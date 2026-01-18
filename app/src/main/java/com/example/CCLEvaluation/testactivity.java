@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,6 +16,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import adapter.CustomViewPager;
 import adapter.testpageradapter;
@@ -45,6 +45,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
     private ArrayList<evaluation> evTemp;
     private TextView exit, counter, timer;
     private String format;
+    private ArrayList<List<a.CharacterPhonology>> aTargetWordList;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -116,10 +117,10 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         if (format == null)
             return;
         if (format.equals("A")) {
+            ImageUrls.initAPhonologyLexicon();
 
-            String[] imageUrls = ImageUrls.A_imageUrls;
-            String[] imageUrlsC = ImageUrls.A_imageUrlsC;
-            String[][] target_tone = ImageUrls.A_proAns;
+            String[] imageUrls = ImageUrls.A_newImageUrls;
+            String[] imageUrlsC = ImageUrls.A_newImageUrlsC;
             int lenth = imageUrls.length;
             testcontext.getInstance().setLengths(lenth);
             JSONArray A = evaluations.getJSONArray("A");
@@ -128,51 +129,31 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);
             ArrayList<String []>R_id2 = new ArrayList<String[]>(lenth);
             String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
+            aTargetWordList = new ArrayList<>(lenth);
 
             if (A.length()==0){//E为空，即尚未答题
                 for (int i = 1; i <= lenth; i++) {
-                    a a1 = new a(i, imageUrlsC[i - 1], null,target_tone[i-1][0], target_tone[i-1][1], null,null);
+                    a a1 = new a(i, imageUrlsC[i - 1], null, null, null, null, null);
+                    // 新题库目标词（用户填充 ImageUrls.A_targetWord 后生效）
+                    a1.setTargetWord(ImageUrls.toList(ImageUrls.A_targetWord[i - 1]));
                     a1.setAllQuestionListener(allquestioncallback);
                     evTemp.add(a1);
                     R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
-                    R_id2.add(target_tone[i-1]);
+//                    R_id2.add(ImageUrls.A_proAns[i-1]); // 兼容旧 UI 展示
+                    aTargetWordList.add(ImageUrls.toList(ImageUrls.A_targetWord[i - 1]));
                 }
             }
             else {//非空，则完成了部分题目
-                String progress;
-                String targettone1;
-                String targettone2;
-                audio audio;
-                String time;
                 for (int i = 1; i <= lenth; i++) {
-                    if (A.getJSONObject(i-1).has("time") && !A.getJSONObject(i-1).isNull("time") && !A.getJSONObject(i-1).getString("time").equals("null")) {
-                        progress = A.getJSONObject(i-1).getString("progress");
-                        if (A.getJSONObject(i-1).has("target_tone1") && !A.getJSONObject(i-1).isNull("target_tone1")) {
-                            targettone1 = A.getJSONObject(i-1).getString("target_tone1");
-                        }else{
-                            targettone1="";
-                        }
-
-                        if (A.getJSONObject(i-1).has("target_tone2") && !A.getJSONObject(i-1).isNull("target_tone2")) {
-                            targettone2 = A.getJSONObject(i-1).getString("target_tone2");
-                        }else {
-                            targettone2="";
-                        }
-                        audio = new audio(A.getJSONObject(i-1).getString("audioPath"));
-                        time = A.getJSONObject(i-1).getString("time");
+                    a a2 = a.fromJson(A.getJSONObject(i-1));
+                    if (a2.getTargetWord() == null) {
+                        a2.setTargetWord(ImageUrls.toList(ImageUrls.A_targetWord[i - 1]));
                     }
-                    else{
-                        progress = null;
-                        targettone1 = null;
-                        targettone2 = null;
-                        audio = null;
-                        time = null;
-                    }
-                    a a2 = new a(i, imageUrlsC[i - 1], progress, targettone1, targettone2, audio, time);
                     a2.setAllQuestionListener(allquestioncallback);
                     evTemp.add(a2);
                     R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
-                    R_id2.add(target_tone[i-1]);
+//                    R_id2.add(ImageUrls.A_proAns[i-1]);
+                    aTargetWordList.add(a2.getTargetWord());
                 }
             }
             testcontext.getInstance().setEvaluations(evTemp);
