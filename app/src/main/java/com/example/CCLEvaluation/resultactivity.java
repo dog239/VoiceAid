@@ -19,6 +19,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import adapter.resultadapter;
 import bean.a;
@@ -116,8 +117,6 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         if(format==null)
             return;
         if(format.equals("A")){
-            String[] characs = ImageUrls.A_characs;
-            int[] score = new int[21];
             tv2.setVisibility(View.GONE);
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("A");
@@ -125,53 +124,12 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 view.setVisibility(View.VISIBLE);
                 table.setVisibility(View.VISIBLE);
             }
-            evaluations.add(new a(0,null,null,null,null,null,null));//首行
+            evaluations.add(new a(0, (List<a.CharacterPhonology>) null, null, null, null)); // 首行
             for(int i=0;i<jsonArray.length();i++){
                 JSONObject object = jsonArray.getJSONObject(i);
-                if(object.has("time")&&!object.isNull("time")){
-                    if(!object.getString("target_tone1").equals("")){
-                        String originalString = object.getString("target_tone1");
-                        for(int j=0;j<characs.length;j++){
-                            if (characs[j].equals(originalString)){
-                                score[j]++;
-                            }
-                        }
-                    }
-                    if(!object.getString("target_tone2").equals("")){
-                        String originalString = object.getString("target_tone2");
-                        for(int j=0;j<characs.length;j++){
-                            if (characs[j].equals(originalString)){
-                                score[j]++;
-                            }
-                        }
-                    }
-
-                    evaluations.add(new a(i+1,object.getString("target"),object.getString("progress"),
-                            object.getString("target_tone1"), object.getString("target_tone2"),new audio(object.getString("audioPath")),
-                            object.getString("time")));
-                }
-                else {
-                    evaluations.add(new a(i+1,object.getString("target"),null,null,null,null,null));
-                }
+                a item = a.fromJson(object);
+                evaluations.add(item);
             }
-            int num[] = ImageUrls.A_nums;
-            if(jsonArray.length()>0){
-                for(int i=0;i<num.length;++i){
-                    double lenthe = num[i];
-                    double scoree = (score[i]/lenthe)*100;
-                    String stre = String.format("%.2f%%",scoree);
-                    tvs[i].setText(stre);
-                    if(scoree>=67){
-                        tvs[i].setBackgroundResource(R.drawable.right_button);
-                    }else if(scoree>=34) {
-                        tvs[i].setBackgroundResource(R.drawable.justsoso_button);
-                    }else {
-                        tvs[i].setBackgroundResource(R.drawable.wrong_button);
-                    }
-
-                }
-            }
-
         }
         else if (format.equals("E")) {
             double counte = 0;

@@ -3,11 +3,14 @@ package bean;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,7 +25,6 @@ import java.util.List;
 
 import utils.AudioPlayer;
 import utils.AudioRecorder;
-import utils.ImageUrls;
 import utils.ResultContext;
 import utils.testcontext;
 
@@ -77,11 +79,22 @@ public class a extends evaluation {
     // 用户作答部分：可编辑的音韵拆解答案
     private List<CharacterPhonology> answerPhonology;
 
+    private String answerRes; // 回答情况，默认空
+
+    private static final String[] ANSWER_RES_OPTIONS = new String[]{
+            "正确",
+            "错误：替代",
+            "错误：增加",
+            "错误：减少",
+            "错误：扭曲"
+    };
+
     public a(int num, String target, String progress, String target_tone1, String target_tone2, bean.audio audio, String time) {
         super(num);
         this.target = target;
         this.audio = audio;
         this.time = time;
+        this.answerRes = ANSWER_RES_OPTIONS[0];
     }
 
     public a(int num, List<CharacterPhonology> targetWord, String progress, bean.audio audio, String time) {
@@ -89,6 +102,7 @@ public class a extends evaluation {
         this.targetWord = targetWord;
         this.audio = audio;
         this.time = time;
+        this.answerRes = ANSWER_RES_OPTIONS[0];
     }
 
 
@@ -108,14 +122,29 @@ public class a extends evaluation {
         this.answerPhonology = answerPhonology;
     }
 
+    public String getAnswerRes() { return answerRes; }
+    public void setAnswerRes(String answerRes) { this.answerRes = answerRes; }
+
     public void ensureAnswerSizeFromTarget() {
         if (targetWord == null) return;
-        if (answerPhonology == null) answerPhonology = new java.util.ArrayList<>();
+        if (answerPhonology == null) {
+            answerPhonology = new java.util.ArrayList<>();
+        }
         while (answerPhonology.size() < targetWord.size()) {
+            CharacterPhonology src = targetWord.get(answerPhonology.size());
             CharacterPhonology cp = new CharacterPhonology();
-            cp.hanzi = targetWord.get(answerPhonology.size()).hanzi;
-            PhonologyPart part = new PhonologyPart();
-            cp.phonology = part;
+            if (src != null) {
+                cp.hanzi = src.hanzi;
+                if (src.phonology != null) {
+                    PhonologyPart part = new PhonologyPart();
+                    part.initial = src.phonology.initial;
+                    part.medial = src.phonology.medial;
+                    part.nucleus = src.phonology.nucleus;
+                    part.coda = src.phonology.coda;
+                    part.isInducible = src.phonology.isInducible;
+                    cp.phonology = part;
+                }
+            }
             answerPhonology.add(cp);
         }
     }
@@ -166,40 +195,127 @@ public class a extends evaluation {
 
     @Override
     public int handle(View[] views, int position) {
-        for (int i = 0; i < views.length; i++) {
-            views[i].setVisibility(View.GONE);
-        }
-        for (int i = 0; i < 4; i++) {
-            views[i].setVisibility(View.VISIBLE);
-        }
+        // 显示：题号 | 目标词 | 声母 | 介音 | 韵腹 | 韵尾 | 可诱发 | 录音 | 回答情况
+        for (int i = 0; i < views.length; i++) views[i].setVisibility(View.GONE);
+        for (int i = 0; i < 9 && i < views.length; i++) views[i].setVisibility(View.VISIBLE);
         if (position == 0) {
-            ((TextView) views[0]).setText(colum1);
-            ((TextView) views[1]).setText(colum2);
-            ((TextView) views[2]).setText(colum3);
-            ((TextView) views[3]).setText(colum4);
+            ((TextView) views[0]).setText("题号");
+            ((TextView) views[1]).setText("目标词");
+            ((TextView) views[2]).setText("声母");
+            ((TextView) views[3]).setText("介音");
+            ((TextView) views[4]).setText("韵腹");
+            ((TextView) views[5]).setText("韵尾");
+            ((TextView) views[6]).setText("可诱发");
+            ((TextView) views[7]).setText("录音");
+            ((TextView) views[8]).setText("回答情况");
         } else {
             ((TextView) views[0]).setText(String.valueOf(num));
-            ((TextView) views[1]).setText(target);
-            if (audio != null) {
-                ((TextView) views[2]).setText(time);
-                ((TextView) views[3]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
-                ((TextView) views[3]).setText(ResultContext.getInstance().getContext().getResources().getString(R.string.audio));
-                AudioPlayer.getInstance().addIcon((TextView) views[3]);
-                views[3].setOnClickListener(v -> AudioPlayer.getInstance().play(audio.getPath(), position - 1));
+            ((TextView) views[1]).setText(buildTargetHanzi());
+            ((TextView) views[2]).setText(joinParts(answerPhonology, PartType.INITIAL));
+            ((TextView) views[3]).setText(joinParts(answerPhonology, PartType.MEDIAL));
+            ((TextView) views[4]).setText(joinParts(answerPhonology, PartType.NUCLEUS));
+            ((TextView) views[5]).setText(joinParts(answerPhonology, PartType.CODA));
+            ((TextView) views[6]).setText(joinInducible(answerPhonology));
+            if (audio != null && time != null) {
+                ((TextView) views[7]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
+                ((TextView) views[7]).setText(ResultContext.getInstance().getContext().getString(R.string.audio));
+                AudioPlayer.getInstance().addIcon((TextView) views[7]);
+                views[7].setOnClickListener(v -> AudioPlayer.getInstance().play(audio.getPath(), position - 1));
+            } else {
+                ((TextView) views[7]).setText("");
             }
+            ((TextView) views[8]).setText(answerRes == null ? "" : answerRes);
         }
-        return 3;
+        return 8;
     }
 
+    private enum PartType { INITIAL, MEDIAL, NUCLEUS, CODA }
+
+    private String buildTargetHanzi() {
+        if (targetWord == null || targetWord.isEmpty()) return target == null ? "" : target;
+        StringBuilder sb = new StringBuilder();
+        for (CharacterPhonology cp : targetWord) {
+            if (cp != null && cp.hanzi != null) sb.append(cp.hanzi);
+        }
+        return sb.toString();
+    }
+
+    private String joinParts(List<CharacterPhonology> ans, PartType type) {
+        if (ans == null || ans.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < ans.size(); i++) {
+            CharacterPhonology cp = ans.get(i);
+            if (cp == null || cp.phonology == null) {
+                sb.append(" ");
+            } else {
+                switch (type) {
+                    case INITIAL: sb.append(nullToEmpty(cp.phonology.initial)); break;
+                    case MEDIAL: sb.append(nullToEmpty(cp.phonology.medial)); break;
+                    case NUCLEUS: sb.append(nullToEmpty(cp.phonology.nucleus)); break;
+                    case CODA: sb.append(nullToEmpty(cp.phonology.coda)); break;
+                }
+            }
+            if (i < ans.size() - 1) sb.append("\n");
+        }
+        return sb.toString();
+    }
+
+    private String joinInducible(List<CharacterPhonology> ans) {
+        if (ans == null || ans.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < ans.size(); i++) {
+            CharacterPhonology cp = ans.get(i);
+            boolean flag = cp != null && cp.phonology != null && cp.phonology.isInducible;
+            sb.append(flag ? "✔" : "");
+            if (i < ans.size() - 1) sb.append("\n");
+        }
+        return sb.toString();
+    }
+
+    private String nullToEmpty(String s) { return s == null ? "" : s; }
+
+    @Override
+    public void toJson(JSONObject evaluations) throws JSONException {
+        JSONObject object = new JSONObject();
+        object.put("num", num);
+        object.put("target", target);
+        if (answerRes == null) answerRes = ANSWER_RES_OPTIONS[0];
+        object.put("errorType", answerRes);
+        if (targetWord != null) {
+            JSONArray arr = new JSONArray();
+            for (CharacterPhonology cp : targetWord) {
+                if (cp != null) arr.put(cp.toJson());
+            }
+            object.put("targetWord", arr);
+        } else {
+            object.put("targetWord", JSONObject.NULL);
+        }
+        JSONArray arrAns = new JSONArray();
+        if (answerPhonology != null) {
+            for (CharacterPhonology cp : answerPhonology) {
+                if (cp != null) arrAns.put(cp.toJson());
+            }
+        }
+        object.put("answerPhonology", arrAns);
+        if (audio != null && time != null) {
+            object.put("audioPath", audio.getPath());
+            object.put("time", time);
+        } else {
+            object.put("audioPath", JSONObject.NULL);
+            object.put("time", JSONObject.NULL);
+        }
+        evaluations.getJSONArray("A").put(object);
+    }
 
     public static a fromJson(JSONObject object) throws JSONException {
         int num = object.optInt("num", 0);
         String target = object.optString("target", null);
-        String progress = object.isNull("progress") ? null : object.optString("progress", null);
-        String targetTone1 = object.isNull("target_tone1") ? null : object.optString("target_tone1", null);
-        String targetTone2 = object.isNull("target_tone2") ? null : object.optString("target_tone2", null);
         String audioPath = object.isNull("audioPath") ? null : object.optString("audioPath", null);
         String time = object.isNull("time") ? null : object.optString("time", null);
+
+        String error = object.optString("errorType", "");
+        if (error != null && error.isEmpty()) error = null;
+
         List<CharacterPhonology> targetWord = null;
         if (object.has("targetWord") && !object.isNull("targetWord")) {
             JSONArray arr = object.optJSONArray("targetWord");
@@ -224,16 +340,12 @@ public class a extends evaluation {
                 }
             }
         }
-        bean.audio audioObj = null;
-        if (audioPath != null && !audioPath.equals(JSONObject.NULL)) {
-            audioObj = new audio(audioPath);
-        }
-        a item = new a(num, target, progress, targetTone1, targetTone2, audioObj, time);
-        item.setTargetWord(targetWord); // may be null if missing
+
+        List<CharacterPhonology> answerPhonology = null;
         if (object.has("answerPhonology") && !object.isNull("answerPhonology")) {
             JSONArray ansArr = object.optJSONArray("answerPhonology");
             if (ansArr != null) {
-                List<CharacterPhonology> ansList = new java.util.ArrayList<>();
+                answerPhonology = new java.util.ArrayList<>();
                 for (int i = 0; i < ansArr.length(); i++) {
                     JSONObject itemAns = ansArr.optJSONObject(i);
                     if (itemAns == null) continue;
@@ -249,47 +361,20 @@ public class a extends evaluation {
                         part.isInducible = phObj.optBoolean("isInducible", false);
                         cp.phonology = part;
                     }
-                    ansList.add(cp);
+                    answerPhonology.add(cp);
                 }
-                item.setAnswerPhonology(ansList);
             }
         }
-        return item;
-    }
 
-    @Override
-    public void toJson(JSONObject evaluations) throws JSONException {
-        JSONObject object = new JSONObject();
-        object.put("num", num);
-        object.put("target", target);
-        if (targetWord != null) {
-            JSONArray arr = new JSONArray();
-            for (CharacterPhonology cp : targetWord) {
-                if (cp != null) {
-                    arr.put(cp.toJson());
-                }
-            }
-            object.put("targetWord", arr);
-        } else {
-            object.put("targetWord", JSONObject.NULL);
+        bean.audio audioObj = null;
+        if (audioPath != null && !audioPath.equals(JSONObject.NULL)) {
+            audioObj = new audio(audioPath);
         }
-        if (answerPhonology != null) {
-            JSONArray arrAns = new JSONArray();
-            for (CharacterPhonology cp : answerPhonology) {
-                if (cp != null) {
-                    arrAns.put(cp.toJson());
-                }
-            }
-            object.put("answerPhonology", arrAns);
-        }
-        if (time != null) {
-            object.put("audioPath", audio.getPath());
-            object.put("time", time);
-        } else {
-            object.put("audioPath", JSONObject.NULL);
-            object.put("time", JSONObject.NULL);
-        }
-        evaluations.getJSONArray("A").put(object);
+        a item = new a(num, targetWord, null, audioObj, time);
+        item.setTarget(target);
+        item.setAnswerPhonology(answerPhonology);
+        item.setAnswerRes(error);
+        return item;
     }
 
     @Override
@@ -301,11 +386,32 @@ public class a extends evaluation {
         TextView ansTextView = view.findViewById(R.id.tv_ans);
         Button startButton = view.findViewById(R.id.btn_start);
         Button nextButton = view.findViewById(R.id.btn_next);
+        Spinner spError = view.findViewById(R.id.sp_error_type);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(view.getContext(), android.R.layout.simple_spinner_dropdown_item, ANSWER_RES_OPTIONS);
+        spError.setAdapter(adapter);
+        int defIndex = 0;
+        if (answerRes != null) {
+            for (int i = 0; i < ANSWER_RES_OPTIONS.length; i++) {
+                if (ANSWER_RES_OPTIONS[i].equals(answerRes)) { defIndex = i; break; }
+            }
+        }
+        spError.setSelection(defIndex);
+        final boolean[] firstSelect = new boolean[]{true};
+        spError.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                if (firstSelect[0] && answerRes == null && pos == 0) { firstSelect[0] = false; return; }
+                firstSelect[0] = false;
+                answerRes = ANSWER_RES_OPTIONS[pos];
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         imageView.setImageResource(ImageIdList.get(position));
         numberTextView.setText("第" + TabString[position] + "题：图片画的是什么？");
         counter.setText(testcontext.getInstance().getCount() + "/" + testcontext.getInstance().getLengths());
         ansTextView.setText(Hint[position]);
+
 
         if (time != null) {
             ansTextView.setVisibility(View.VISIBLE);

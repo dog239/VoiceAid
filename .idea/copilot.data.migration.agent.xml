@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AgentMigrationStateService">
+    <option name="pendingSessionIds">
+      <option value="19cb15ab-7719-4325-9126-56cf78bed989" />
+    </option>
+    <pendingTurns>
+      <entry key="19cb15ab-7719-4325-9126-56cf78bed989">
+        <set>
+          <option value="cadf384a-4a9a-471c-b253-b188b175dff0" />
+          <option value="1c6045db-6589-4752-b975-4cd7b9c91b1b" />
+          <option value="578e5215-8031-4f5e-bb5c-ebcb8341b7eb" />
+          <option value="0a0dda2d-d71e-4eba-8121-4fcbdc879687" />
+          <option value="32113bf5-8495-4341-bd17-bbc63811d93f" />
+          <option value="c5a9272f-5d79-43dd-a3cb-ecde78e28ab2" />
+          <option value="02526fac-dd33-410d-a9d0-2fbd9f57514d" />
+        </set>
+      </entry>
+    </pendingTurns>
+    <pendingWorkingSetItems>
+      <entry key="19cb15ab-7719-4325-9126-56cf78bed989">
+        <set>
+          <option value="file://$PROJECT_DIR$/app/src/main/java/bean/a.java" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/adapter/resultadapter.java" />
+          <option value="file://$PROJECT_DIR$/app/src/main/res/layout/item_result.xml" />
+          <option value="file://$PROJECT_DIR$/app/src/main/java/com/example/CCLEvaluation/resultactivity.java" />
+        </set>
+      </entry>
+    </pendingWorkingSetItems>
+  </component>
+</project>
