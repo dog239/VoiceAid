@@ -76,6 +76,19 @@ public interface ImageUrls {
             "燕子", "围巾", "针", "老虎", "黄瓜", "船", "萝卜", "桌子", "红色", "鞋", "头发", "牛",
             "蒜", "风扇", "土豆", "向日葵", "鱼", "泡泡", "乌龟", "药", "紫色", "裙子", "蚊子"
     };
+
+//    String[] A_imageUrls = {"nose","foot","mouth","tennis","car","woodentable","umbrella","bird","plane","hair",
+//            "door","piano","racing","crab","watermelon","dress","apple","vegetables","flower","fatmeat",
+//            "ear","mouse","chopsticks","shorts","milk","lantern","panda","hotwater","stairs","stick",
+//            "moon","bag","finger","rainbow","bed","girl","clamp","sun","ring","brushteeth","goodbye"
+//    };
+//
+//    String[] A_imageUrlsC = {"鼻子","脚","嘴","球","汽车","桌子","雨伞","鸟","飞机","头发",
+//            "木门","钢琴","赛跑","螃蟹","西瓜","裙子","苹果","蔬菜","花","肥肉",
+//            "耳朵","老鼠","筷子","短裤","牛奶","灯笼","熊猫","热水","楼梯","棍子",
+//            "月亮","书包","手指","彩虹","床","女孩","夹子","太阳","圆圈","刷牙","再见"
+//    };
+
 //    String[][] A_proAns = {{"/b/", "/z/"},
 //            {"/j/", ""},
 //            {"/z/", ""},
@@ -118,9 +131,9 @@ public interface ImageUrls {
 //            {"/sh/", "/y/"},
 //            {"/z/", "/j/"},
 //    };
-//    String[] A_characs = {"/b/", "/p/", "/m/", "/f/", "/d/", "/t/", "/n/", "/l/", "/s/", "/z/", "/c/", "/x/", "/j/", "/q/",
-//            "/sh/", "/r/", "/zh/", "/ch/", "/g/", "/k/", "/h/"};
-//    int[] A_nums = {2, 3, 3, 3, 3, 3, 4, 4, 2, 8, 2, 3, 3, 5, 6, 2, 2, 2, 4, 2, 3};
+    String[] A_characs = {"/b/", "/p/", "/m/", "/f/", "/d/", "/t/", "/n/", "/l/", "/s/", "/z/", "/c/", "/x/", "/j/", "/q/",
+            "/sh/", "/r/", "/zh/", "/ch/", "/g/", "/k/", "/h/"};
+    int[] A_nums = {2, 3, 3, 3, 3, 3, 4, 4, 2, 8, 2, 3, 3, 5, 6, 2, 2, 2, 4, 2, 3};
 
     String[][] NWR_characs = {{"把ba3", "丹dan1", "召zhao4", "歹dai3", "库ku4", "尚shang4"},
             {"商shang1", "楷kai3", "到dao4", "尬ga4", "展zhan3", "铺pu4"},
