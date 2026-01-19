@@ -51,13 +51,13 @@
             android:layout_centerHorizontal="true"
             android:layout_gravity="center"
             android:background="@drawable/btn"
-            android:text="退出"
             android:clickable="true"
+            android:text="退出"
+            app:backgroundTint="#1e3b7a"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            />
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

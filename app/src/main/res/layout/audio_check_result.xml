@@ -1,79 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:drawable/screen_background_light"
     android:orientation="horizontal"
     android:paddingTop="10dp"
-    android:background="@drawable/bg"
     tools:context="login.Loginactivity">
 
     <LinearLayout
         android:id="@+id/llm"
-        android:layout_marginTop="100dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
         android:layout_gravity="center_vertical"
-        >
-    <TextView
-        android:id="@+id/tv_1"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:gravity="center"
-        android:text="请听录音"
-        android:textColor="@color/black"
-        android:textSize="30sp"
-        />
-    <ProgressBar
-        android:id="@+id/progressBar2"
-        android:layout_width="match_parent"
-        android:layout_height="15dp"
-        android:layout_margin="20dp"
-        android:layout_marginTop="2dp"
-        android:indeterminateOnly="false"
-        android:progressDrawable="@drawable/common_progress_bg" />
+        android:layout_marginTop="100dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/btnPlay"
-        android:layout_width="match_parent"
-        android:layout_marginHorizontal="20dp"
-        android:layout_height="wrap_content"
-        android:text="播放"
-        android:layout_gravity="center"
-        android:layout_marginRight="1dp"
-        android:background="@drawable/btn_left"
-        />
+        <TextView
+            android:id="@+id/tv_1"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:gravity="center"
+            android:text="请听录音"
+            android:textColor="@color/black"
+            android:textSize="30sp" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        <ProgressBar
+            android:id="@+id/progressBar2"
+            android:layout_width="match_parent"
+            android:layout_height="15dp"
+            android:layout_margin="20dp"
+            android:layout_marginTop="2dp"
+            android:indeterminateOnly="false"
+            android:progressDrawable="@drawable/common_progress_bg" />
 
-        android:padding="20dp"
-        >
         <Button
-            android:id="@+id/btnSatisfied"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+            android:id="@+id/btnPlay"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="满意"
             android:layout_gravity="center"
+            android:layout_marginHorizontal="20dp"
             android:layout_marginRight="1dp"
             android:background="@drawable/btn_left"
-            />
-        <Button
-            android:id="@+id/btnNotSatisfied"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+            android:text="播放"
+            app:backgroundTint="#1e3b7a" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="重新录音"
-            android:layout_gravity="center"
-            android:layout_marginLeft="1dp"
-            android:background="@drawable/btn_right"
-            />
-    </LinearLayout>
+            android:orientation="horizontal"
+
+            android:padding="20dp">
+
+            <Button
+                android:id="@+id/btnSatisfied"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginRight="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_left"
+                android:text="满意"
+                app:backgroundTint="#1e3b7a" />
+
+            <Button
+                android:id="@+id/btnNotSatisfied"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_right"
+                android:text="重新录音"
+                app:backgroundTint="#1e3b7a" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
 

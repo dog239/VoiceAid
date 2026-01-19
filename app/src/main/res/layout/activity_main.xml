@@ -4,290 +4,285 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/_1_"
     android:orientation="horizontal"
-    android:background="@drawable/bg"
-    tools:context="login.Loginactivity"
-    android:paddingBottom="80dp">
+    android:paddingBottom="80dp"
+    tools:context="login.Loginactivity">
 
 
     <TextView
         android:id="@+id/tv_1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#63CAE2"
         android:gravity="center"
+        android:paddingTop="20dp"
         android:text="学前儿童汉语评测"
         android:textColor="@color/black"
         android:textSize="30sp"
-        android:paddingTop="20dp"
-        app:layout_constraintTop_toTopOf="parent"
-        android:background="@color/green_blue"
-        app:layout_constraintVertical_chainStyle="spread_inside"
         app:layout_constraintBottom_toTopOf="@id/btn_new1"
-        />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="spread_inside"
+        tools:layout_editor_absoluteX="0dp" />
+
     <LinearLayout
         android:id="@+id/btn_new1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_marginHorizontal="20dp"
-        app:layout_constraintTop_toBottomOf="@id/tv_1"
-        app:layout_constraintBottom_toTopOf="@id/btn_old1">
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/btn_old1"
+        app:layout_constraintTop_toBottomOf="@id/tv_1">
+
         <TextView
             android:id="@+id/new1_no"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="match_parent"
-            android:text="1"
-            android:textAlignment="center"
-            android:textSize="25sp"
+            android:layout_weight="1"
             android:background="@drawable/startbuttonleft"
             android:paddingVertical="20dp"
-            />
+            android:text="1"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+
         <TextView
             android:layout_width="0dp"
-            android:layout_weight="3"
             android:layout_height="match_parent"
-            android:text="新评测"
-            android:textSize="25sp"
+            android:layout_weight="3"
+            android:background="@android:drawable/editbox_background_normal"
             android:paddingVertical="20dp"
-            android:textAlignment="center"
             android:paddingRight="20dp"
-            android:background="@drawable/startbuttonright"
-            />
+            android:text="新评测"
+            android:textAlignment="center"
+            android:textSize="25sp" />
     </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/btn_old1"
-            android:layout_width="match_parent"
+    <LinearLayout
+        android:id="@+id/btn_old1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/btn_old2"
+        app:layout_constraintTop_toBottomOf="@id/btn_new1">
+
+        <TextView
+            android:id="@+id/old1_no"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginHorizontal="20dp"
-            app:layout_constraintTop_toBottomOf="@id/btn_new1"
-            app:layout_constraintBottom_toTopOf="@id/btn_old2"
-            >
-            <TextView
-                android:id="@+id/old1_no"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="1"
-                android:textAlignment="center"
-                android:textSize="25sp"
-                android:background="@drawable/startbuttonleft"
-                android:paddingVertical="20dp"
-                />
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="3"
-                android:layout_height="wrap_content"
-                android:text="本机评测"
-                android:textSize="25sp"
-                android:paddingVertical="20dp"
-                android:textAlignment="center"
-                android:paddingRight="20dp"
-                android:background="@drawable/startbuttonright"
-                />
-        </LinearLayout>
+            android:layout_weight="1"
+            android:background="@drawable/startbuttonleft"
+            android:paddingVertical="20dp"
+            android:text="1"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:background="@android:drawable/editbox_background_normal"
+            android:paddingVertical="20dp"
+            android:paddingRight="20dp"
+            android:text="本机评测"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+    </LinearLayout>
 
 
-        <LinearLayout
-            android:id="@+id/btn_old2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginHorizontal="20dp"
-            app:layout_constraintTop_toBottomOf="@id/btn_old1"
-            app:layout_constraintBottom_toTopOf="@id/btn_all"
-            >
-            <TextView
-                android:id="@+id/old2_no"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="1"
-                android:textAlignment="center"
-                android:textSize="25sp"
-                android:background="@drawable/startbuttonleft"
-                android:paddingVertical="20dp"
-                />
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="3"
-                android:layout_height="wrap_content"
-                android:text="个人评测"
-                android:textSize="25sp"
-                android:paddingVertical="20dp"
-                android:textAlignment="center"
-                android:paddingRight="20dp"
-                android:background="@drawable/startbuttonright"
-                />
-        </LinearLayout>
+    <LinearLayout
+        android:id="@+id/btn_old2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/btn_all"
+        app:layout_constraintTop_toBottomOf="@id/btn_old1">
 
-        <LinearLayout
-            android:id="@+id/btn_all"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/old2_no"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginHorizontal="20dp"
-            app:layout_constraintTop_toBottomOf="@id/btn_old2"
-            app:layout_constraintBottom_toTopOf="@id/btn_record"
-            >
-            <TextView
-                android:id="@+id/all_no"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="1"
-                android:textAlignment="center"
-                android:textSize="25sp"
-                android:background="@drawable/startbuttonleft"
-                android:paddingVertical="20dp"
-                />
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="3"
-                android:layout_height="wrap_content"
-                android:text="所有测评"
-                android:textSize="25sp"
-                android:paddingVertical="20dp"
-                android:textAlignment="center"
-                android:paddingRight="20dp"
-                android:background="@drawable/startbuttonright"
-                />
-        </LinearLayout>
+            android:layout_weight="1"
+            android:background="@drawable/startbuttonleft"
+            android:paddingVertical="20dp"
+            android:text="1"
+            android:textAlignment="center"
+            android:textSize="25sp" />
 
-        <LinearLayout
-            android:id="@+id/btn_record"
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginHorizontal="20dp"
-            app:layout_constraintTop_toBottomOf="@id/btn_all"
-            app:layout_constraintBottom_toTopOf="@id/btn_changeModule"
-            >
-            <TextView
-                android:id="@+id/record_no"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="1"
-                android:textAlignment="center"
-                android:textSize="25sp"
-                android:background="@drawable/startbuttonleft"
-                android:paddingVertical="20dp"
-                />
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="3"
-                android:layout_height="wrap_content"
-                android:text="试音"
-                android:textSize="25sp"
-                android:paddingVertical="20dp"
-                android:textAlignment="center"
-                android:paddingRight="20dp"
-                android:background="@drawable/startbuttonright"
-                />
-        </LinearLayout>
+            android:layout_weight="3"
+            android:background="@android:drawable/editbox_background_normal"
+            android:paddingVertical="20dp"
+            android:paddingRight="20dp"
+            android:text="个人评测"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+    </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/btn_changeModule"
-            android:layout_width="match_parent"
+    <LinearLayout
+        android:id="@+id/btn_all"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/btn_record"
+        app:layout_constraintTop_toBottomOf="@id/btn_old2">
+
+        <TextView
+            android:id="@+id/all_no"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginHorizontal="20dp"
-            app:layout_constraintTop_toBottomOf="@id/btn_record"
-            app:layout_constraintBottom_toTopOf="@id/btn_logout"
-            >
-            <TextView
-                android:id="@+id/changeModule_no"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="1"
-                android:textAlignment="center"
-                android:textSize="25sp"
-                android:background="@drawable/startbuttonleft"
-                android:paddingVertical="20dp"
-                />
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="3"
-                android:layout_height="wrap_content"
-                android:text="测评模块修改"
-                android:textSize="25sp"
-                android:paddingVertical="20dp"
-                android:textAlignment="center"
-                android:paddingRight="20dp"
-                android:background="@drawable/startbuttonright"
-                />
-        </LinearLayout>
+            android:layout_weight="1"
+            android:background="@drawable/startbuttonleft"
+            android:paddingVertical="20dp"
+            android:text="1"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:background="@android:drawable/editbox_background_normal"
+            android:paddingVertical="20dp"
+            android:paddingRight="20dp"
+            android:text="所有测评"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/btn_record"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/btn_changeModule"
+        app:layout_constraintTop_toBottomOf="@id/btn_all">
+
+        <TextView
+            android:id="@+id/record_no"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/startbuttonleft"
+            android:paddingVertical="20dp"
+            android:text="1"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:background="@android:drawable/editbox_background_normal"
+            android:paddingVertical="20dp"
+            android:paddingRight="20dp"
+            android:text="试音"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/btn_changeModule"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/btn_logout"
+        app:layout_constraintTop_toBottomOf="@id/btn_record">
+
+        <TextView
+            android:id="@+id/changeModule_no"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/startbuttonleft"
+            android:paddingVertical="20dp"
+            android:text="1"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:background="@android:drawable/editbox_background_normal"
+            android:paddingVertical="20dp"
+            android:paddingRight="20dp"
+            android:text="测评模块修改"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+    </LinearLayout>
+
     <LinearLayout
         android:id="@+id/btn_logout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_marginHorizontal="20dp"
-        app:layout_constraintTop_toBottomOf="@id/btn_changeModule"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toTopOf="@id/btn_delete"
+        app:layout_constraintTop_toBottomOf="@id/btn_changeModule"
 
         >
+
         <TextView
             android:id="@+id/logout_no"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="1"
-            android:textAlignment="center"
-            android:textSize="25sp"
+            android:layout_weight="1"
             android:background="@drawable/startbuttonleft"
             android:paddingVertical="20dp"
-            />
+            android:text="1"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+
         <TextView
             android:layout_width="0dp"
-            android:layout_weight="3"
             android:layout_height="wrap_content"
-            android:text="退出登录"
-            android:textSize="25sp"
+            android:layout_weight="3"
+            android:background="@android:drawable/editbox_background_normal"
             android:paddingVertical="20dp"
-            android:textAlignment="center"
             android:paddingRight="20dp"
-            android:background="@drawable/startbuttonright"
-            />
+            android:text="退出登录"
+            android:textAlignment="center"
+            android:textSize="25sp" />
     </LinearLayout>
 
     <LinearLayout
-            android:id="@+id/btn_delete"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginHorizontal="20dp"
-            app:layout_constraintTop_toBottomOf="@id/btn_logout"
-            app:layout_constraintBottom_toBottomOf="parent"
-            >
-            <TextView
-                android:id="@+id/delete_no"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="1"
-                android:textAlignment="center"
-                android:textSize="25sp"
-                android:background="@drawable/startbuttonleft"
-                android:paddingVertical="20dp"
-                />
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="3"
-                android:layout_height="wrap_content"
-                android:text="注销用户"
-                android:textSize="25sp"
-                android:paddingVertical="20dp"
-                android:textAlignment="center"
-                android:paddingRight="20dp"
-                android:background="@drawable/startbuttonright"
-                />
-        </LinearLayout>
+        android:id="@+id/btn_delete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_logout">
 
+        <TextView
+            android:id="@+id/delete_no"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/startbuttonleft"
+            android:paddingVertical="20dp"
+            android:text="1"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:background="@android:drawable/editbox_background_normal"
+            android:paddingVertical="20dp"
+            android:paddingRight="20dp"
+            android:text="注销用户"
+            android:textAlignment="center"
+            android:textSize="25sp" />
+    </LinearLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

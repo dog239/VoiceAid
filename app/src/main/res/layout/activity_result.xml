@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/_1_"
     android:paddingTop="10dp"
-    android:background="@drawable/bg"
     tools:context="login.Loginactivity">
 
     <TextView
@@ -15,8 +15,7 @@
         android:gravity="center"
         android:text="评测结果"
         android:textColor="@color/black"
-        android:textSize="30dp"
-        />
+        android:textSize="30dp" />
 
     <TextView
         android:id="@+id/tv_2"
@@ -31,20 +30,21 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerview"
-        android:layout_below="@+id/tv_2"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@+id/tv_2"
         android:layout_marginHorizontal="20dp"
-        android:layout_marginBottom="60sp"
-        />
+        android:layout_marginBottom="60sp" />
+
     <Button
         android:id="@+id/back"
-        android:layout_marginTop="30sp"
-        android:layout_alignParentBottom="true"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:text="返回"
+        android:layout_alignParentBottom="true"
         android:layout_marginHorizontal="20dp"
         android:layout_marginVertical="10dp"
-        android:background="@drawable/cage"/>
-</RelativeLayout >
+        android:layout_marginTop="30sp"
+        android:background="@drawable/cage"
+        android:text="返回"
+        app:backgroundTint="#014a84" />
+</RelativeLayout>

@@ -1,32 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/_1_"
     android:orientation="horizontal"
     android:paddingTop="10dp"
-    android:background="@drawable/bg"
     tools:context="login.Loginactivity"
     tools:ignore="ExtraText">
 
     <LinearLayout
-        android:layout_marginTop="100dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:layout_gravity="center_vertical"
+        android:layout_marginTop="100dp"
         android:gravity="center_horizontal"
-        android:layout_gravity="center_vertical">
-
-
-
+        android:orientation="vertical">
 
 
         <LinearLayout
             android:id="@+id/ll2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginHorizontal="20dp">
+            android:layout_marginHorizontal="20dp"
+            android:orientation="vertical">
+
             <TextView
                 android:id="@+id/tv_3"
                 android:layout_width="match_parent"
@@ -34,80 +33,85 @@
                 android:gravity="center"
                 android:text="账号注销"
                 android:textColor="@color/black"
-                android:textSize="25sp"
-                />
+                android:textSize="25sp" />
+
             <EditText
                 android:id="@+id/et_tel_or_email"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
                 android:autofillHints="name"
+                android:background="@drawable/cage"
                 android:hint="手机号/邮箱"
                 android:inputType="text"
-                android:textColor="@color/black"
-                android:textSize="20sp"
                 android:padding="10dp"
-                android:layout_marginTop="5dp"
-                android:background="@drawable/cage"/>
+                android:textColor="@color/black"
+                android:textSize="20sp" />
+
             <LinearLayout
                 android:id="@+id/lll"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
+
                 <EditText
                     android:id="@+id/et_capcha"
                     android:layout_width="0dp"
-                    android:layout_weight="3"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:layout_weight="3"
                     android:autofillHints="name"
+                    android:background="@drawable/cage"
                     android:hint="验证码"
                     android:inputType="text"
-                    android:textColor="@color/black"
-                    android:textSize="20sp"
                     android:padding="10dp"
-                    android:layout_marginTop="5dp"
-                    android:background="@drawable/cage"/>
+                    android:textColor="@color/black"
+                    android:textSize="20sp" />
+
                 <Button
                     android:id="@+id/btn_getcapcha"
                     android:layout_width="0dp"
-                    android:layout_weight="2"
                     android:layout_height="match_parent"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_weight="2"
                     android:background="@drawable/cage"
                     android:padding="10dp"
-                    android:layout_marginTop="5dp"
-                    android:layout_marginLeft="5dp"
                     android:text="获取验证码"
-                    />
+                    app:backgroundTint="#A3E1EF" />
             </LinearLayout>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:layout_marginTop="20dp"
-                android:padding="20dp"
-                >
+                android:orientation="horizontal"
+                android:padding="20dp">
+
                 <Button
                     android:id="@+id/btn_sure"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="注销"
                     android:layout_gravity="center"
                     android:layout_marginRight="1dp"
+                    android:layout_weight="1"
                     android:background="@drawable/btn_left"
-                    />
+                    android:text="注销"
+                    app:backgroundTint="#A3E1EF" />
+
                 <Button
                     android:id="@+id/btn_back"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="返回"
                     android:layout_gravity="center"
                     android:layout_marginLeft="1dp"
+                    android:layout_weight="1"
                     android:background="@drawable/btn_right"
-                    />
+                    android:text="返回"
+                    app:backgroundTint="#A3E1EF" />
             </LinearLayout>
         </LinearLayout>
-</LinearLayout>
+    </LinearLayout>
     <!--        android:max="100"-->
     <!--        android:progress="60"-->
 </LinearLayout>
