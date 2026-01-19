@@ -4,10 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/_1_"
     android:orientation="horizontal"
-    android:paddingTop="10dp"
     android:paddingHorizontal="20dp"
-    android:background="@drawable/bg"
+    android:paddingTop="10dp"
     tools:context="login.Loginactivity">
 
 
@@ -15,187 +15,194 @@
         android:id="@+id/ll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:gravity="center_horizontal"
+        android:orientation="vertical"
 
         >
-    <TextView
-        android:id="@+id/tv_1"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:gravity="center"
-        android:text="平台注册"
-        android:textColor="@color/black"
-        android:textSize="30sp"
-        />
+
+        <TextView
+            android:id="@+id/tv_1"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:gravity="center"
+            android:text="平台注册"
+            android:textColor="@color/black"
+            android:textSize="30sp" />
+
         <EditText
             android:id="@+id/et_tel_or_email"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
             android:autofillHints="name"
+            android:background="@drawable/cage"
             android:hint="手机号/邮箱"
             android:inputType="text"
-            android:textColor="@color/black"
-            android:textSize="20sp"
             android:padding="10dp"
-            android:layout_marginTop="5dp"
-            android:background="@drawable/cage"/>
+            android:textColor="@color/black"
+            android:textSize="20sp" />
+
         <LinearLayout
             android:id="@+id/lll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
+
             <EditText
                 android:id="@+id/et_capcha"
                 android:layout_width="0dp"
-                android:layout_weight="3"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_weight="3"
                 android:autofillHints="name"
+                android:background="@drawable/cage"
                 android:hint="验证码"
                 android:inputType="text"
-                android:textColor="@color/black"
-                android:textSize="20sp"
                 android:padding="10dp"
-                android:layout_marginTop="5dp"
-                android:background="@drawable/cage"/>
+                android:textColor="@color/black"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/btn_getcapcha"
                 android:layout_width="0dp"
-                android:layout_weight="2"
                 android:layout_height="match_parent"
+                android:layout_marginLeft="5dp"
+                android:layout_marginTop="5dp"
+                android:layout_weight="2"
                 android:background="@drawable/cage"
                 android:padding="10dp"
-                android:layout_marginTop="5dp"
-                android:layout_marginLeft="5dp"
                 android:text="获取验证码"
-                />
+                app:backgroundTint="#A3E1EF" />
         </LinearLayout>
+
         <EditText
             android:id="@+id/et_regname"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
             android:autofillHints="name"
+            android:background="@drawable/cage"
             android:hint="用户名"
             android:inputType="text"
-            android:textColor="@color/black"
-            android:textSize="20sp"
             android:padding="10dp"
-            android:layout_marginTop="5dp"
-            android:background="@drawable/cage"/>
+            android:textColor="@color/black"
+            android:textSize="20sp" />
 
         <EditText
             android:id="@+id/et_regcode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
             android:autofillHints="code"
+            android:background="@drawable/cage"
             android:hint="密码"
             android:inputType="textPassword"
-            android:textColor="@color/black"
-            android:textSize="20sp"
             android:padding="10dp"
-            android:layout_marginTop="5dp"
-            android:background="@drawable/cage"/>
+            android:textColor="@color/black"
+            android:textSize="20sp" />
+
         <EditText
             android:id="@+id/et_regcheck"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
             android:autofillHints="code"
+            android:background="@drawable/cage"
             android:hint="再次确认密码"
             android:inputType="textPassword"
-            android:textColor="@color/black"
-            android:textSize="20sp"
             android:padding="10dp"
-            android:layout_marginTop="5dp"
-            android:background="@drawable/cage"/>
-    <LinearLayout
-        android:id="@+id/chooseTable"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginTop="20dp"
-        android:padding="20dp"
-        android:background="@drawable/black_dash"
-        android:visibility="gone"
-        >
-        <TextView
-            android:id="@+id/tv_2"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:gravity="center"
-            android:text="测评模块选择"
             android:textColor="@color/black"
-            android:textSize="23sp"
-            android:background="#00B4C1"
-            />
+            android:textSize="20sp" />
+
+        <LinearLayout
+            android:id="@+id/chooseTable"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/black_dash"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_2"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="#00B4C1"
+                android:gravity="center"
+                android:text="测评模块选择"
+                android:textColor="@color/black"
+                android:textSize="23sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal">
+
+                <CheckBox
+                    android:id="@+id/word"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="词汇"
+                    android:textSize="20dp" />
+
+                <CheckBox
+                    android:id="@+id/pronounciation"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="构音"
+                    android:textSize="20dp" />
+
+                <CheckBox
+                    android:id="@+id/grammar"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="语法理解"
+                    android:textSize="20dp" />
+
+                <CheckBox
+                    android:id="@+id/narrator"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="叙述"
+                    android:textSize="20dp" />
+            </LinearLayout>
+        </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginVertical="10dp"
             android:orientation="horizontal"
-            android:layout_marginTop="20dp"
-            >
+            android:weightSum="2">
 
-            <CheckBox
-                android:id="@+id/word"
+            <Button
+                android:id="@+id/btn_sure"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginRight="1dp"
                 android:layout_weight="1"
-                android:layout_height="match_parent"
-                android:text="词汇"
-                android:textSize="20dp"
-                />
-            <CheckBox
-                android:id="@+id/pronounciation"
+                android:background="@drawable/btn_left"
+                android:text="确定"
+                app:backgroundTint="#A3E1EF" />
+
+            <Button
+                android:id="@+id/btn_back"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="1dp"
                 android:layout_weight="1"
-                android:layout_height="match_parent"
-                android:text="构音"
-                android:textSize="20dp"
-                />
-            <CheckBox
-                android:id="@+id/grammar"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="match_parent"
-                android:text="语法理解"
-                android:textSize="20dp"
-                />
-            <CheckBox
-                android:id="@+id/narrator"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="match_parent"
-                android:text="叙述"
-                android:textSize="20dp"
-                />
+                android:background="@drawable/btn_right"
+                android:text="返回"
+                app:backgroundTint="#A3E1EF" />
         </LinearLayout>
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginVertical="10dp"
-        android:weightSum="2"
-        >
-        <Button
-            android:id="@+id/btn_sure"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="确定"
-            android:layout_gravity="center"
-            android:layout_marginRight="1dp"
-            android:background="@drawable/btn_left"
-            />
-        <Button
-            android:id="@+id/btn_back"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="返回"
-            android:layout_gravity="center"
-            android:layout_marginLeft="1dp"
-            android:background="@drawable/btn_right"
-            />
-    </LinearLayout>
     </LinearLayout>
 </LinearLayout>
 

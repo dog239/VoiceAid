@@ -109,7 +109,8 @@
                     android:layout_marginRight="1dp"
                     android:layout_weight="1"
                     android:background="@drawable/btn_left"
-                    android:text="开始回答" />
+                    android:text="开始回答"
+                    app:backgroundTint="#1e3b7a" />
 
                 <Button
                     android:id="@+id/btn_next"
@@ -119,7 +120,8 @@
                     android:layout_marginLeft="1dp"
                     android:layout_weight="1"
                     android:background="@drawable/btn_right"
-                    android:text="下一题" />
+                    android:text="下一题"
+                    app:backgroundTint="#1e3b7a" />
             </LinearLayout>
 
 

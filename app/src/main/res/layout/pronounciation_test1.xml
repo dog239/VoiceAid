@@ -137,27 +137,28 @@
                 android:orientation="horizontal"
                 android:layout_marginTop="20dp"
                 >
+
                 <Button
                     android:id="@+id/btn_start"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="开始"
                     android:layout_gravity="center"
                     android:layout_marginRight="1dp"
+                    android:layout_weight="1"
                     android:background="@drawable/btn_left"
-                    />
+                    android:text="开始"
+                    app:backgroundTint="#1e3b7a" />
 
                 <Button
                     android:id="@+id/btn_next"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="下一题"
                     android:layout_gravity="center"
                     android:layout_marginLeft="1dp"
+                    android:layout_weight="1"
                     android:background="@drawable/btn_right"
-                    />
+                    android:text="下一题"
+                    app:backgroundTint="#1e3b7a" />
             </LinearLayout>
         </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
