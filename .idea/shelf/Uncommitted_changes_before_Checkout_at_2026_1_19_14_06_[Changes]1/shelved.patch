@@ -1,0 +1,594 @@
+Index: app/src/main/java/com/example/CCLEvaluation/testactivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.CCLEvaluation;\r\n\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.viewpager.widget.ViewPager;\r\n\r\nimport android.annotation.SuppressLint;\r\nimport android.content.Intent;\r\nimport android.content.SharedPreferences;\r\nimport android.os.Bundle;\r\nimport android.util.Log;\r\nimport android.view.View;\r\nimport android.widget.TextView;\r\nimport android.widget.Toast;\r\n\r\nimport org.json.JSONArray;\r\nimport org.json.JSONObject;\r\n\r\nimport java.util.ArrayList;\r\nimport java.util.List;\r\n\r\nimport adapter.CustomViewPager;\r\nimport adapter.testpageradapter;\r\nimport bean.audio;\r\nimport bean.e;\r\nimport bean.a;\r\nimport bean.re;\r\nimport bean.rg;\r\nimport bean.s;\r\nimport bean.pst;\r\nimport bean.nwr;\r\nimport bean.pn;\r\nimport bean.evaluation;\r\nimport utils.AudioRecorder;\r\nimport utils.Chinesenumbers;\r\nimport utils.allquestionlistener;\r\nimport utils.dataManager;\r\nimport utils.dialogUtils;\r\nimport utils.ImageUrls;\r\nimport utils.testcontext;\r\n\r\npublic class testactivity extends AppCompatActivity implements View.OnClickListener {\r\n    private CustomViewPager viewPager;\r\n    private testpageradapter adapter;\r\n    private String fName;\r\n    private ArrayList<evaluation> evTemp;\r\n    private TextView exit, counter, timer;\r\n    private String format;\r\n    private ArrayList<List<a.CharacterPhonology>> aTargetWordList;\r\n\r\n    @SuppressLint(\"MissingInflatedId\")\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_test);\r\n        viewPager = findViewById(R.id.viewpager);\r\n        exit = findViewById(R.id.btn_exit);\r\n        counter = findViewById(R.id.counter);\r\n        timer = findViewById(R.id.timer);\r\n\r\n        SharedPreferences preferences = getSharedPreferences(\"login_prefs\", MODE_PRIVATE);\r\n        SharedPreferences.Editor editor = preferences.edit();\r\n        editor.putString(\"CurrentQuestion\", null);\r\n        editor.apply();\r\n\r\n\r\n        //必须加载数据\r\n        try {\r\n            initData();\r\n        } catch (Exception e) {\r\n            Toast.makeText(this,\"数据加载失败！\",Toast.LENGTH_SHORT).show();\r\n            throw new RuntimeException(e);\r\n        }\r\n\r\n        exit.setOnClickListener(this);\r\n\r\n\r\n        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {\r\n            private int currentPage = 0;\r\n\r\n            @Override\r\n            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels){\r\n                if (adapter.getAllowSwipe()){\r\n                }\r\n            }\r\n\r\n            @Override\r\n            public void onPageSelected(int position) {\r\n                if(adapter.getAllowSwipe())\r\n                    currentPage = position;\r\n                Log.d(\"zhxj7034\",String.valueOf(currentPage));\r\n                timer.setText(testcontext.getInstance().getEvaluations().get(position).getTime()==null?\r\n                        \"00:00\": testcontext.getInstance().getEvaluations().get(position).getTime());\r\n            }\r\n\r\n            @Override\r\n            public void onPageScrollStateChanged(int state) {\r\n                // 当页面切换完成，检测是否需要跳回到当前页\r\n                if (state == ViewPager.SCROLL_STATE_IDLE && !adapter.getAllowSwipe()) {\r\n                    Log.d(\"zhxj7034jump\",String.valueOf(currentPage));\r\n                    viewPager.setCurrentItem(currentPage, true);\r\n                }\r\n            }\r\n        });\r\n    }\r\n\r\n\r\n\r\n    private void initData() throws Exception {\r\n        testcontext.getInstance().setContext(this);\r\n        testcontext.getInstance().setViewPager(viewPager);\r\n\r\n        //获取上个页面传来的信息，即测试哪种题目\r\n        Intent intent = getIntent();\r\n        format = intent.getStringExtra(\"format\");\r\n        fName = intent.getStringExtra(\"fName\");\r\n        JSONObject evaluations = dataManager.getInstance().loadData(fName).getJSONObject(\"evaluations\");\r\n        if (format == null)\r\n            return;\r\n        if (format.equals(\"A\")) {\r\n            ImageUrls.initAPhonologyLexicon();\r\n\r\n            String[] imageUrls = ImageUrls.A_newImageUrls;\r\n            String[] imageUrlsC = ImageUrls.A_newImageUrlsC;\r\n            int lenth = imageUrls.length;\r\n            testcontext.getInstance().setLengths(lenth);\r\n            JSONArray A = evaluations.getJSONArray(\"A\");\r\n            evTemp = new ArrayList<evaluation>(lenth);\r\n\r\n            ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);\r\n            ArrayList<String []>R_id2 = new ArrayList<String[]>(lenth);\r\n            String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);\r\n            aTargetWordList = new ArrayList<>(lenth);\r\n\r\n            if (A.length()==0){//E为空，即尚未答题\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    a a1 = new a(i, imageUrlsC[i - 1], null, null, null, null, null);\r\n                    // 新题库目标词（用户填充 ImageUrls.A_targetWord 后生效）\r\n                    a1.setTargetWord(ImageUrls.toList(ImageUrls.A_targetWord[i - 1]));\r\n                    a1.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(a1);\r\n                    R_id.add(getResources().getIdentifier(imageUrls[i - 1], \"drawable\", getPackageName()));\r\n//                    R_id2.add(ImageUrls.A_proAns[i-1]); // 兼容旧 UI 展示\r\n                    aTargetWordList.add(ImageUrls.toList(ImageUrls.A_targetWord[i - 1]));\r\n                }\r\n            }\r\n            else {//非空，则完成了部分题目\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    a a2 = a.fromJson(A.getJSONObject(i-1));\r\n                    if (a2.getTargetWord() == null) {\r\n                        a2.setTargetWord(ImageUrls.toList(ImageUrls.A_targetWord[i - 1]));\r\n                    }\r\n                    a2.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(a2);\r\n                    R_id.add(getResources().getIdentifier(imageUrls[i - 1], \"drawable\", getPackageName()));\r\n//                    R_id2.add(ImageUrls.A_proAns[i-1]);\r\n                    aTargetWordList.add(a2.getTargetWord());\r\n                }\r\n            }\r\n            testcontext.getInstance().setEvaluations(evTemp);\r\n\r\n            adapter = new testpageradapter(R.layout.pronounciation_test1, R_id, Tb, evTemp, null,R_id2,imageUrlsC,counter, timer);\r\n            viewPager.setAdapter(adapter);\r\n            viewPager.setCurrentItem(testcontext.getInstance().searchOne());\r\n\r\n        } else if (format.equals(\"E\")) {\r\n\r\n            String[] imageUrls = ImageUrls.E_imageUrls;\r\n            String[] imageUrlsC = ImageUrls.E_imageUrlsC;\r\n            int lenth = imageUrls.length;\r\n            testcontext.getInstance().setLengths(lenth);\r\n            JSONArray E = evaluations.getJSONArray(\"E\");\r\n            evTemp = new ArrayList<evaluation>(lenth);\r\n\r\n            ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);\r\n            String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);\r\n\r\n            if (E.length()==0){//E为空，即尚未答题\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    e e1 = new e(i, imageUrlsC[i - 1], null, null, null);\r\n                    e1.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(e1);\r\n                    R_id.add(getResources().getIdentifier(imageUrls[i - 1], \"drawable\", getPackageName()));\r\n                }\r\n            }\r\n            else {//非空，则完成了部分题目\r\n                Boolean result;\r\n                audio audio;\r\n                String time;\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    if (E.getJSONObject(i-1).has(\"result\") && !E.getJSONObject(i-1).isNull(\"result\")) {\r\n                        result = E.getJSONObject(i-1).getBoolean(\"result\");\r\n                        audio = new audio(E.getJSONObject(i-1).getString(\"audioPath\"));\r\n                        time = E.getJSONObject(i-1).getString(\"time\");\r\n                    }\r\n                    else{\r\n                        result = null;\r\n                        audio = null;\r\n                        time = null;\r\n                    }\r\n                    e e2 = new e(i, imageUrlsC[i - 1], result, audio, time);\r\n                    e2.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(e2);\r\n                    R_id.add(getResources().getIdentifier(imageUrls[i - 1], \"drawable\", getPackageName()));\r\n                }\r\n            }\r\n            testcontext.getInstance().setEvaluations(evTemp);\r\n\r\n            adapter = new testpageradapter(R.layout.word_test1, R_id, Tb, evTemp, null,null,null,counter, timer);\r\n            viewPager.setAdapter(adapter);\r\n            viewPager.setCurrentItem(testcontext.getInstance().searchOne());\r\n\r\n        } else if (format.equals(\"NWR\")) {\r\n            String[][] words = ImageUrls.NWR_characs;\r\n            String[][] wordsC = ImageUrls.NWR_characsC;\r\n            int lenth  = words.length;\r\n            testcontext.getInstance().setLengths(lenth);\r\n            JSONArray NWR = evaluations.getJSONArray(\"NWR\");\r\n            evTemp = new ArrayList<evaluation>(lenth);\r\n\r\n            ArrayList<String []>R_id2 = new ArrayList<String[]>(lenth);\r\n            String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);\r\n            if (NWR.length()==0){//E为空，即尚未答题\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    Boolean[] ans = new Boolean[6];\r\n                    for(int j=0;j<6;++j){\r\n                        ans[j]=false;\r\n                    }\r\n                    nwr nwr1 = new nwr(i, wordsC[i-1], ans, null, null);\r\n                    nwr1.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(nwr1);\r\n                    R_id2.add(words[i-1]);\r\n                }\r\n            }\r\n            else {//非空，则完成了部分题目\r\n\r\n                audio audio;\r\n                String time;\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    if (NWR.getJSONObject(i-1).has(\"time\") && !NWR.getJSONObject(i-1).isNull(\"time\")) {\r\n                        Boolean[] ans = new Boolean[6];\r\n                        for(int j=0;j<6;++j){\r\n                            ans[j] = NWR.getJSONObject(i-1).getBoolean(\"results\"+(j+1));\r\n                        }\r\n                        audio = new audio(NWR.getJSONObject(i-1).getString(\"audioPath\"));\r\n                        time = NWR.getJSONObject(i-1).getString(\"time\");\r\n                        nwr nwr2 = new nwr(i, wordsC[i-1], ans, audio, time);\r\n                        nwr2.setAllQuestionListener(allquestioncallback);\r\n                        evTemp.add(nwr2);\r\n                    }else{\r\n                        Boolean[] ans = new Boolean[6];\r\n                        for(int j=0;j<6;++j){\r\n                            ans[j]=false;\r\n                        }\r\n                        audio = null;\r\n                        time = null;\r\n                        nwr nwr3 = new nwr(i, wordsC[i-1], ans, audio, time);\r\n                        nwr3.setAllQuestionListener(allquestioncallback);\r\n                        evTemp.add(nwr3);\r\n                    }\r\n                    R_id2.add(words[i-1]);\r\n                }\r\n            }\r\n            testcontext.getInstance().setEvaluations(evTemp);\r\n\r\n            adapter = new testpageradapter(R.layout.word_test4, null, Tb, evTemp, null,R_id2,null,counter, timer);\r\n            viewPager.setAdapter(adapter);\r\n            viewPager.setCurrentItem(testcontext.getInstance().searchOne());\r\n\r\n        } else if (format.equals(\"PN\")) {\r\n\r\n            String[] imageUrls = ImageUrls.PN_imageUrls;\r\n            String[] pnHints = ImageUrls.PN_hints;\r\n            int lenth = imageUrls.length;\r\n            testcontext.getInstance().setLengths(lenth);\r\n            JSONArray PN = evaluations.getJSONArray(\"PN\");\r\n            evTemp = new ArrayList<evaluation>(lenth);\r\n\r\n            ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);\r\n            ArrayList<String []> R_id2 = new ArrayList<String []>(lenth);\r\n            String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);\r\n\r\n            if (PN.length()==0){//E为空，即尚未答题\r\n                for (int i = 1; i <= lenth; i++) {\r\n\r\n                    pn pn1 = new pn(i,0,null,null);\r\n                    pn1.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(pn1);\r\n                    R_id.add(getResources().getIdentifier(imageUrls[i - 1], \"drawable\", getPackageName()));\r\n\r\n                    String[] hint = new String[1];\r\n                    for(int j=0;j<1;++j){\r\n                        hint[j] = getString(getResources().getIdentifier(pnHints[i-1], \"string\", getPackageName()));\r\n                    }\r\n                    R_id2.add(hint);\r\n                }\r\n            }\r\n            else {//非空，则完成了部分题目\r\n                audio audio;\r\n                String time;\r\n                int score;\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    if (PN.getJSONObject(i-1).has(\"time\") && !PN.getJSONObject(i-1).isNull(\"time\")) {\r\n                        audio = new audio(PN.getJSONObject(i-1).getString(\"audioPath\"));\r\n                        time = PN.getJSONObject(i-1).getString(\"time\");\r\n                        score = PN.getJSONObject(i-1).getInt(\"score\");\r\n                    }\r\n                    else{\r\n                        audio = null;\r\n                        time = null;\r\n                        score = 0;\r\n                    }\r\n                    pn pn2 =  new pn(i, score, audio, time);\r\n                    pn2.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(pn2);\r\n                    String[] hint = new String[1];\r\n                    hint[0] = getString(getResources().getIdentifier(pnHints[i-1], \"string\", getPackageName()));\r\n                    R_id2.add(hint);\r\n                    R_id.add(getResources().getIdentifier(imageUrls[i - 1], \"drawable\", getPackageName()));\r\n                }\r\n            }\r\n            testcontext.getInstance().setEvaluations(evTemp);\r\n            adapter = new testpageradapter(R.layout.narrate_tests, R_id, Tb, evTemp, null,R_id2,null,counter, timer);\r\n            viewPager.setAdapter(adapter);\r\n            viewPager.setCurrentItem(testcontext.getInstance().searchOne());\r\n\r\n        } else if (format.equals(\"PST\")) {\r\n            String[] imageUrls = ImageUrls.PST_imageUrls;\r\n            //String[][] pstHints = ImageUrls.PST_hints;\r\n            int lenth = imageUrls.length;\r\n            testcontext.getInstance().setLengths(lenth);\r\n            JSONArray PST = evaluations.getJSONArray(\"PST\");\r\n            evTemp = new ArrayList<evaluation>(lenth);\r\n\r\n            ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);\r\n           // ArrayList<String []> R_id2 = new ArrayList<String []>(lenth);\r\n            String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);\r\n\r\n            if (PST.length()==0){//E为空，即尚未答题\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    pst pst1 = new pst(i,0,null,null);\r\n                    pst1.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(pst1);\r\n                    R_id.add(getResources().getIdentifier(imageUrls[i - 1], \"drawable\", getPackageName()));\r\n                }\r\n            }\r\n            else {//非空，则完成了部分题目\r\n                audio audio;\r\n                String time;\r\n                int score;\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    if (PST.getJSONObject(i-1).has(\"time\") && !PST.getJSONObject(i-1).isNull(\"time\")) {\r\n                        audio = new audio(PST.getJSONObject(i-1).getString(\"audioPath\"));\r\n                        time = PST.getJSONObject(i-1).getString(\"time\");\r\n                        score = PST.getJSONObject(i-1).getInt(\"score\");\r\n                    }\r\n                    else{\r\n                        audio = null;\r\n                        time = null;\r\n                        score = 0;\r\n                    }\r\n                    pst pst2 = new pst(i, score, audio, time);\r\n                    pst2.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(pst2);\r\n//                    String[] hint = new String[4];\r\n//                    for(int j=0;j<4;++j){\r\n//                        hint[j] = getString(getResources().getIdentifier(pstHints[i-1][j], \"string\", getPackageName()));\r\n//                    }\r\n//                    R_id2.add(hint);\r\n                    R_id.add(getResources().getIdentifier(imageUrls[i - 1], \"drawable\", getPackageName()));\r\n                }\r\n            }\r\n            testcontext.getInstance().setEvaluations(evTemp);\r\n            adapter = new testpageradapter(R.layout.narrate_tests, R_id, Tb, evTemp, null,null,null,counter, timer);\r\n            viewPager.setAdapter(adapter);\r\n            viewPager.setCurrentItem(testcontext.getInstance().searchOne());\r\n        } else if (format.equals(\"RE\")) {\r\n            String[] imageUrls = ImageUrls.RE_imageUrls;\r\n            String[] imageUrlsC = ImageUrls.RE_imageUrlsC;\r\n            int[][] turn = ImageUrls.RE_turn;\r\n            int lenth = imageUrls.length;\r\n            testcontext.getInstance().setLengths(lenth);\r\n            JSONArray RE = evaluations.getJSONArray(\"RE\");\r\n            evTemp = new ArrayList<evaluation>(lenth);\r\n\r\n            ArrayList<Integer []> R_id = new ArrayList<Integer[]>(lenth);\r\n            String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);\r\n\r\n            if (RE.length()==0){//RE为空，即尚未答题\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    re re1 = new re(i, imageUrls[i - 1], imageUrlsC[i - 1],null, -1, null,null,null);\r\n                    re1.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(re1);\r\n                    Integer[] imageUrl = new Integer[6];\r\n                    for(int j=0;j<6;++j){\r\n                        imageUrl[j] = getResources().getIdentifier(imageUrls[turn[i-1][j]], \"drawable\", getPackageName());\r\n                        Log.d(\"imageUrl\",imageUrls[turn[i-1][j]]);\r\n                    }\r\n                    R_id.add(imageUrl);\r\n                }\r\n            }else {//非空，则完成了部分题目\r\n                Boolean result;\r\n                String select;\r\n                int select_num;\r\n                audio audio;\r\n                String time;\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    if (RE.getJSONObject(i-1).has(\"result\") && !RE.getJSONObject(i-1).isNull(\"result\")) {\r\n                        result = RE.getJSONObject(i-1).getBoolean(\"result\");\r\n                        select = RE.getJSONObject(i-1).getString(\"select\");\r\n                        select_num = RE.getJSONObject(i-1).getInt(\"select_num\");\r\n                        audio = new audio(RE.getJSONObject(i-1).getString(\"audioPath\"));\r\n                        time = RE.getJSONObject(i-1).getString(\"time\");\r\n                    }\r\n                    else{\r\n                        result = null;\r\n                        select = null;\r\n                        select_num = -1;\r\n                        audio = null;\r\n                        time = null;\r\n                    }\r\n                    re re2 = new re(i, imageUrls[i - 1], imageUrlsC[i - 1],select, select_num, result, audio, time);\r\n                    re2.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(re2);\r\n                    Integer[] imageUrl = new Integer[6];\r\n                    for(int j=0;j<6;++j){\r\n                        imageUrl[j] = getResources().getIdentifier(imageUrls[turn[i-1][j]], \"drawable\", getPackageName());\r\n                    }\r\n                    R_id.add(imageUrl);\r\n                }\r\n            }\r\n            testcontext.getInstance().setEvaluations(evTemp);\r\n\r\n            adapter = new testpageradapter(R.layout.word_test2, null, Tb, evTemp, R_id,null,null,counter, timer);\r\n            viewPager.setAdapter(adapter);\r\n            viewPager.setCurrentItem(testcontext.getInstance().searchOne());\r\n        } else if (format.equals(\"RG\")) {\r\n\r\n            String[] imageUrlsC = ImageUrls.RG_hints;\r\n            String[] ans = ImageUrls.RG_Ans;\r\n            int lenth = imageUrlsC.length;\r\n            testcontext.getInstance().setLengths(lenth);\r\n            JSONArray RG = evaluations.getJSONArray(\"RG\");\r\n            evTemp = new ArrayList<evaluation>(lenth);\r\n\r\n            ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);\r\n            String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);\r\n\r\n            if (RG.length()==0){//RE为空，即尚未答题\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    rg rg1 = new rg(i, imageUrlsC[i - 1], ans[i - 1],null, null,-1, null,null);\r\n                    rg1.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(rg1);\r\n                    R_id.add(getResources().getIdentifier(\"g\"+String.valueOf(i), \"drawable\", getPackageName()));\r\n                }\r\n            }else {//非空，则完成了部分题目\r\n                String answer;\r\n                Boolean result;\r\n                audio audio;\r\n                String time;\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    if (RG.getJSONObject(i-1).has(\"time\") && !RG.getJSONObject(i-1).isNull(\"time\")) {\r\n                        result = RG.getJSONObject(i-1).getBoolean(\"result\");\r\n                        answer = RG.getJSONObject(i-1).getString(\"answer\");\r\n                        audio = new audio(RG.getJSONObject(i-1).getString(\"audioPath\"));\r\n                        time = RG.getJSONObject(i-1).getString(\"time\");\r\n                    }\r\n                    else{\r\n                        answer = null;\r\n                        result = null;\r\n                        audio = null;\r\n                        time = null;\r\n                    }\r\n                    rg rg2 = new rg(i, imageUrlsC[i - 1], ans[i - 1],answer, result, -1, audio, time);\r\n                    rg2.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(rg2);\r\n                    R_id.add(getResources().getIdentifier(\"g\"+String.valueOf(i), \"drawable\", getPackageName()));\r\n                }\r\n            }\r\n            testcontext.getInstance().setEvaluations(evTemp);\r\n\r\n            adapter = new testpageradapter(R.layout.grammar_test1, R_id, Tb, evTemp,null,null,imageUrlsC,counter, timer);\r\n            viewPager.setAdapter(adapter);\r\n            viewPager.setCurrentItem(testcontext.getInstance().searchOne());\r\n\r\n        } else if (format.equals(\"S\")) {\r\n            String[] sWords = ImageUrls.S_words;\r\n            String[] sWordsAns = ImageUrls.S_wordsAns;\r\n            int lenth = sWords.length;\r\n            testcontext.getInstance().setLengths(lenth);\r\n            JSONArray S = evaluations.getJSONArray(\"S\");\r\n            evTemp = new ArrayList<evaluation>(lenth);\r\n            String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);\r\n\r\n            if (S.length()==0){//E为空，即尚未答题\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    s s1 = new s(i, sWords[i - 1], sWordsAns[i - 1], null, null, null);\r\n                    s1.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(s1);\r\n                }\r\n            }\r\n            else {//非空，则完成了部分题目\r\n                Boolean result;\r\n                audio audio;\r\n                String time;\r\n                for (int i = 1; i <= lenth; i++) {\r\n                    if (S.getJSONObject(i-1).has(\"result\") && !S.getJSONObject(i-1).isNull(\"result\")) {\r\n                        result = S.getJSONObject(i-1).getBoolean(\"result\");\r\n                        audio = new audio(S.getJSONObject(i-1).getString(\"audioPath\"));\r\n                        time = S.getJSONObject(i-1).getString(\"time\");\r\n                    }\r\n                    else{\r\n                        result = null;\r\n                        audio = null;\r\n                        time = null;\r\n                    }\r\n                    s s2 = new s(i,  sWords[i - 1],sWordsAns[i - 1], result, audio, time);\r\n                    s2.setAllQuestionListener(allquestioncallback);\r\n                    evTemp.add(s2);\r\n                }\r\n            }\r\n            testcontext.getInstance().setEvaluations(evTemp);\r\n\r\n            adapter = new testpageradapter(R.layout.word_test3, null, Tb, evTemp, null,null,sWords,counter, timer);\r\n            viewPager.setAdapter(adapter);\r\n            viewPager.setCurrentItem(testcontext.getInstance().searchOne());\r\n\r\n        } else {\r\n\r\n        }\r\n    }\r\n\r\n    @Override\r\n    public void onBackPressed() {\r\n        if(testcontext.getInstance().getCount()< testcontext.getInstance().getLengths())\r\n            dialogUtils.showDialog(this, \"提示信息\", \"您尚未完成测评，是否退出？\", \"是\", () ->{\r\n                performCleanup();\r\n                finish();\r\n            }, \"否\", null);\r\n        else\r\n            super.onBackPressed();\r\n    }\r\n\r\n    @Override\r\n    protected void onDestroy() {\r\n        //录音未结束，中断录音\r\n        if(AudioRecorder.getInstance().getAlive()!=null&& AudioRecorder.getInstance().getAlive()){\r\n            int i = viewPager.getCurrentItem();\r\n            SharedPreferences preferences = getSharedPreferences(\"login_prefs\", MODE_PRIVATE);\r\n            String CurrentQuestion = preferences.getString(\"CurrentQuestion\", null);\r\n            int CurrentQustionNumber = preferences.getInt(\"CurrentQustionNumber\",-1);\r\n            if(CurrentQuestion != null && CurrentQustionNumber != -1){\r\n                JSONObject data = null;\r\n                try {\r\n                    data = dataManager.getInstance().loadData(fName);\r\n                    JSONObject evaluations = data.getJSONObject(\"evaluations\");\r\n                    evaluations.getJSONArray(CurrentQuestion).get(CurrentQustionNumber);\r\n                } catch (Exception e) {\r\n                    throw new RuntimeException(e);\r\n                }\r\n\r\n\r\n            }\r\n            AudioRecorder.getInstance().interruptRecorder();\r\n        }\r\n\r\n        //释放单例\r\n        testcontext.getInstance().release();\r\n        super.onDestroy();\r\n    }\r\n\r\n    @Override\r\n    public void onClick(View v) {\r\n        if(v.getId() == R.id.btn_exit){\r\n            if(testcontext.getInstance().getCount()< testcontext.getInstance().getLengths())\r\n                dialogUtils.showDialog(this, \"提示信息\", \"您尚未完成测评，是否退出？\", \"是\", ()->{\r\n                    performCleanup();\r\n                    finish();\r\n                }, \"否\", null);\r\n            else {\r\n                performCleanup();\r\n                finish();\r\n            }\r\n        }\r\n    }\r\n\r\n    public void performCleanup(){\r\n        //结果写入内存\r\n        try {\r\n            JSONObject data = dataManager.getInstance().loadData(fName);\r\n            JSONObject evaluations = data.getJSONObject(\"evaluations\");\r\n\r\n            // 创建一个新的空的 JSONArray\r\n            JSONArray emptyArray = new JSONArray();\r\n\r\n            if(format!=null){\r\n                if (format.equals(\"A\")) {\r\n                    evaluations.put(\"A\", emptyArray);\r\n                }\r\n                else if (format.equals(\"E\")) {\r\n                    evaluations.put(\"E\", emptyArray);\r\n                }\r\n                else if (format.equals(\"NWR\")) {\r\n                    evaluations.put(\"NWR\", emptyArray);\r\n\r\n                } else if (format.equals(\"PN\")) {\r\n                    evaluations.put(\"PN\", emptyArray);\r\n\r\n                } else if (format.equals(\"PST\")) {\r\n                    evaluations.put(\"PST\", emptyArray);\r\n\r\n                } else if (format.equals(\"RE\")) {\r\n                    evaluations.put(\"RE\", emptyArray);\r\n\r\n                } else if (format.equals(\"RG\")) {\r\n                    evaluations.put(\"RG\", emptyArray);\r\n\r\n                } else if (format.equals(\"S\")) {\r\n                    evaluations.put(\"S\", emptyArray);\r\n\r\n                } else {\r\n\r\n                }\r\n                for(int i = 0; i< evTemp.size(); i++){\r\n                    evTemp.get(i).toJson(evaluations);\r\n                }\r\n                dataManager.getInstance().saveData(fName,data);\r\n            }\r\n\r\n        } catch (Exception e) {\r\n            Toast.makeText(this,\"保存失败！\",Toast.LENGTH_SHORT).show();\r\n            throw new RuntimeException(e);\r\n        }\r\n\r\n    }\r\n\r\n\r\n    utils.allquestionlistener allquestioncallback = new allquestionlistener(){\r\n        @Override\r\n        public void onAllQuestionComplete() {\r\n            performCleanup();\r\n        }\r\n    };\r\n\r\n\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/CCLEvaluation/testactivity.java b/app/src/main/java/com/example/CCLEvaluation/testactivity.java
+--- a/app/src/main/java/com/example/CCLEvaluation/testactivity.java	(revision 4fdaeee83037045de0414fadbfc206794004cdeb)
++++ b/app/src/main/java/com/example/CCLEvaluation/testactivity.java	(date 1768746737824)
+@@ -67,7 +67,7 @@
+         try {
+             initData();
+         } catch (Exception e) {
+-            Toast.makeText(this,"数据加载失败！",Toast.LENGTH_SHORT).show();
++            Toast.makeText(this, "数据加载失败！", Toast.LENGTH_SHORT).show();
+             throw new RuntimeException(e);
+         }
+ 
+@@ -78,25 +78,25 @@
+             private int currentPage = 0;
+ 
+             @Override
+-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels){
+-                if (adapter.getAllowSwipe()){
++            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
++                if (adapter.getAllowSwipe()) {
+                 }
+             }
+ 
+             @Override
+             public void onPageSelected(int position) {
+-                if(adapter.getAllowSwipe())
++                if (adapter.getAllowSwipe())
+                     currentPage = position;
+-                Log.d("zhxj7034",String.valueOf(currentPage));
+-                timer.setText(testcontext.getInstance().getEvaluations().get(position).getTime()==null?
+-                        "00:00": testcontext.getInstance().getEvaluations().get(position).getTime());
++                Log.d("zhxj7034", String.valueOf(currentPage));
++                timer.setText(testcontext.getInstance().getEvaluations().get(position).getTime() == null ?
++                        "00:00" : testcontext.getInstance().getEvaluations().get(position).getTime());
+             }
+ 
+             @Override
+             public void onPageScrollStateChanged(int state) {
+                 // 当页面切换完成，检测是否需要跳回到当前页
+                 if (state == ViewPager.SCROLL_STATE_IDLE && !adapter.getAllowSwipe()) {
+-                    Log.d("zhxj7034jump",String.valueOf(currentPage));
++                    Log.d("zhxj7034jump", String.valueOf(currentPage));
+                     viewPager.setCurrentItem(currentPage, true);
+                 }
+             }
+@@ -104,7 +104,6 @@
+     }
+ 
+ 
+-
+     private void initData() throws Exception {
+         testcontext.getInstance().setContext(this);
+         testcontext.getInstance().setViewPager(viewPager);
+@@ -127,11 +126,11 @@
+             evTemp = new ArrayList<evaluation>(lenth);
+ 
+             ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);
+-            ArrayList<String []>R_id2 = new ArrayList<String[]>(lenth);
++            ArrayList<String[]> R_id2 = new ArrayList<String[]>(lenth);
+             String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
+             aTargetWordList = new ArrayList<>(lenth);
+ 
+-            if (A.length()==0){//E为空，即尚未答题
++            if (A.length() == 0) {//E为空，即尚未答题
+                 for (int i = 1; i <= lenth; i++) {
+                     a a1 = new a(i, imageUrlsC[i - 1], null, null, null, null, null);
+                     // 新题库目标词（用户填充 ImageUrls.A_targetWord 后生效）
+@@ -142,10 +141,9 @@
+ //                    R_id2.add(ImageUrls.A_proAns[i-1]); // 兼容旧 UI 展示
+                     aTargetWordList.add(ImageUrls.toList(ImageUrls.A_targetWord[i - 1]));
+                 }
+-            }
+-            else {//非空，则完成了部分题目
++            } else {//非空，则完成了部分题目
+                 for (int i = 1; i <= lenth; i++) {
+-                    a a2 = a.fromJson(A.getJSONObject(i-1));
++                    a a2 = a.fromJson(A.getJSONObject(i - 1));
+                     if (a2.getTargetWord() == null) {
+                         a2.setTargetWord(ImageUrls.toList(ImageUrls.A_targetWord[i - 1]));
+                     }
+@@ -158,7 +156,7 @@
+             }
+             testcontext.getInstance().setEvaluations(evTemp);
+ 
+-            adapter = new testpageradapter(R.layout.pronounciation_test1, R_id, Tb, evTemp, null,R_id2,imageUrlsC,counter, timer);
++            adapter = new testpageradapter(R.layout.pronounciation_test1, R_id, Tb, evTemp, null, R_id2, imageUrlsC, counter, timer);
+             viewPager.setAdapter(adapter);
+             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+ 
+@@ -174,25 +172,23 @@
+             ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);
+             String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
+ 
+-            if (E.length()==0){//E为空，即尚未答题
++            if (E.length() == 0) {//E为空，即尚未答题
+                 for (int i = 1; i <= lenth; i++) {
+                     e e1 = new e(i, imageUrlsC[i - 1], null, null, null);
+                     e1.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(e1);
+                     R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
+                 }
+-            }
+-            else {//非空，则完成了部分题目
++            } else {//非空，则完成了部分题目
+                 Boolean result;
+                 audio audio;
+                 String time;
+                 for (int i = 1; i <= lenth; i++) {
+-                    if (E.getJSONObject(i-1).has("result") && !E.getJSONObject(i-1).isNull("result")) {
+-                        result = E.getJSONObject(i-1).getBoolean("result");
+-                        audio = new audio(E.getJSONObject(i-1).getString("audioPath"));
+-                        time = E.getJSONObject(i-1).getString("time");
+-                    }
+-                    else{
++                    if (E.getJSONObject(i - 1).has("result") && !E.getJSONObject(i - 1).isNull("result")) {
++                        result = E.getJSONObject(i - 1).getBoolean("result");
++                        audio = new audio(E.getJSONObject(i - 1).getString("audioPath"));
++                        time = E.getJSONObject(i - 1).getString("time");
++                    } else {
+                         result = null;
+                         audio = null;
+                         time = null;
+@@ -205,64 +201,63 @@
+             }
+             testcontext.getInstance().setEvaluations(evTemp);
+ 
+-            adapter = new testpageradapter(R.layout.word_test1, R_id, Tb, evTemp, null,null,null,counter, timer);
++            adapter = new testpageradapter(R.layout.word_test1, R_id, Tb, evTemp, null, null, null, counter, timer);
+             viewPager.setAdapter(adapter);
+             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+ 
+         } else if (format.equals("NWR")) {
+             String[][] words = ImageUrls.NWR_characs;
+             String[][] wordsC = ImageUrls.NWR_characsC;
+-            int lenth  = words.length;
++            int lenth = words.length;
+             testcontext.getInstance().setLengths(lenth);
+             JSONArray NWR = evaluations.getJSONArray("NWR");
+             evTemp = new ArrayList<evaluation>(lenth);
+ 
+-            ArrayList<String []>R_id2 = new ArrayList<String[]>(lenth);
++            ArrayList<String[]> R_id2 = new ArrayList<String[]>(lenth);
+             String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
+-            if (NWR.length()==0){//E为空，即尚未答题
++            if (NWR.length() == 0) {//E为空，即尚未答题
+                 for (int i = 1; i <= lenth; i++) {
+                     Boolean[] ans = new Boolean[6];
+-                    for(int j=0;j<6;++j){
+-                        ans[j]=false;
++                    for (int j = 0; j < 6; ++j) {
++                        ans[j] = false;
+                     }
+-                    nwr nwr1 = new nwr(i, wordsC[i-1], ans, null, null);
++                    nwr nwr1 = new nwr(i, wordsC[i - 1], ans, null, null);
+                     nwr1.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(nwr1);
+-                    R_id2.add(words[i-1]);
++                    R_id2.add(words[i - 1]);
+                 }
+-            }
+-            else {//非空，则完成了部分题目
++            } else {//非空，则完成了部分题目
+ 
+                 audio audio;
+                 String time;
+                 for (int i = 1; i <= lenth; i++) {
+-                    if (NWR.getJSONObject(i-1).has("time") && !NWR.getJSONObject(i-1).isNull("time")) {
++                    if (NWR.getJSONObject(i - 1).has("time") && !NWR.getJSONObject(i - 1).isNull("time")) {
+                         Boolean[] ans = new Boolean[6];
+-                        for(int j=0;j<6;++j){
+-                            ans[j] = NWR.getJSONObject(i-1).getBoolean("results"+(j+1));
++                        for (int j = 0; j < 6; ++j) {
++                            ans[j] = NWR.getJSONObject(i - 1).getBoolean("results" + (j + 1));
+                         }
+-                        audio = new audio(NWR.getJSONObject(i-1).getString("audioPath"));
+-                        time = NWR.getJSONObject(i-1).getString("time");
+-                        nwr nwr2 = new nwr(i, wordsC[i-1], ans, audio, time);
++                        audio = new audio(NWR.getJSONObject(i - 1).getString("audioPath"));
++                        time = NWR.getJSONObject(i - 1).getString("time");
++                        nwr nwr2 = new nwr(i, wordsC[i - 1], ans, audio, time);
+                         nwr2.setAllQuestionListener(allquestioncallback);
+                         evTemp.add(nwr2);
+-                    }else{
++                    } else {
+                         Boolean[] ans = new Boolean[6];
+-                        for(int j=0;j<6;++j){
+-                            ans[j]=false;
++                        for (int j = 0; j < 6; ++j) {
++                            ans[j] = false;
+                         }
+                         audio = null;
+                         time = null;
+-                        nwr nwr3 = new nwr(i, wordsC[i-1], ans, audio, time);
++                        nwr nwr3 = new nwr(i, wordsC[i - 1], ans, audio, time);
+                         nwr3.setAllQuestionListener(allquestioncallback);
+                         evTemp.add(nwr3);
+                     }
+-                    R_id2.add(words[i-1]);
++                    R_id2.add(words[i - 1]);
+                 }
+             }
+             testcontext.getInstance().setEvaluations(evTemp);
+ 
+-            adapter = new testpageradapter(R.layout.word_test4, null, Tb, evTemp, null,R_id2,null,counter, timer);
++            adapter = new testpageradapter(R.layout.word_test4, null, Tb, evTemp, null, R_id2, null, counter, timer);
+             viewPager.setAdapter(adapter);
+             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+ 
+@@ -276,50 +271,48 @@
+             evTemp = new ArrayList<evaluation>(lenth);
+ 
+             ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);
+-            ArrayList<String []> R_id2 = new ArrayList<String []>(lenth);
++            ArrayList<String[]> R_id2 = new ArrayList<String[]>(lenth);
+             String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
+ 
+-            if (PN.length()==0){//E为空，即尚未答题
++            if (PN.length() == 0) {//E为空，即尚未答题
+                 for (int i = 1; i <= lenth; i++) {
+ 
+-                    pn pn1 = new pn(i,0,null,null);
++                    pn pn1 = new pn(i, 0, null, null);
+                     pn1.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(pn1);
+                     R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
+ 
+                     String[] hint = new String[1];
+-                    for(int j=0;j<1;++j){
+-                        hint[j] = getString(getResources().getIdentifier(pnHints[i-1], "string", getPackageName()));
++                    for (int j = 0; j < 1; ++j) {
++                        hint[j] = getString(getResources().getIdentifier(pnHints[i - 1], "string", getPackageName()));
+                     }
+                     R_id2.add(hint);
+                 }
+-            }
+-            else {//非空，则完成了部分题目
++            } else {//非空，则完成了部分题目
+                 audio audio;
+                 String time;
+                 int score;
+                 for (int i = 1; i <= lenth; i++) {
+-                    if (PN.getJSONObject(i-1).has("time") && !PN.getJSONObject(i-1).isNull("time")) {
+-                        audio = new audio(PN.getJSONObject(i-1).getString("audioPath"));
+-                        time = PN.getJSONObject(i-1).getString("time");
+-                        score = PN.getJSONObject(i-1).getInt("score");
+-                    }
+-                    else{
++                    if (PN.getJSONObject(i - 1).has("time") && !PN.getJSONObject(i - 1).isNull("time")) {
++                        audio = new audio(PN.getJSONObject(i - 1).getString("audioPath"));
++                        time = PN.getJSONObject(i - 1).getString("time");
++                        score = PN.getJSONObject(i - 1).getInt("score");
++                    } else {
+                         audio = null;
+                         time = null;
+                         score = 0;
+                     }
+-                    pn pn2 =  new pn(i, score, audio, time);
++                    pn pn2 = new pn(i, score, audio, time);
+                     pn2.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(pn2);
+                     String[] hint = new String[1];
+-                    hint[0] = getString(getResources().getIdentifier(pnHints[i-1], "string", getPackageName()));
++                    hint[0] = getString(getResources().getIdentifier(pnHints[i - 1], "string", getPackageName()));
+                     R_id2.add(hint);
+                     R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
+                 }
+             }
+             testcontext.getInstance().setEvaluations(evTemp);
+-            adapter = new testpageradapter(R.layout.narrate_tests, R_id, Tb, evTemp, null,R_id2,null,counter, timer);
++            adapter = new testpageradapter(R.layout.narrate_tests, R_id, Tb, evTemp, null, R_id2, null, counter, timer);
+             viewPager.setAdapter(adapter);
+             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+ 
+@@ -332,28 +325,26 @@
+             evTemp = new ArrayList<evaluation>(lenth);
+ 
+             ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);
+-           // ArrayList<String []> R_id2 = new ArrayList<String []>(lenth);
++            // ArrayList<String []> R_id2 = new ArrayList<String []>(lenth);
+             String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
+ 
+-            if (PST.length()==0){//E为空，即尚未答题
++            if (PST.length() == 0) {//E为空，即尚未答题
+                 for (int i = 1; i <= lenth; i++) {
+-                    pst pst1 = new pst(i,0,null,null);
++                    pst pst1 = new pst(i, 0, null, null);
+                     pst1.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(pst1);
+                     R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
+                 }
+-            }
+-            else {//非空，则完成了部分题目
++            } else {//非空，则完成了部分题目
+                 audio audio;
+                 String time;
+                 int score;
+                 for (int i = 1; i <= lenth; i++) {
+-                    if (PST.getJSONObject(i-1).has("time") && !PST.getJSONObject(i-1).isNull("time")) {
+-                        audio = new audio(PST.getJSONObject(i-1).getString("audioPath"));
+-                        time = PST.getJSONObject(i-1).getString("time");
+-                        score = PST.getJSONObject(i-1).getInt("score");
+-                    }
+-                    else{
++                    if (PST.getJSONObject(i - 1).has("time") && !PST.getJSONObject(i - 1).isNull("time")) {
++                        audio = new audio(PST.getJSONObject(i - 1).getString("audioPath"));
++                        time = PST.getJSONObject(i - 1).getString("time");
++                        score = PST.getJSONObject(i - 1).getInt("score");
++                    } else {
+                         audio = null;
+                         time = null;
+                         score = 0;
+@@ -370,7 +361,7 @@
+                 }
+             }
+             testcontext.getInstance().setEvaluations(evTemp);
+-            adapter = new testpageradapter(R.layout.narrate_tests, R_id, Tb, evTemp, null,null,null,counter, timer);
++            adapter = new testpageradapter(R.layout.narrate_tests, R_id, Tb, evTemp, null, null, null, counter, timer);
+             viewPager.setAdapter(adapter);
+             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+         } else if (format.equals("RE")) {
+@@ -382,55 +373,54 @@
+             JSONArray RE = evaluations.getJSONArray("RE");
+             evTemp = new ArrayList<evaluation>(lenth);
+ 
+-            ArrayList<Integer []> R_id = new ArrayList<Integer[]>(lenth);
++            ArrayList<Integer[]> R_id = new ArrayList<Integer[]>(lenth);
+             String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
+ 
+-            if (RE.length()==0){//RE为空，即尚未答题
++            if (RE.length() == 0) {//RE为空，即尚未答题
+                 for (int i = 1; i <= lenth; i++) {
+-                    re re1 = new re(i, imageUrls[i - 1], imageUrlsC[i - 1],null, -1, null,null,null);
++                    re re1 = new re(i, imageUrls[i - 1], imageUrlsC[i - 1], null, -1, null, null, null);
+                     re1.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(re1);
+                     Integer[] imageUrl = new Integer[6];
+-                    for(int j=0;j<6;++j){
+-                        imageUrl[j] = getResources().getIdentifier(imageUrls[turn[i-1][j]], "drawable", getPackageName());
+-                        Log.d("imageUrl",imageUrls[turn[i-1][j]]);
++                    for (int j = 0; j < 6; ++j) {
++                        imageUrl[j] = getResources().getIdentifier(imageUrls[turn[i - 1][j]], "drawable", getPackageName());
++                        Log.d("imageUrl", imageUrls[turn[i - 1][j]]);
+                     }
+                     R_id.add(imageUrl);
+                 }
+-            }else {//非空，则完成了部分题目
++            } else {//非空，则完成了部分题目
+                 Boolean result;
+                 String select;
+                 int select_num;
+                 audio audio;
+                 String time;
+                 for (int i = 1; i <= lenth; i++) {
+-                    if (RE.getJSONObject(i-1).has("result") && !RE.getJSONObject(i-1).isNull("result")) {
+-                        result = RE.getJSONObject(i-1).getBoolean("result");
+-                        select = RE.getJSONObject(i-1).getString("select");
+-                        select_num = RE.getJSONObject(i-1).getInt("select_num");
+-                        audio = new audio(RE.getJSONObject(i-1).getString("audioPath"));
+-                        time = RE.getJSONObject(i-1).getString("time");
+-                    }
+-                    else{
++                    if (RE.getJSONObject(i - 1).has("result") && !RE.getJSONObject(i - 1).isNull("result")) {
++                        result = RE.getJSONObject(i - 1).getBoolean("result");
++                        select = RE.getJSONObject(i - 1).getString("select");
++                        select_num = RE.getJSONObject(i - 1).getInt("select_num");
++                        audio = new audio(RE.getJSONObject(i - 1).getString("audioPath"));
++                        time = RE.getJSONObject(i - 1).getString("time");
++                    } else {
+                         result = null;
+                         select = null;
+                         select_num = -1;
+                         audio = null;
+                         time = null;
+                     }
+-                    re re2 = new re(i, imageUrls[i - 1], imageUrlsC[i - 1],select, select_num, result, audio, time);
++                    re re2 = new re(i, imageUrls[i - 1], imageUrlsC[i - 1], select, select_num, result, audio, time);
+                     re2.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(re2);
+                     Integer[] imageUrl = new Integer[6];
+-                    for(int j=0;j<6;++j){
+-                        imageUrl[j] = getResources().getIdentifier(imageUrls[turn[i-1][j]], "drawable", getPackageName());
++                    for (int j = 0; j < 6; ++j) {
++                        imageUrl[j] = getResources().getIdentifier(imageUrls[turn[i - 1][j]], "drawable", getPackageName());
+                     }
+                     R_id.add(imageUrl);
+                 }
+             }
+             testcontext.getInstance().setEvaluations(evTemp);
+ 
+-            adapter = new testpageradapter(R.layout.word_test2, null, Tb, evTemp, R_id,null,null,counter, timer);
++            adapter = new testpageradapter(R.layout.word_test2, null, Tb, evTemp, R_id, null, null, counter, timer);
+             viewPager.setAdapter(adapter);
+             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+         } else if (format.equals("RG")) {
+@@ -445,40 +435,39 @@
+             ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);
+             String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
+ 
+-            if (RG.length()==0){//RE为空，即尚未答题
++            if (RG.length() == 0) {//RE为空，即尚未答题
+                 for (int i = 1; i <= lenth; i++) {
+-                    rg rg1 = new rg(i, imageUrlsC[i - 1], ans[i - 1],null, null,-1, null,null);
++                    rg rg1 = new rg(i, imageUrlsC[i - 1], ans[i - 1], null, null, -1, null, null);
+                     rg1.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(rg1);
+-                    R_id.add(getResources().getIdentifier("g"+String.valueOf(i), "drawable", getPackageName()));
++                    R_id.add(getResources().getIdentifier("g" + String.valueOf(i), "drawable", getPackageName()));
+                 }
+-            }else {//非空，则完成了部分题目
++            } else {//非空，则完成了部分题目
+                 String answer;
+                 Boolean result;
+                 audio audio;
+                 String time;
+                 for (int i = 1; i <= lenth; i++) {
+-                    if (RG.getJSONObject(i-1).has("time") && !RG.getJSONObject(i-1).isNull("time")) {
+-                        result = RG.getJSONObject(i-1).getBoolean("result");
+-                        answer = RG.getJSONObject(i-1).getString("answer");
+-                        audio = new audio(RG.getJSONObject(i-1).getString("audioPath"));
+-                        time = RG.getJSONObject(i-1).getString("time");
+-                    }
+-                    else{
++                    if (RG.getJSONObject(i - 1).has("time") && !RG.getJSONObject(i - 1).isNull("time")) {
++                        result = RG.getJSONObject(i - 1).getBoolean("result");
++                        answer = RG.getJSONObject(i - 1).getString("answer");
++                        audio = new audio(RG.getJSONObject(i - 1).getString("audioPath"));
++                        time = RG.getJSONObject(i - 1).getString("time");
++                    } else {
+                         answer = null;
+                         result = null;
+                         audio = null;
+                         time = null;
+                     }
+-                    rg rg2 = new rg(i, imageUrlsC[i - 1], ans[i - 1],answer, result, -1, audio, time);
++                    rg rg2 = new rg(i, imageUrlsC[i - 1], ans[i - 1], answer, result, -1, audio, time);
+                     rg2.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(rg2);
+-                    R_id.add(getResources().getIdentifier("g"+String.valueOf(i), "drawable", getPackageName()));
++                    R_id.add(getResources().getIdentifier("g" + String.valueOf(i), "drawable", getPackageName()));
+                 }
+             }
+             testcontext.getInstance().setEvaluations(evTemp);
+ 
+-            adapter = new testpageradapter(R.layout.grammar_test1, R_id, Tb, evTemp,null,null,imageUrlsC,counter, timer);
++            adapter = new testpageradapter(R.layout.grammar_test1, R_id, Tb, evTemp, null, null, imageUrlsC, counter, timer);
+             viewPager.setAdapter(adapter);
+             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+ 
+@@ -491,36 +480,34 @@
+             evTemp = new ArrayList<evaluation>(lenth);
+             String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
+ 
+-            if (S.length()==0){//E为空，即尚未答题
++            if (S.length() == 0) {//E为空，即尚未答题
+                 for (int i = 1; i <= lenth; i++) {
+                     s s1 = new s(i, sWords[i - 1], sWordsAns[i - 1], null, null, null);
+                     s1.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(s1);
+                 }
+-            }
+-            else {//非空，则完成了部分题目
++            } else {//非空，则完成了部分题目
+                 Boolean result;
+                 audio audio;
+                 String time;
+                 for (int i = 1; i <= lenth; i++) {
+-                    if (S.getJSONObject(i-1).has("result") && !S.getJSONObject(i-1).isNull("result")) {
+-                        result = S.getJSONObject(i-1).getBoolean("result");
+-                        audio = new audio(S.getJSONObject(i-1).getString("audioPath"));
+-                        time = S.getJSONObject(i-1).getString("time");
+-                    }
+-                    else{
++                    if (S.getJSONObject(i - 1).has("result") && !S.getJSONObject(i - 1).isNull("result")) {
++                        result = S.getJSONObject(i - 1).getBoolean("result");
++                        audio = new audio(S.getJSONObject(i - 1).getString("audioPath"));
++                        time = S.getJSONObject(i - 1).getString("time");
++                    } else {
+                         result = null;
+                         audio = null;
+                         time = null;
+                     }
+-                    s s2 = new s(i,  sWords[i - 1],sWordsAns[i - 1], result, audio, time);
++                    s s2 = new s(i, sWords[i - 1], sWordsAns[i - 1], result, audio, time);
+                     s2.setAllQuestionListener(allquestioncallback);
+                     evTemp.add(s2);
+                 }
+             }
+             testcontext.getInstance().setEvaluations(evTemp);
+ 
+-            adapter = new testpageradapter(R.layout.word_test3, null, Tb, evTemp, null,null,sWords,counter, timer);
++            adapter = new testpageradapter(R.layout.word_test3, null, Tb, evTemp, null, null, sWords, counter, timer);
+             viewPager.setAdapter(adapter);
+             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+ 
+@@ -531,8 +518,8 @@
+ 
+     @Override
+     public void onBackPressed() {
+-        if(testcontext.getInstance().getCount()< testcontext.getInstance().getLengths())
+-            dialogUtils.showDialog(this, "提示信息", "您尚未完成测评，是否退出？", "是", () ->{
++        if (testcontext.getInstance().getCount() < testcontext.getInstance().getLengths())
++            dialogUtils.showDialog(this, "提示信息", "您尚未完成测评，是否退出？", "是", () -> {
+                 performCleanup();
+                 finish();
+             }, "否", null);
+@@ -543,12 +530,12 @@
+     @Override
+     protected void onDestroy() {
+         //录音未结束，中断录音
+-        if(AudioRecorder.getInstance().getAlive()!=null&& AudioRecorder.getInstance().getAlive()){
++        if (AudioRecorder.getInstance().getAlive() != null && AudioRecorder.getInstance().getAlive()) {
+             int i = viewPager.getCurrentItem();
+             SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
+             String CurrentQuestion = preferences.getString("CurrentQuestion", null);
+-            int CurrentQustionNumber = preferences.getInt("CurrentQustionNumber",-1);
+-            if(CurrentQuestion != null && CurrentQustionNumber != -1){
++            int CurrentQustionNumber = preferences.getInt("CurrentQustionNumber", -1);
++            if (CurrentQuestion != null && CurrentQustionNumber != -1) {
+                 JSONObject data = null;
+                 try {
+                     data = dataManager.getInstance().loadData(fName);
+@@ -570,9 +557,9 @@
+ 
+     @Override
+     public void onClick(View v) {
+-        if(v.getId() == R.id.btn_exit){
+-            if(testcontext.getInstance().getCount()< testcontext.getInstance().getLengths())
+-                dialogUtils.showDialog(this, "提示信息", "您尚未完成测评，是否退出？", "是", ()->{
++        if (v.getId() == R.id.btn_exit) {
++            if (testcontext.getInstance().getCount() < testcontext.getInstance().getLengths())
++                dialogUtils.showDialog(this, "提示信息", "您尚未完成测评，是否退出？", "是", () -> {
+                     performCleanup();
+                     finish();
+                 }, "否", null);
+@@ -583,7 +570,7 @@
+         }
+     }
+ 
+-    public void performCleanup(){
++    public void performCleanup() {
+         //结果写入内存
+         try {
+             JSONObject data = dataManager.getInstance().loadData(fName);
+@@ -592,14 +579,12 @@
+             // 创建一个新的空的 JSONArray
+             JSONArray emptyArray = new JSONArray();
+ 
+-            if(format!=null){
++            if (format != null) {
+                 if (format.equals("A")) {
+                     evaluations.put("A", emptyArray);
+-                }
+-                else if (format.equals("E")) {
++                } else if (format.equals("E")) {
+                     evaluations.put("E", emptyArray);
+-                }
+-                else if (format.equals("NWR")) {
++                } else if (format.equals("NWR")) {
+                     evaluations.put("NWR", emptyArray);
+ 
+                 } else if (format.equals("PN")) {
+@@ -620,21 +605,21 @@
+                 } else {
+ 
+                 }
+-                for(int i = 0; i< evTemp.size(); i++){
++                for (int i = 0; i < evTemp.size(); i++) {
+                     evTemp.get(i).toJson(evaluations);
+                 }
+-                dataManager.getInstance().saveData(fName,data);
++                dataManager.getInstance().saveData(fName, data);
+             }
+ 
+         } catch (Exception e) {
+-            Toast.makeText(this,"保存失败！",Toast.LENGTH_SHORT).show();
++            Toast.makeText(this, "保存失败！", Toast.LENGTH_SHORT).show();
+             throw new RuntimeException(e);
+         }
+ 
+     }
+ 
+ 
+-    utils.allquestionlistener allquestioncallback = new allquestionlistener(){
++    utils.allquestionlistener allquestioncallback = new allquestionlistener() {
+         @Override
+         public void onAllQuestionComplete() {
+             performCleanup();

@@ -1,0 +1,52 @@
+Index: .idea/copilot.data.migration.agent.xml
+===================================================================
+diff --git a/.idea/copilot.data.migration.agent.xml b/.idea/copilot.data.migration.agent.xml
+--- a/.idea/copilot.data.migration.agent.xml	(revision 4fdaeee83037045de0414fadbfc206794004cdeb)
++++ b/.idea/copilot.data.migration.agent.xml	(date 1768802652216)
+@@ -1,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="AgentMigrationStateService">
++    <option name="migrationStatus" value="COMPLETED" />
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/copilot.data.migration.ask2agent.xml
+===================================================================
+diff --git a/.idea/copilot.data.migration.ask2agent.xml b/.idea/copilot.data.migration.ask2agent.xml
+--- a/.idea/copilot.data.migration.ask2agent.xml	(revision 4fdaeee83037045de0414fadbfc206794004cdeb)
++++ b/.idea/copilot.data.migration.ask2agent.xml	(date 1768802652218)
+@@ -1,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="Ask2AgentMigrationStateService">
++    <option name="migrationStatus" value="COMPLETED" />
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/copilot.data.migration.ask.xml
+===================================================================
+diff --git a/.idea/copilot.data.migration.ask.xml b/.idea/copilot.data.migration.ask.xml
+--- a/.idea/copilot.data.migration.ask.xml	(revision 4fdaeee83037045de0414fadbfc206794004cdeb)
++++ b/.idea/copilot.data.migration.ask.xml	(date 1768802652219)
+@@ -1,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="AskMigrationStateService">
++    <option name="migrationStatus" value="COMPLETED" />
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/copilot.data.migration.edit.xml
+===================================================================
+diff --git a/.idea/copilot.data.migration.edit.xml b/.idea/copilot.data.migration.edit.xml
+--- a/.idea/copilot.data.migration.edit.xml	(revision 4fdaeee83037045de0414fadbfc206794004cdeb)
++++ b/.idea/copilot.data.migration.edit.xml	(date 1768802652221)
+@@ -1,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="EditMigrationStateService">
++    <option name="migrationStatus" value="COMPLETED" />
++  </component>
++</project>
+\ No newline at end of file
