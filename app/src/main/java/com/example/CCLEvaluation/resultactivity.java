@@ -12,6 +12,7 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -20,6 +21,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import adapter.resultadapter;
 import bean.a;
@@ -45,6 +47,24 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
     private Button back;
     private LinearLayout extraAResults;
     private LinearLayout extraASuggestions;
+    private EditText vowelAccuracy;
+    private EditText initialAccuracy;
+    private EditText speechClarity;
+    private final int[] initialIds = new int[]{
+            R.id.initial_b, R.id.initial_p, R.id.initial_m, R.id.initial_f,
+            R.id.initial_d, R.id.initial_t, R.id.initial_n, R.id.initial_l,
+            R.id.initial_g, R.id.initial_k, R.id.initial_h, R.id.initial_j,
+            R.id.initial_q, R.id.initial_x, R.id.initial_zh, R.id.initial_ch,
+            R.id.initial_sh, R.id.initial_r, R.id.initial_z, R.id.initial_c
+    };
+    private final String[] initialLabels = new String[]{
+            "b", "p", "m", "f",
+            "d", "t", "n", "l",
+            "g", "k", "h", "j",
+            "q", "x", "zh", "ch",
+            "sh", "r", "z", "c"
+    };
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +75,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         tv2 = findViewById(R.id.tv_2);
         extraAResults = findViewById(R.id.extra_a_results);
         extraASuggestions = findViewById(R.id.extra_a_suggestions);
+        vowelAccuracy = findViewById(R.id.extra_a_vowel_accuracy);
+        initialAccuracy = findViewById(R.id.extra_a_initial_accuracy);
+        speechClarity = findViewById(R.id.extra_a_speech_clarity);
         try {
             initData();
         } catch (Exception e) {
@@ -114,10 +137,73 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (extraAResults != null) extraAResults.setVisibility(View.VISIBLE);
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.VISIBLE);
             evaluations.add(new a(0, (List<a.CharacterPhonology>) null, null, null, null)); // 首行
+            // 逐题读取
+            List<a> aItems = new ArrayList<>();
             for(int i=0;i<jsonArray.length();i++){
                 JSONObject object = jsonArray.getJSONObject(i);
                 a item = a.fromJson(object);
+                aItems.add(item);
                 evaluations.add(item);
+            }
+            // 统计声母正确率：每个声母独立 “正确/总”
+            int[] correctInitial = new int[initialLabels.length];
+            int[] totalInitial = new int[initialLabels.length];
+            int vowelCorrect = 0;
+            int vowelTotal = 0;
+            for (a item : aItems) {
+                List<a.CharacterPhonology> targets = item.getTargetWord();
+                List<a.CharacterPhonology> answers = item.getAnswerPhonology();
+                if (targets == null) continue;
+                for (int idx = 0; idx < targets.size(); idx++) {
+                    a.CharacterPhonology tgt = targets.get(idx);
+                    a.CharacterPhonology ans = (answers != null && idx < answers.size()) ? answers.get(idx) : null;
+                    String tgtInitial = safeLower(initialOf(tgt));
+                    String ansInitial = safeLower(initialOf(ans));
+                    if (!tgtInitial.isEmpty()) {
+                        int pos = initialIndexOf(tgtInitial);
+                        if (pos >= 0) {
+                            totalInitial[pos]++;
+                            if (tgtInitial.equals(ansInitial)) correctInitial[pos]++;
+                        }
+                    }
+                    String tgtVowel = vowelString(tgt);
+                    if (!tgtVowel.isEmpty()) {
+                        vowelTotal++;
+                        if (tgtVowel.equals(vowelString(ans))) vowelCorrect++;
+                    }
+                }
+            }
+            // 填充声母表格
+            for (int i = 0; i < initialIds.length && i < initialLabels.length; i++) {
+                EditText et = findViewById(initialIds[i]);
+                if (et != null) {
+                    int total = totalInitial[i];
+                    int correct = correctInitial[i];
+                    et.setText(total > 0 ? (correct + "/" + total) : "0/0");
+                }
+            }
+            // 填充总体声母正确率
+            double initialRate = 0d;
+            if (initialAccuracy != null) {
+                int sumTotal = 0, sumCorrect = 0;
+                for (int i = 0; i < totalInitial.length; i++) { sumTotal += totalInitial[i]; sumCorrect += correctInitial[i]; }
+                initialRate = sumTotal > 0 ? (sumCorrect * 1.0d / sumTotal) : 0d;
+                String rateStr = sumTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (initialRate * 100.0d)) : "0%";
+                initialAccuracy.setText(rateStr);
+            }
+            // 填充韵母正确率
+            if (vowelAccuracy != null) {
+                String rate = vowelTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (vowelCorrect * 100.0f / vowelTotal)) : "0%";
+                vowelAccuracy.setText(rate);
+            }
+            // 根据声母总正确率填写语音清晰度等级
+            if (speechClarity != null) {
+                String level;
+                if (initialRate >= 0.85d) level = "轻度";
+                else if (initialRate >= 0.65d) level = "轻中度";
+                else if (initialRate >= 0.50d) level = "中重度";
+                else level = "重度";
+                speechClarity.setText(level);
             }
         }
         else if (format.equals("E")) {
@@ -272,4 +358,30 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             finish();
         }
     }
+
+    private String initialOf(a.CharacterPhonology cp) {
+        if (cp == null || cp.phonology == null) return "";
+        return cp.phonology.initial == null ? "" : cp.phonology.initial.trim();
+    }
+
+    private String vowelString(a.CharacterPhonology cp) {
+        if (cp == null || cp.phonology == null) return "";
+        String m = cp.phonology.medial == null ? "" : cp.phonology.medial.trim();
+        String n = cp.phonology.nucleus == null ? "" : cp.phonology.nucleus.trim();
+        String c = cp.phonology.coda == null ? "" : cp.phonology.coda.trim();
+        String res = m + n + c;
+        return res.trim();
+    }
+
+    private String safeLower(String s) {
+        return s == null ? "" : s.toLowerCase(Locale.getDefault());
+    }
+
+    private int initialIndexOf(String ini) {
+        for (int i = 0; i < initialLabels.length; i++) {
+            if (initialLabels[i].equalsIgnoreCase(ini)) return i;
+        }
+        return -1;
+    }
+
 }

@@ -25,7 +25,6 @@ import java.util.List;
 
 import utils.AudioPlayer;
 import utils.AudioRecorder;
-import utils.ImageUrls;
 import utils.ResultContext;
 import utils.testcontext;
 
@@ -682,10 +681,6 @@ public class a extends evaluation {
 
     private String computePinyinFallback() {
         if (pinyin != null && !pinyin.isEmpty()) return pinyin;
-        if (target != null && !target.isEmpty()) {
-            String mapped = ImageUrls.getAPinyin(target);
-            if (mapped != null && !mapped.isEmpty()) return mapped;
-        }
         if (targetWord != null && !targetWord.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (CharacterPhonology cp : targetWord) {
