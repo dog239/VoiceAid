@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -30,7 +31,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
-                android:text="获取验证码" />
+                android:text="获取验证码"
+                app:backgroundTint="#ECA6D7FD" />
 
             <EditText
                 android:id="@+id/cEdit"
@@ -43,49 +45,56 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
-                android:text="注册" />
+                android:text="注册"
+                app:backgroundTint="#ECA6D7FD" />
 
             <Button
                 android:id="@+id/i3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
-                android:text="登录" />
+                android:text="登录"
+                app:backgroundTint="#ECA6D7FD" />
 
             <Button
                 android:id="@+id/i4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
-                android:text="上传测评" />
+                android:text="上传测评"
+                app:backgroundTint="#ECA6D7FD" />
 
             <Button
                 android:id="@+id/i5"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
-                android:text="下载测评" />
+                android:text="下载测评"
+                app:backgroundTint="#ECA6D7FD" />
 
             <Button
                 android:id="@+id/i6"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
-                android:text="录音" />
+                android:text="录音"
+                app:backgroundTint="#ECA6D7FD" />
 
             <Button
                 android:id="@+id/i7"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
-                android:text="结束录音并上传" />
+                android:text="结束录音并上传"
+                app:backgroundTint="#ECA6D7FD" />
 
             <Button
                 android:id="@+id/i8"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
-                android:text="下载录音并播放" />
+                android:text="下载录音并播放"
+                app:backgroundTint="#ECA6D7FD" />
 
         </LinearLayout>
     </ScrollView>
