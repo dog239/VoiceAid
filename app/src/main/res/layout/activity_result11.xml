@@ -8,1142 +8,335 @@
     android:background="@drawable/bg"
     tools:context="login.Loginactivity">
 
-
-<LinearLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp">
-    <TextView
-        android:id="@+id/tv_1"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:gravity="center"
-        android:text="评测结果"
-        android:textColor="@color/black"
-        android:textSize="30dp"
-        />
 
-    <TextView
-        android:id="@+id/tv_2"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_below="@id/tv_1"
-        android:layout_marginTop="2dp"
-        android:gravity="center_vertical"
-        android:paddingLeft="20dp"
-        android:textColor="@color/black"
-        android:textSize="22dp" />
+        <!-- 标题 -->
+        <TextView
+            android:id="@+id/tv_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="评测结果"
+            android:textColor="@color/black"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
-        <!-- 规则表格：使用RecyclerView和GridLayoutManager -->
+        <!-- （一）记录表 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="（一）记录表"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/black" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="8dp"
+            android:background="@android:color/darker_gray" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false" /> <!-- 注意：这里设置为false可能不是必需的，取决于你的具体需求 -->
+            android:nestedScrollingEnabled="false" />
 
-        <!-- 假设的分割线 -->
-        <View
-            android:id="@+id/line"
-            android:layout_marginTop="20dp"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:visibility="gone"
-            android:background="@android:color/darker_gray" />
-
-        <!-- 不规则表格：这里仅展示一个容器，你需要自定义其内部布局 -->
-        <LinearLayout
-            android:id="@+id/table"
+        <!-- （二）评估结果 -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="0dp"
-            android:padding="10dp"
+            android:layout_marginTop="16dp"
+            android:text="（二）评估结果"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:id="@+id/tv_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="start"
+            android:textColor="@color/black"
+            android:textSize="16sp" />
+
+        <LinearLayout
+            android:id="@+id/extra_a_results"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="12dp"
+            android:padding="12dp"
             android:visibility="gone"
-            >
+            android:background="@drawable/table">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="构音A结果"
+                android:textSize="18sp"
+                android:textColor="@color/black"
+                android:padding="4dp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1. 声母正确率"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp" />
+
+            <TableLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:stretchColumns="1,3,5,7">
+                <!-- 声母表格 -->
+                <TableRow>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="b" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="p" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="m" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="f" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                </TableRow>
+                <TableRow>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="d" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="t" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="n" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="l" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                </TableRow>
+                <TableRow>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="g" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="k" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="h" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="j" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                </TableRow>
+                <TableRow>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="q" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="x" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="zh" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ch" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                </TableRow>
+                <TableRow>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="sh" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="r" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="z" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="c" android:padding="6dp" android:gravity="center" android:textColor="@color/black" />
+                    <EditText android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/table" android:padding="6dp" android:singleLine="true" />
+                </TableRow>
+            </TableLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2. 韵母正确率"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:paddingTop="12dp"
+                android:paddingBottom="4dp" />
+
+            <EditText
+                android:id="@+id/extra_a_vowel_accuracy"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:gravity="top"
+                android:background="@drawable/table"
+                android:padding="8dp"
+                android:hint="填写韵母正确率" />
 
             <LinearLayout
-                android:layout_width="0dp"
-                android:layout_weight="2"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
                 <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3. 语音清晰度等级："
+                    android:textSize="16sp"
+                    android:textColor="@color/black" />
+                <EditText
+                    android:id="@+id/extra_a_speech_clarity"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:text="发音方式"
-                    android:textSize="18sp"
-                    android:textColor="@color/black"
-                    android:gravity="center"
-                    android:background="@drawable/table_topleft"
-                    />
-                <TextView
-                    android:layout_weight="1"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:textSize="18sp"
-                    android:textColor="@color/black"
-                    android:gravity="center"
-                    android:layout_marginTop="2dp"
                     android:background="@drawable/table"
-                    />
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_weight="8"
-                    android:layout_height="0dp"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="2dp">
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        >
-                        <TextView
-                            android:layout_weight="2"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:text="塞音"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:background="@drawable/table"
-                            />
-                        <TextView
-                            android:layout_weight="1"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:text="鼻音"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:layout_marginTop="2dp"
-                            android:background="@drawable/table"
-                            />
-                        <TextView
-                            android:layout_weight="1"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:text="边音"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:layout_marginTop="2dp"
-                            android:background="@drawable/table"
-                            />
-                        <TextView
-                            android:layout_weight="2"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:text="擦音"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:layout_marginTop="2dp"
-                            android:background="@drawable/table"
-                            />
-                        <TextView
-                            android:layout_weight="2"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:text="塞擦音"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:layout_marginTop="2dp"
-                            android:background="@drawable/table_bottomleft"
-                            />
+                    android:padding="6dp"
+                    android:singleLine="true" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="  声母正确率："
+                    android:textSize="16sp"
+                    android:textColor="@color/black" />
+                <EditText
+                    android:id="@+id/extra_a_initial_accuracy"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/table"
+                    android:padding="6dp"
+                    android:singleLine="true" />
+            </LinearLayout>
 
-                    </LinearLayout>
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:layout_marginLeft="2dp">
-                        <TextView
-                            android:layout_weight="1"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:text="不送气"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:background="@drawable/table"
-                            />
-                        <TextView
-                            android:layout_weight="1"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:text="送气"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:layout_marginTop="2dp"
-                            android:background="@drawable/table"
-                            />
-                        <TextView
-                            android:layout_weight="1"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:layout_marginTop="2dp"
-                            android:background="@drawable/table"
-                            />
-                        <TextView
-                            android:layout_weight="1"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:layout_marginTop="2dp"
-                            android:background="@drawable/table"
-                            />
-                        <TextView
-                            android:layout_weight="1"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:layout_marginTop="2dp"
-                            android:background="@drawable/table"
-                            />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="4. 诊断（直接勾选）"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:paddingTop="12dp"
+                android:paddingBottom="4dp" />
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:layout_marginTop="2dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/table"
-                            android:gravity="center"
-                            android:textColor="@color/black"
-                            android:textSize="18sp" />
+            <CheckBox
+                android:id="@+id/extra_a_diag_normal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常发展中/正常语言" />
+            <CheckBox
+                android:id="@+id/extra_a_diag_phonology"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="构音/音韵异常" />
+            <CheckBox
+                android:id="@+id/extra_a_diag_tone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="声调异常" />
 
-                        <TextView
-                            android:layout_weight="1"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:text="不送气"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:layout_marginTop="2dp"
-                            android:background="@drawable/table"
-                            />
-                        <TextView
-                            android:layout_weight="1"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:text="送气"
-                            android:textSize="18sp"
-                            android:textColor="@color/black"
-                            android:gravity="center"
-                            android:layout_marginTop="2dp"
-                            android:background="@drawable/table"
-                            />
-                    </LinearLayout>
+        </LinearLayout>
 
+        <!-- （三）评估建议 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="（三）评估建议"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/black" />
 
-                </LinearLayout>
+        <LinearLayout
+            android:id="@+id/extra_a_suggestions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"
+            android:padding="12dp"
+            android:visibility="gone"
+            android:background="@drawable/table">
 
+            <CheckBox
+                android:id="@+id/extra_a_suggest_none"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="不需转介/音韵治疗" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <CheckBox
+                    android:id="@+id/extra_a_suggest_follow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="定期追踪与观察" />
+                <EditText
+                    android:id="@+id/extra_a_follow_months"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/table"
+                    android:padding="6dp"
+                    android:singleLine="true" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="个月后复查" />
             </LinearLayout>
             <LinearLayout
-                android:layout_width="0dp"
-                android:layout_weight="7"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
-
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <CheckBox
+                    android:id="@+id/extra_a_suggest_trad"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="传统构音治疗法: 治疗频次:" />
+                <EditText
+                    android:id="@+id/extra_a_trad_freq"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/table"
+                    android:padding="6dp"
+                    android:singleLine="true" />
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/table_topright"
-                    android:gravity="center"
-                    android:text="发音部位"
-                    android:layout_marginLeft="2dp"
-                    android:textColor="@color/black"
-                    android:textSize="18sp" />
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_weight="9"
-                    android:layout_height="0dp"
-                    android:orientation="horizontal">
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="2"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:layout_marginLeft="2dp">
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_weight="8"
-                            android:layout_height="0dp"
-                            android:orientation="horizontal"
-                            android:layout_marginTop="2dp">
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_weight="1"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical">
-                                <TextView
-                                    android:layout_weight="1"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:text="双唇"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="center"
-                                    android:background="@drawable/table"
-                                    />
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="b"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:id="@+id/B"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="p"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:id="@+id/P"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="m"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:id="@+id/M"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-                                <TextView
-                                    android:layout_weight="5.2"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="center"
-                                    android:layout_marginTop="2dp"
-                                    android:background="@drawable/table"
-                                    />
-
-                            </LinearLayout>
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_weight="1"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical"
-                                android:layout_marginLeft="2dp">
-                                <TextView
-                                    android:layout_weight="1"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:text="唇齿音"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="center"
-                                    android:background="@drawable/table"
-                                    />
-                                <TextView
-                                    android:layout_weight="4.1"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:layout_marginTop="2dp"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="center"
-                                    android:background="@drawable/table"
-                                    />
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="f"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:id="@+id/F"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:layout_weight="3.2"
-                                    android:background="@drawable/table"
-                                    android:gravity="center"
-                                    android:textColor="@color/black"
-                                    android:textSize="18sp"
-                                    android:layout_marginTop="2dp"/>
-                            </LinearLayout>
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="5"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:layout_marginLeft="2dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_weight="7"
-                            android:layout_height="0dp"
-                            android:orientation="horizontal"
-                            android:layout_marginTop="2dp">
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_weight="1"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical">
-                                <TextView
-                                    android:layout_weight="1"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:text="舌尖中"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="center"
-
-                                    android:background="@drawable/table"
-                                    />
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <TextView
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:layout_weight="1"
-                                        android:background="@drawable/table"
-                                        android:gravity="center"
-                                        android:text="d"
-                                        android:textColor="@color/black"
-                                        android:textSize="18sp" />
-                                    <TextView
-                                        android:id="@+id/D"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="t"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:id="@+id/T"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="n"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:id="@+id/N"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="l"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:id="@+id/L"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-                                <TextView
-                                    android:layout_weight="4.4"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="center"
-                                    android:layout_marginTop="2dp"
-                                    android:background="@drawable/table"
-                                    />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_weight="3"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical"
-                                android:layout_marginLeft="2dp">
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal">
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="舌尖前"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="舌面前"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="舌尖后"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-                                <TextView
-                                    android:layout_weight="4.1"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="center"
-                                    android:layout_marginTop="2dp"
-                                    android:background="@drawable/table"
-                                    />
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_weight="1"
-                                        android:layout_height="match_parent"
-                                        android:orientation="horizontal">
-                                        <TextView
-                                            android:layout_weight="1"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:text="s"
-                                            android:textSize="18sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:background="@drawable/table"
-                                            />
-
-                                        <TextView
-                                            android:id="@+id/S"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:layout_marginLeft="2dp"
-                                            android:layout_weight="2"
-                                            android:background="@drawable/table"
-                                            android:gravity="center"
-                                            android:textColor="@color/black"
-                                            android:textSize="15sp" />
-                                    </LinearLayout>
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_weight="1"
-                                        android:layout_height="match_parent"
-                                        android:orientation="horizontal"
-                                        android:layout_marginLeft="2dp">
-
-                                        <TextView
-                                            android:layout_weight="1"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:text="x"
-                                            android:textSize="18sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:background="@drawable/table"
-                                            />
-                                        <TextView
-                                            android:id="@+id/X"
-                                            android:layout_weight="2"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:textSize="15sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:layout_marginLeft="2dp"
-                                            android:background="@drawable/table"
-                                            />
-                                    </LinearLayout>
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_weight="1"
-                                        android:layout_height="match_parent"
-                                        android:orientation="horizontal"
-                                        android:layout_marginLeft="2dp">
-                                        <TextView
-                                            android:layout_weight="1"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:text="sh"
-                                            android:textSize="18sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:background="@drawable/table"
-                                            />
-                                        <TextView
-                                            android:id="@+id/SH"
-                                            android:layout_weight="2"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:textSize="15sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:layout_marginLeft="2dp"
-                                            android:background="@drawable/table"
-                                            />
-                                    </LinearLayout>
-
-                                </LinearLayout>
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-                                    <TextView
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_weight="1"
-                                        android:layout_height="match_parent"
-                                        android:orientation="horizontal"
-                                        android:layout_marginLeft="2dp">
-                                        <TextView
-                                            android:layout_weight="1"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:text="r"
-                                            android:textSize="18sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:background="@drawable/table"
-                                            />
-                                        <TextView
-                                            android:id="@+id/R"
-                                            android:layout_weight="2"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:textSize="15sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:layout_marginLeft="2dp"
-                                            android:background="@drawable/table"
-                                            />
-                                    </LinearLayout>
-
-                                </LinearLayout>
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_weight="1"
-                                        android:layout_height="match_parent"
-                                        android:orientation="horizontal"
-                                        >
-                                        <TextView
-                                            android:layout_weight="1"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:text="z"
-                                            android:textSize="18sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:background="@drawable/table"
-                                            />
-                                        <TextView
-                                            android:id="@+id/Z"
-                                            android:layout_weight="2"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:textSize="15sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:layout_marginLeft="2dp"
-                                            android:background="@drawable/table"
-                                            />
-                                    </LinearLayout>
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_weight="1"
-                                        android:layout_height="match_parent"
-                                        android:orientation="horizontal"
-                                        android:layout_marginLeft="2dp">
-
-                                        <TextView
-                                            android:layout_weight="1"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:text="j"
-                                            android:textSize="18sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:background="@drawable/table"
-                                            />
-                                        <TextView
-                                            android:id="@+id/J"
-                                            android:layout_weight="2"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:textSize="15sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:layout_marginRight="1dp"
-                                            android:background="@drawable/table"
-                                            android:layout_marginLeft="2dp"/>
-                                    </LinearLayout>
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_weight="1"
-                                        android:layout_height="match_parent"
-                                        android:orientation="horizontal"
-                                        android:layout_marginLeft="2dp">
-                                        <TextView
-                                            android:layout_weight="1"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:text="zh"
-                                            android:textSize="18sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:background="@drawable/table"
-                                            />
-                                        <TextView
-                                            android:id="@+id/ZH"
-                                            android:layout_weight="2"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:textSize="15sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:layout_marginLeft="2dp"
-                                            android:background="@drawable/table"
-                                            />
-                                    </LinearLayout>
-
-                                </LinearLayout>
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_weight="1"
-                                        android:layout_height="match_parent"
-                                        android:orientation="horizontal">
-                                        <TextView
-                                            android:layout_weight="1"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:text="c"
-                                            android:textSize="18sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:background="@drawable/table"
-                                            />
-                                        <TextView
-                                            android:id="@+id/C"
-                                            android:layout_weight="2"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:textSize="15sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:layout_marginLeft="2dp"
-                                            android:background="@drawable/table"
-                                            />
-                                    </LinearLayout>
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_weight="1"
-                                        android:layout_height="match_parent"
-                                        android:orientation="horizontal"
-                                        android:layout_marginLeft="2dp">
-
-                                        <TextView
-                                            android:layout_weight="1"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:text="q"
-                                            android:textSize="18sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:background="@drawable/table"
-                                            />
-                                        <TextView
-                                            android:id="@+id/Q"
-                                            android:layout_weight="2"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:textSize="15sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:layout_marginLeft="2dp"
-                                            android:background="@drawable/table"
-                                            />
-                                    </LinearLayout>
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_weight="1"
-                                        android:layout_height="match_parent"
-                                        android:orientation="horizontal"
-                                        android:layout_marginLeft="2dp">
-                                        <TextView
-                                            android:layout_weight="1"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:text="ch"
-                                            android:textSize="18sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:background="@drawable/table"
-                                            />
-                                        <TextView
-                                            android:id="@+id/CH"
-                                            android:layout_weight="2"
-                                            android:layout_width="0dp"
-                                            android:layout_height="match_parent"
-                                            android:textSize="15sp"
-                                            android:textColor="@color/black"
-                                            android:gravity="center"
-                                            android:layout_marginLeft="2dp"
-                                            android:background="@drawable/table"
-                                            />
-                                    </LinearLayout>
-
-                                </LinearLayout>
-
-
-                            </LinearLayout>
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_weight="1"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical"
-                                android:layout_marginLeft="2dp">
-                                <TextView
-                                    android:layout_weight="1"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:text="舌根"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="center"
-                                    android:background="@drawable/table"
-                                    />
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="g"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:id="@+id/G"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="k"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:id="@+id/K"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-                                <TextView
-                                    android:layout_weight="1.8"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="center"
-                                    android:layout_marginTop="2dp"
-                                    android:background="@drawable/table"
-                                    />
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_weight="1"
-                                    android:layout_height="0dp"
-                                    android:orientation="horizontal"
-                                    android:layout_marginTop="2dp">
-
-                                    <TextView
-                                        android:layout_weight="1"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:text="h"
-                                        android:textSize="18sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:background="@drawable/table"
-                                        />
-                                    <TextView
-                                        android:id="@+id/H"
-                                        android:layout_weight="2"
-                                        android:layout_width="0dp"
-                                        android:layout_height="match_parent"
-                                        android:textSize="15sp"
-                                        android:textColor="@color/black"
-                                        android:gravity="center"
-                                        android:layout_marginLeft="2dp"
-                                        android:background="@drawable/table"
-                                        />
-                                </LinearLayout>
-
-                                <TextView
-                                    android:layout_weight="3.1"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="0dp"
-                                    android:textSize="18sp"
-                                    android:textColor="@color/black"
-                                    android:gravity="center"
-                                    android:layout_marginTop="2dp"
-                                    android:background="@drawable/table_bottomright"
-                                    />
-                            </LinearLayout>
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="次/周" />
             </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <CheckBox
+                    android:id="@+id/extra_a_suggest_phono"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="音韵疗程治疗法: 治疗频次:" />
+                <EditText
+                    android:id="@+id/extra_a_phono_freq"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/table"
+                    android:padding="6dp"
+                    android:singleLine="true" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="次/周" />
+            </LinearLayout>
+            <CheckBox
+                android:id="@+id/extra_a_suggest_more"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="需做进一步检查" />
         </LinearLayout>
-    <Button
-        android:id="@+id/back"
-        android:layout_marginTop="30sp"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:text="返回"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginVertical="10dp"
-        android:background="@drawable/cage"/>
 
+        <!-- 返回按钮置底 -->
+        <Button
+            android:id="@+id/back"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="24dp"
+            android:text="返回"
+            android:background="@drawable/cage" />
 
-</LinearLayout>
+    </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>
 

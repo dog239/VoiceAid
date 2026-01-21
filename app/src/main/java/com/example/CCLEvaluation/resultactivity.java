@@ -40,12 +40,11 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
 
     private RecyclerView recyclerView;
     private resultadapter adapter;
-    private View view;
     private TextView tv2;
-    private LinearLayout table;
     private ArrayList<evaluation> evaluations;
     private Button back;
-    private TextView[] tvs = new TextView[21];
+    private LinearLayout extraAResults;
+    private LinearLayout extraASuggestions;
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,16 +53,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         recyclerView = findViewById(R.id.recyclerview);
         back = findViewById(R.id.back);
         tv2 = findViewById(R.id.tv_2);
-        table = findViewById(R.id.table);
-        view = findViewById(R.id.line);
-        String[] charc = ImageUrls.A_characs;
-        Resources res = getResources();
-        for(int k=0; k < charc.length;++k){
-            int start = charc[k].indexOf('/');
-            int end = charc[k].lastIndexOf('/');
-            String extractedString = charc[k].substring(start + 1, end).toUpperCase();
-            tvs[k] = findViewById(res.getIdentifier(extractedString,"id",getPackageName()));
-        }
+        extraAResults = findViewById(R.id.extra_a_results);
+        extraASuggestions = findViewById(R.id.extra_a_suggestions);
         try {
             initData();
         } catch (Exception e) {
@@ -120,10 +111,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             tv2.setVisibility(View.GONE);
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("A");
-            if(jsonArray.length()>0){
-                view.setVisibility(View.VISIBLE);
-                table.setVisibility(View.VISIBLE);
-            }
+            if (extraAResults != null) extraAResults.setVisibility(View.VISIBLE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.VISIBLE);
             evaluations.add(new a(0, (List<a.CharacterPhonology>) null, null, null, null)); // 首行
             for(int i=0;i<jsonArray.length();i++){
                 JSONObject object = jsonArray.getJSONObject(i);
@@ -132,6 +121,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             }
         }
         else if (format.equals("E")) {
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             double counte = 0;
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("E");
             evaluations.add(new e(0, null, null, null, null));//首行
@@ -152,6 +143,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             tv2.setText("本题正确率为：" + stre);
 
         }else if(format.equals("PN")){
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("PN");
             evaluations.add(new pn(0,null,null,null));//首行
             for(int i=0;i<jsonArray.length();i++){
@@ -164,6 +157,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 }
             }
         } else if(format.equals("PST")){
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("PST");
             evaluations.add(new pst(0,null,null,null));//首行
             for(int i=0;i<jsonArray.length();i++){
@@ -176,6 +171,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 }
             }
         } else if (format.equals("RE")) {
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             double countre=0;
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("RE");
             evaluations.add(new re(0,null,null,null,-1,null,null,null));//首行
@@ -199,6 +196,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             tv2.setText("本题正确率为："+strre);
         }
         else if(format.equals("RG")){
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             double countre=0;
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("RG");
             evaluations.add(new rg(0,null,null,null,null,-1,null,null));//首行
@@ -222,6 +221,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
 
         }
         else if(format.equals("S")){
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             double countre=0;
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("S");
             evaluations.add(new s(0,null,null,null,null,null));//首行
@@ -243,7 +244,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             tv2.setText("本题正确率为："+strre);
         }
         else {
-
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
         }
         adapter = new resultadapter(this, evaluations);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));

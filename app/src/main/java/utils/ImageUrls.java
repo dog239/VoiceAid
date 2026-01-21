@@ -68,16 +68,21 @@ public interface ImageUrls {
             "new_milk", "new_kite", "new_bowl", "new_bed", "new_grass", "new_scallion", "new_door", "new_strawberry", "new_ear", "new_swim_ring",
             "new_swallow", "new_scarf", "new_needle", "new_tiger", "new_cucumber", "new_boat", "new_radish", "new_table", "new_red", "new_shoes",
             "new_hair", "new_cow", "new_garlic", "new_fan", "new_potato", "new_sunflower", "new_fish", "new_bubble", "new_turtle", "new_medicine",
-            "new_purple", "new_skirt", "new_mosquito"
+            "new_purple", "new_skirt", "new_smell"
     };
-    String[] A_newImageUrlsC = {"哭", "足球", "苹果", "糖", "凳子", "白云", "叉子", "筷子", "肉", "书",
-            "跑步", "猫", "嘴", "人", "香蕉", "月亮", "橘子", "牙", "蛇", "雨伞",
+    String[] A_newImageUrlsC = {"哭", "足球", "苹果", "糖", "凳", "白云", "叉", "筷", "肉", "书",
+            "跑步", "猫", "嘴", "人", "香蕉", "月亮", "桔", "牙", "蛇", "雨伞",
             "牛奶", "风筝", "碗", "床", "草", "葱", "门", "草莓", "耳朵", "游泳圈",
-            "燕子", "围巾", "针", "老虎", "黄瓜", "船", "萝卜", "桌子", "红色", "鞋", "头发", "牛",
-            "蒜", "风扇", "土豆", "向日葵", "鱼", "泡泡", "乌龟", "药", "紫色", "裙子", "蚊子"
+            "燕", "围巾", "针", "老虎", "黄瓜", "船", "萝卜", "桌", "红色", "鞋", "头发", "牛",
+            "蒜", "风扇", "土豆", "向日葵", "鱼", "泡泡", "乌龟", "药", "紫色", "裙", "闻"
     };
+    String[] A_newImageUrlsPinyin = {"ku", "zuqiu", "pingguo", "tang", "deng", "baiyun", "cha", "kuai",
+            "rou", "shu", "paobu", "mao", "zui", "ren", "xiangjiao", "yueliang", "ju", "ya", "she", "yusan",
+            "niunai", "fengzheng", "wan", "chuang", "cao", "cong", "men", "caomei", "erduo", "youyongquan",
+            "yan", "weijin", "zhen", "laohu", "huanggua", "chuan", "luobo", "zhuo", "hongse", "xie", "toufa",
+            "niu", "suan", "fengshan", "tudou", "xiangrikui", "yu", "paopao", "wugui", "yao", "zise", "qun", "wen"};
 
-//    String[] A_imageUrls = {"nose","foot","mouth","tennis","car","woodentable","umbrella","bird","plane","hair",
+    //    String[] A_imageUrls = {"nose","foot","mouth","tennis","car","woodentable","umbrella","bird","plane","hair",
 //            "door","piano","racing","crab","watermelon","dress","apple","vegetables","flower","fatmeat",
 //            "ear","mouse","chopsticks","shorts","milk","lantern","panda","hotwater","stairs","stick",
 //            "moon","bag","finger","rainbow","bed","girl","clamp","sun","ring","brushteeth","goodbye"
@@ -220,14 +225,17 @@ public interface ImageUrls {
     }
 
     static void initAPhonologyLexicon() {
+        // reset all to null first
+        java.util.Arrays.fill(A_targetWord, null);
+
         setAWord("哭", cp("哭", "k", "", "u", "", false));
         setAWord("足球", cp("足", "z", "", "u", "", false), cp("球", "q", "i", "o", "u", false));
         setAWord("苹果", cp("苹", "p", "", "i", "ng", false), cp("果", "g", "u", "o", "", false));
         setAWord("糖", cp("糖", "t", "", "a", "ng", false));
-        setAWord("凳子", cp("凳", "d", "", "e", "ng", false), cp("子", "z", "", "i", "", false));
+        setAWord("凳", cp("凳", "d", "", "e", "ng", false));
         setAWord("白云", cp("白", "b", "", "a", "i", false), cp("云", "", "", "ü", "n", false));
-        setAWord("叉子", cp("叉", "ch", "", "a", "", false), cp("子", "z", "", "i", "", false));
-        setAWord("筷子", cp("筷", "k", "u", "a", "i", false), cp("子", "z", "", "i", "", false));
+        setAWord("叉", cp("叉", "ch", "", "a", "", false));
+        setAWord("筷", cp("筷", "k", "u", "a", "i", false));
         setAWord("肉", cp("肉", "r", "", "o", "u", false));
         setAWord("书", cp("书", "sh", "", "u", "", false));
         setAWord("跑步", cp("跑", "p", "", "a", "o", false), cp("步", "b", "", "u", "", false));
@@ -236,7 +244,7 @@ public interface ImageUrls {
         setAWord("人", cp("人", "r", "", "e", "n", false));
         setAWord("香蕉", cp("香", "x", "i", "a", "ng", false), cp("蕉", "j", "i", "a", "o", false));
         setAWord("月亮", cp("月", "", "ü", "e", "", false), cp("亮", "l", "i", "a", "ng", false));
-        setAWord("橘子", cp("橘", "j", "", "ü", "", false), cp("子", "z", "", "i", "", false));
+        setAWord("桔", cp("桔", "j", "", "ü", "", false));
         setAWord("牙", cp("牙", "", "", "a", "", false));
         setAWord("蛇", cp("蛇", "sh", "", "e", "", false));
         setAWord("雨伞", cp("雨", "", "", "ü", "", false), cp("伞", "s", "", "a", "n", false));
@@ -250,14 +258,14 @@ public interface ImageUrls {
         setAWord("草莓", cp("草", "c", "", "a", "o", false), cp("莓", "m", "", "e", "i", false));
         setAWord("耳朵", cp("耳", "", "", "er", "", false), cp("朵", "d", "u", "o", "", false));
         setAWord("游泳圈", cp("游", "", "i", "o", "u", false), cp("泳", "", "i", "o", "ng", false), cp("圈", "q", "ü", "a", "n", false));
-        setAWord("燕子", cp("燕", "", "i", "a", "n", false), cp("子", "z", "", "i", "", false));
+        setAWord("燕", cp("燕", "", "i", "a", "n", false));
         setAWord("围巾", cp("围", "", "u", "e", "i", false), cp("巾", "j", "", "i", "n", false));
         setAWord("针", cp("针", "zh", "", "e", "n", false));
         setAWord("老虎", cp("老", "l", "", "a", "o", false), cp("虎", "h", "", "u", "", false));
         setAWord("黄瓜", cp("黄", "h", "u", "a", "ng", false), cp("瓜", "g", "u", "a", "", false));
         setAWord("船", cp("船", "ch", "u", "a", "n", false));
         setAWord("萝卜", cp("萝", "l", "u", "o", "", false), cp("卜", "b", "", "o", "", false));
-        setAWord("桌子", cp("桌", "zh", "u", "o", "", false), cp("子", "z", "", "i", "", false));
+        setAWord("桌", cp("桌", "zh", "u", "o", "", false));
         setAWord("红色", cp("红", "h", "", "o", "ng", false), cp("色", "s", "", "e", "", false));
         setAWord("鞋", cp("鞋", "x", "i", "e", "", false));
         setAWord("头发", cp("头", "t", "", "o", "u", false), cp("发", "f", "", "a", "", false));
@@ -271,7 +279,13 @@ public interface ImageUrls {
         setAWord("乌龟", cp("乌", "", "", "u", "", false), cp("龟", "g", "u", "e", "i", false));
         setAWord("药", cp("药", "", "", "a", "o", false));
         setAWord("紫色", cp("紫", "z", "", "i", "", false), cp("色", "s", "", "e", "", false));
-        setAWord("裙子", cp("裙", "q", "", "ü", "n", false), cp("子", "z", "", "i", "", false));
-        setAWord("蚊子", cp("蚊", "", "u", "e", "n", false), cp("子", "z", "", "i", "", false));
+        setAWord("裙", cp("裙", "q", "", "ü", "n", false));
+        setAWord("闻", cp("闻", "", "u", "e", "n", false));
+    }
+
+    static String getAPinyin(String word) {
+        int idx = indexOfAWord(word);
+        if (idx >= 0 && idx < A_newImageUrlsPinyin.length) return A_newImageUrlsPinyin[idx];
+        return "";
     }
 }

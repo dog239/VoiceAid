@@ -26,8 +26,8 @@ public class resultadapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     }
 
     class ItemViewHolder extends RecyclerView.ViewHolder {
-        private View[] item = new View[9];
-        private int[] Id = new int[]{R.id.i1, R.id.i2, R.id.i3, R.id.i4, R.id.i5, R.id.i6, R.id.i7, R.id.i8, R.id.i9};
+        private View[] item = new View[11];
+        private int[] Id = new int[]{R.id.i1, R.id.i2, R.id.i3, R.id.i4, R.id.i5, R.id.i6, R.id.i7, R.id.i8, R.id.i9, R.id.i10, R.id.i11};
 
         public ItemViewHolder(@NonNull View itemView) {
             super(itemView);
