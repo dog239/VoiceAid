@@ -1,5 +1,10 @@
 package utils;
 
+import java.util.Arrays;
+import java.util.List;
+
+import bean.a;
+
 public interface ImageUrls {
     String[] E_imageUrls = {"cloth", "horse", "rope", "ship", "spoon",
             "television","socks","bike","goat","belt",
@@ -113,6 +118,141 @@ public interface ImageUrls {
     String[] A_characs = {"/b/","/p/","/m/","/f/","/d/","/t/","/n/","/l/","/s/","/z/","/c/","/x/","/j/","/q/",
                             "/sh/","/r/","/zh/","/ch/","/g/","/k/","/h/"};
     int[]  A_nums= {2, 3, 3, 3, 3, 3, 4, 4, 2, 8, 2, 3, 3, 5, 6, 2, 2, 2, 4, 2, 3};
+
+    String[] A_newImageUrls = {
+            "new_cry", "new_soccer", "new_apple", "new_candy", "new_stool", "new_cloud", "new_fork", "new_chopsticks", "new_meat", "new_book",
+            "new_run", "new_cat", "new_mouth", "new_person", "new_banana", "new_moon", "new_orange", "new_tooth", "new_snake", "new_umbrella",
+            "new_milk", "new_kite", "new_bowl", "new_bed", "new_grass", "new_scallion", "new_door", "new_strawberry", "new_ear", "new_swim_ring",
+            "new_swallow", "new_scarf", "new_needle", "new_tiger", "new_cucumber", "new_boat", "new_radish", "new_table", "new_red", "new_shoes",
+            "new_hair", "new_cow", "new_garlic", "new_fan", "new_potato", "new_sunflower", "new_fish", "new_bubble", "new_turtle", "new_medicine",
+            "new_purple", "new_skirt", "new_smell"
+    };
+
+    String[] A_newImageUrlsC = {"哭", "足球", "苹果", "糖", "凳", "白云", "叉", "筷", "肉", "书",
+            "跑步", "猫", "嘴", "人", "香蕉", "月亮", "橘", "牙", "蛇", "雨伞",
+            "牛奶", "风筝", "碗", "床", "草", "葱", "门", "草莓", "耳朵", "游泳圈",
+            "燕", "围巾", "针", "老虎", "黄瓜", "船", "萝卜", "桌", "红色", "鞋",
+            "头发", "牛", "蒜", "风扇", "土豆", "向日葵", "鱼", "泡泡", "乌龟", "药",
+            "紫色", "裙", "闻"};
+
+    String[] A_newImageUrlsPinyin = {"ku", "zuqiu", "pingguo", "tang", "deng", "baiyun", "cha", "kuai",
+            "rou", "shu", "paobu", "mao", "zui", "ren", "xiangjiao", "yueliang", "ju", "ya", "she", "yusan",
+            "niunai", "fengzheng", "wan", "chuang", "cao", "cong", "men", "caomei", "erduo", "youyongquan",
+            "yan", "weijin", "zhen", "laohu", "huanggua", "chuan", "luobo", "zhuo", "hongse", "xie", "toufa",
+            "niu", "suan", "fengshan", "tudou", "xiangrikui", "yu", "paopao", "wugui", "yao", "zise", "qun", "wen"};
+
+    a.CharacterPhonology[][] A_targetWord = new a.CharacterPhonology[A_newImageUrlsC.length][];
+
+    static boolean useNewAPhonology() {
+        return A_newImageUrls != null && A_newImageUrls.length > 0;
+    }
+
+    static String[] getAImageUrls() {
+        return useNewAPhonology() ? A_newImageUrls : A_imageUrls;
+    }
+
+    static String[] getAImageUrlsC() {
+        return useNewAPhonology() ? A_newImageUrlsC : A_imageUrlsC;
+    }
+
+    static int getAImageCount() {
+        return getAImageUrls().length;
+    }
+
+    static a.CharacterPhonology cp(String hanzi, String initial, String medial, String nucleus, String coda, boolean isInducible) {
+        a.PhonologyPart part = new a.PhonologyPart();
+        part.initial = initial;
+        part.medial = medial;
+        part.nucleus = nucleus;
+        part.coda = coda;
+        part.isInducible = isInducible;
+        a.CharacterPhonology cp = new a.CharacterPhonology();
+        cp.hanzi = hanzi;
+        cp.phonology = part;
+        return cp;
+    }
+
+    static List<a.CharacterPhonology> toList(a.CharacterPhonology[] arr) {
+        return arr == null ? null : Arrays.asList(arr);
+    }
+
+    static int indexOfAWord(String word) {
+        for (int i = 0; i < A_newImageUrlsC.length; i++) {
+            if (word.equals(A_newImageUrlsC[i])) return i;
+        }
+        return -1;
+    }
+
+    static void setAWord(String word, a.CharacterPhonology... cps) {
+        int idx = indexOfAWord(word);
+        if (idx >= 0) {
+            A_targetWord[idx] = cps;
+        }
+    }
+
+    static void initAPhonologyLexicon() {
+        Arrays.fill(A_targetWord, null);
+
+        setAWord("哭", cp("哭", "k", "", "u", "", false));
+        setAWord("足球", cp("足", "z", "", "u", "", false), cp("球", "q", "i", "o", "u", false));
+        setAWord("苹果", cp("苹", "p", "", "i", "ng", false), cp("果", "g", "u", "o", "", false));
+        setAWord("糖", cp("糖", "t", "", "a", "ng", false));
+        setAWord("凳", cp("凳", "d", "", "e", "ng", false));
+        setAWord("白云", cp("白", "b", "", "a", "i", false), cp("云", "", "", "ü", "n", false));
+        setAWord("叉", cp("叉", "ch", "", "a", "", false));
+        setAWord("筷", cp("筷", "k", "u", "a", "i", false));
+        setAWord("肉", cp("肉", "r", "", "o", "u", false));
+        setAWord("书", cp("书", "sh", "", "u", "", false));
+        setAWord("跑步", cp("跑", "p", "", "a", "o", false), cp("步", "b", "", "u", "", false));
+        setAWord("猫", cp("猫", "m", "", "a", "o", false));
+        setAWord("嘴", cp("嘴", "z", "u", "e", "i", false));
+        setAWord("人", cp("人", "r", "", "e", "n", false));
+        setAWord("香蕉", cp("香", "x", "i", "a", "ng", false), cp("蕉", "j", "i", "a", "o", false));
+        setAWord("月亮", cp("月", "", "ü", "e", "", false), cp("亮", "l", "i", "a", "ng", false));
+        setAWord("橘", cp("橘", "j", "", "ü", "", false));
+        setAWord("牙", cp("牙", "", "", "a", "", false));
+        setAWord("蛇", cp("蛇", "sh", "", "e", "", false));
+        setAWord("雨伞", cp("雨", "", "", "ü", "", false), cp("伞", "s", "", "a", "n", false));
+        setAWord("牛奶", cp("牛", "n", "i", "o", "u", false), cp("奶", "n", "", "a", "i", false));
+        setAWord("风筝", cp("风", "f", "", "e", "ng", false), cp("筝", "zh", "", "e", "ng", false));
+        setAWord("碗", cp("碗", "", "u", "a", "n", false));
+        setAWord("床", cp("床", "ch", "u", "a", "ng", false));
+        setAWord("草", cp("草", "c", "", "a", "o", false));
+        setAWord("葱", cp("葱", "c", "", "o", "ng", false));
+        setAWord("门", cp("门", "m", "", "e", "n", false));
+        setAWord("草莓", cp("草", "c", "", "a", "o", false), cp("莓", "m", "", "e", "i", false));
+        setAWord("耳朵", cp("耳", "", "", "er", "", false), cp("朵", "d", "u", "o", "", false));
+        setAWord("游泳圈", cp("游", "", "i", "o", "u", false), cp("泳", "", "i", "o", "ng", false), cp("圈", "q", "ü", "a", "n", false));
+        setAWord("燕", cp("燕", "", "i", "a", "n", false));
+        setAWord("围巾", cp("围", "", "u", "e", "i", false), cp("巾", "j", "", "i", "n", false));
+        setAWord("针", cp("针", "zh", "", "e", "n", false));
+        setAWord("老虎", cp("老", "l", "", "a", "o", false), cp("虎", "h", "", "u", "", false));
+        setAWord("黄瓜", cp("黄", "h", "u", "a", "ng", false), cp("瓜", "g", "u", "a", "", false));
+        setAWord("船", cp("船", "ch", "u", "a", "n", false));
+        setAWord("萝卜", cp("萝", "l", "u", "o", "", false), cp("卜", "b", "", "o", "", false));
+        setAWord("桌", cp("桌", "zh", "u", "o", "", false));
+        setAWord("红色", cp("红", "h", "", "o", "ng", false), cp("色", "s", "", "e", "", false));
+        setAWord("鞋", cp("鞋", "x", "i", "e", "", false));
+        setAWord("头发", cp("头", "t", "", "o", "u", false), cp("发", "f", "", "a", "", false));
+        setAWord("牛", cp("牛", "n", "i", "o", "u", false));
+        setAWord("蒜", cp("蒜", "s", "u", "a", "n", false));
+        setAWord("风扇", cp("风", "f", "", "e", "ng", false), cp("扇", "sh", "", "a", "n", false));
+        setAWord("土豆", cp("土", "t", "", "u", "", false), cp("豆", "d", "", "o", "u", false));
+        setAWord("向日葵", cp("向", "x", "i", "a", "ng", false), cp("日", "r", "", "i", "", false), cp("葵", "k", "u", "e", "i", false));
+        setAWord("鱼", cp("鱼", "", "", "ü", "", false));
+        setAWord("泡泡", cp("泡", "p", "", "a", "o", false), cp("泡", "p", "", "a", "o", false));
+        setAWord("乌龟", cp("乌", "", "", "u", "", false), cp("龟", "g", "u", "e", "i", false));
+        setAWord("药", cp("药", "", "", "a", "o", false));
+        setAWord("紫色", cp("紫", "z", "", "i", "", false), cp("色", "s", "", "e", "", false));
+        setAWord("裙", cp("裙", "q", "", "ü", "n", false));
+        setAWord("闻", cp("闻", "", "u", "e", "n", false));
+    }
+
+    static String getAPinyin(String word) {
+        int idx = indexOfAWord(word);
+        if (idx >= 0 && idx < A_newImageUrlsPinyin.length) return A_newImageUrlsPinyin[idx];
+        return "";
+    }
 
 String[][] NWR_characs = {{"把ba3","丹dan1","召zhao4","歹dai3","库ku4","尚shang4"},
         {"商shang1","楷kai3","到dao4","尬ga4","展zhan3","铺pu4"},

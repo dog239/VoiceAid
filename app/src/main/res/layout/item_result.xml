@@ -96,4 +96,56 @@
         android:visibility="gone"
         android:fontFamily="@font/iconfont"
         />
+    <TextView
+        android:id="@+id/i8"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="2dp"
+        android:textSize="20dp"
+        android:gravity="center"
+        android:background="@drawable/btn"
+        android:textColor="@color/black"
+        android:padding="2dp"
+        android:visibility="gone"
+        android:fontFamily="@font/iconfont" />
+    <TextView
+        android:id="@+id/i9"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="2dp"
+        android:textSize="20dp"
+        android:gravity="center"
+        android:background="@drawable/btn"
+        android:textColor="@color/black"
+        android:padding="2dp"
+        android:visibility="gone"
+        android:fontFamily="@font/iconfont" />
+    <TextView
+        android:id="@+id/i10"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="2dp"
+        android:textSize="20dp"
+        android:gravity="center"
+        android:background="@drawable/btn"
+        android:textColor="@color/black"
+        android:padding="2dp"
+        android:visibility="gone"
+        android:fontFamily="@font/iconfont" />
+    <TextView
+        android:id="@+id/i11"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="2dp"
+        android:textSize="20dp"
+        android:gravity="center"
+        android:background="@drawable/btn"
+        android:textColor="@color/black"
+        android:padding="2dp"
+        android:visibility="gone"
+        android:fontFamily="@font/iconfont" />
 </LinearLayout>

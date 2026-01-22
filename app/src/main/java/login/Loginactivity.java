@@ -84,7 +84,10 @@ public class Loginactivity extends AppCompatActivity{
                 // ==========================
                 // 版本 A：本地调试模式（直接进入）
                 // ==========================
-                String username = mEtet1.getText().toString();
+                boolean useLocalDebug = false;
+                String username;
+                if (useLocalDebug) {
+                username = mEtet1.getText().toString();
                 Intent intent = new Intent(Loginactivity.this, startActivity.class);
                 SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -94,8 +97,7 @@ public class Loginactivity extends AppCompatActivity{
                 startActivity(intent);
                 Toast.makeText(Loginactivity.this,"[调试模式] 本地登录成功",Toast.LENGTH_SHORT).show();
                 finish();
-
-                /* 
+                } else {
                 // ==========================
                 // 版本 B：原网络请求版本（连接服务器用）
                 // ==========================
@@ -117,7 +119,7 @@ public class Loginactivity extends AppCompatActivity{
                         Netinteractutils.getInstance(Loginactivity.this).loginWithCaptcha(username,password);
                     }
                 }
-                */
+                }
             }
         });
         mBtnRegister.setOnClickListener(new View.OnClickListener() {
@@ -168,10 +170,7 @@ public class Loginactivity extends AppCompatActivity{
         mBtnCaptcha.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // ==========================
-                // 版本 A：本地调试模式（直接倒计时）
-                // ==========================
-                Toast.makeText(Loginactivity.this,"[调试模式] 模拟验证码已发送",Toast.LENGTH_SHORT).show();
+                boolean useLocalDebug = false;
                 CountDownTimer countDownTimer = new CountDownTimer(60000, 1000) {
                     @Override
                     public void onTick(long millisUntilFinished) {
@@ -185,10 +184,15 @@ public class Loginactivity extends AppCompatActivity{
                         mBtnCaptcha.setText("获取验证码");
                     }
                 };
-                mBtnCaptcha.setEnabled(false);
+if (useLocalDebug) {
+                // ==========================
+                // 版本 A：本地调试模式（直接倒计时）
+                // ==========================
+                Toast.makeText(Loginactivity.this,"[调试模式] 模拟验证码已发送",Toast.LENGTH_SHORT).show();
+                                mBtnCaptcha.setEnabled(false);
                 countDownTimer.start();
 
-                /*
+                                } else {
                 // ==========================
                 // 版本 B：原网络请求版本（连接服务器用）
                 // ==========================
@@ -200,7 +204,7 @@ public class Loginactivity extends AppCompatActivity{
                     mBtnCaptcha.setEnabled(false);
                     countDownTimer.start();
                 }
-                */
+                                }
             }
         });
     }

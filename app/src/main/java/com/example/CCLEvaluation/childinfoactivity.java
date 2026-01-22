@@ -30,7 +30,12 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
     private Button buttonDelete;
     private Button buttonAddMember;
     private EditText textName;
+    private EditText textClass;
+    private EditText textNumber;
     private EditText textBirth;
+    private EditText textTestTime;
+    private EditText textTestPlace;
+    private EditText textTester;
     private EditText textAddress;
     private EditText textPhone;
     private RadioGroup genderGroup;
@@ -49,7 +54,12 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
         buttonAddMember = findViewById(R.id.btn_add_member);
 
         textName = findViewById(R.id.et_name);
+        textClass = findViewById(R.id.et_class);
+        textNumber = findViewById(R.id.et_number);
         textBirth = findViewById(R.id.et_birth);
+        textTestTime = findViewById(R.id.et_test_time);
+        textTestPlace = findViewById(R.id.et_place);
+        textTester = findViewById(R.id.et_tester);
         textAddress = findViewById(R.id.et_address);
         textPhone = findViewById(R.id.et_phone);
         genderGroup = findViewById(R.id.rg_gender);
@@ -58,6 +68,7 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
         dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         textBirth.setKeyListener(null);
         textBirth.setOnClickListener(v -> showBirthDatePicker());
+        textTestTime.setText(dateFormat.format(new Date()));
 
         familyRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         familyMemberAdapter = new FamilyMemberAdapter(createDefaultMembers(), this::handleDeleteMember);
@@ -74,7 +85,12 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
     public void onClick(View v) {
         if (v.getId() == R.id.btn_save){
             String tNa = textName.getText().toString().trim();
+            String tClass = textClass.getText().toString().trim();
+            String tNumber = textNumber.getText().toString().trim();
             String tB = textBirth.getText().toString().trim();
+            String tTestDate = textTestTime.getText().toString().trim();
+            String tTestPlace = textTestPlace.getText().toString().trim();
+            String tTester = textTester.getText().toString().trim();
             String tAddr = textAddress.getText().toString().trim();
             String tPhone = textPhone.getText().toString().trim();
             String tGender = getSelectedGender();
@@ -86,11 +102,11 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
                 info.put("address", tAddr);
                 info.put("phone", tPhone);
                 info.put("familyMembers", FamilyMemberAdapter.toJsonArray(familyMemberAdapter.getMembers()));
-                info.put("class", "");
-                info.put("serialNumber", "");
-                info.put("testDate", dateFormat.format(new Date()));
-                info.put("testLocation", "");
-                info.put("examiner", "");
+                info.put("class", tClass);
+                info.put("serialNumber", tNumber);
+                info.put("testDate", tTestDate.isEmpty() ? dateFormat.format(new Date()) : tTestDate);
+                info.put("testLocation", tTestPlace);
+                info.put("examiner", tTester);
 
                 Intent intent = new Intent(childinfoactivity.this, evmenuactivity.class);
                 JSONObject data = dataManager.getInstance().createData(info);
@@ -117,8 +133,13 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
 
     private void clearForm() {
         textName.setText("");
+        textClass.setText("");
+        textNumber.setText("");
         genderGroup.clearCheck();
         textBirth.setText("");
+        textTestTime.setText(dateFormat.format(new Date()));
+        textTestPlace.setText("");
+        textTester.setText("");
         textAddress.setText("");
         textPhone.setText("");
         familyMemberAdapter.setMembers(createDefaultMembers());

@@ -675,7 +675,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         showDetails(Word2, evaluations.getJSONArray("RE"), evaluation.RE, ImageUrls.RE_imageUrls.length);
         showDetails(Word3, evaluations.getJSONArray("S"), evaluation.S, ImageUrls.S_words.length);
         showDetails(Word4, evaluations.getJSONArray("NWR"), evaluation.NWR, ImageUrls.NWR_characs.length);
-        showDetails(Pronunciation, evaluations.getJSONArray("A"), evaluation.A, ImageUrls.A_imageUrls.length);
+        showDetails(Pronunciation, evaluations.getJSONArray("A"), evaluation.A, ImageUrls.getAImageCount());
         showDetails(Grammar, evaluations.getJSONArray("RG"), evaluation.RG, ImageUrls.RG_hints.length);
         showDetails(Narrate1, evaluations.getJSONArray("PST"), evaluation.PST, ImageUrls.PST_imageUrls.length);
         showDetails(Narrate2, evaluations.getJSONArray("PN"), evaluation.PN, ImageUrls.PN_hints.length);

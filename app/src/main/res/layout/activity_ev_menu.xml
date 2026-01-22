@@ -326,7 +326,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="2"
                 android:layout_height="wrap_content"
-                android:text="看图说故事"
+                                android:text="çå¾è¯´æäº"
                 android:layout_gravity="center"
                 android:layout_marginRight="1dp"
                 android:background="@drawable/btn_left"

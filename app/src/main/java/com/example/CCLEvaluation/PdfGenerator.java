@@ -241,16 +241,18 @@ public class PdfGenerator extends evmenuactivity{
                 for (int i = 0; i < jsonArrayA.length(); i++) {
                     JSONObject object = jsonArrayA.getJSONObject(i);
                     if (object.has("time") && !object.isNull("time") && !object.get("time").equals("null")) {
-                        if (!object.getString("target_tone1").equals("")) {
-                            String originalString = object.getString("target_tone1");
+                        String tone1 = object.optString("target_tone1", "");
+                        if (!tone1.equals("")) {
+                            String originalString = tone1;
                             for (int j = 0; j < characs.length; j++) {
                                 if (characs[j].equals(originalString)) {
                                     score[j]++;
                                 }
                             }
                         }
-                        if (!object.getString("target_tone2").equals("")) {
-                            String originalString = object.getString("target_tone2");
+                        String tone2 = object.optString("target_tone2", "");
+                        if (!tone2.equals("")) {
+                            String originalString = tone2;
                             for (int j = 0; j < characs.length; j++) {
                                 if (characs[j].equals(originalString)) {
                                     score[j]++;

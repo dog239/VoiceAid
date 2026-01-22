@@ -116,9 +116,12 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         if (format == null)
             return;
         if (format.equals("A")) {
-
-            String[] imageUrls = ImageUrls.A_imageUrls;
-            String[] imageUrlsC = ImageUrls.A_imageUrlsC;
+            boolean useNewA = ImageUrls.useNewAPhonology();
+            if (useNewA) {
+                ImageUrls.initAPhonologyLexicon();
+            }
+            String[] imageUrls = useNewA ? ImageUrls.A_newImageUrls : ImageUrls.A_imageUrls;
+            String[] imageUrlsC = useNewA ? ImageUrls.A_newImageUrlsC : ImageUrls.A_imageUrlsC;
             String[][] target_tone = ImageUrls.A_proAns;
             int lenth = imageUrls.length;
             testcontext.getInstance().setLengths(lenth);
@@ -126,60 +129,86 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             evTemp = new ArrayList<evaluation>(lenth);
 
             ArrayList<Integer> R_id = new ArrayList<Integer>(lenth);
-            ArrayList<String []>R_id2 = new ArrayList<String[]>(lenth);
+            ArrayList<String[]> R_id2 = useNewA ? null : new ArrayList<String[]>(lenth);
             String[] Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
 
-            if (A.length()==0){//E为空，即尚未答题
-                for (int i = 1; i <= lenth; i++) {
-                    a a1 = new a(i, imageUrlsC[i - 1], null,target_tone[i-1][0], target_tone[i-1][1], null,null);
-                    a1.setAllQuestionListener(allquestioncallback);
-                    evTemp.add(a1);
-                    R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
-                    R_id2.add(target_tone[i-1]);
-                }
-            }
-            else {//非空，则完成了部分题目
-                String progress;
-                String targettone1;
-                String targettone2;
-                audio audio;
-                String time;
-                for (int i = 1; i <= lenth; i++) {
-                    if (A.getJSONObject(i-1).has("time") && !A.getJSONObject(i-1).isNull("time") && !A.getJSONObject(i-1).getString("time").equals("null")) {
-                        progress = A.getJSONObject(i-1).getString("progress");
-                        if (A.getJSONObject(i-1).has("target_tone1") && !A.getJSONObject(i-1).isNull("target_tone1")) {
-                            targettone1 = A.getJSONObject(i-1).getString("target_tone1");
-                        }else{
-                            targettone1="";
-                        }
-
-                        if (A.getJSONObject(i-1).has("target_tone2") && !A.getJSONObject(i-1).isNull("target_tone2")) {
-                            targettone2 = A.getJSONObject(i-1).getString("target_tone2");
-                        }else {
-                            targettone2="";
-                        }
-                        audio = new audio(A.getJSONObject(i-1).getString("audioPath"));
-                        time = A.getJSONObject(i-1).getString("time");
+            if (useNewA) {
+                if (A.length() == 0) {
+                    for (int i = 1; i <= lenth; i++) {
+                        a a1 = new a(i, imageUrlsC[i - 1], null, null, null, null, null);
+                        a1.setTargetWord(ImageUrls.toList(ImageUrls.A_targetWord[i - 1]));
+                        a1.setAllQuestionListener(allquestioncallback);
+                        evTemp.add(a1);
+                        R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
                     }
-                    else{
-                        progress = null;
-                        targettone1 = null;
-                        targettone2 = null;
-                        audio = null;
-                        time = null;
+                } else {
+                    for (int i = 1; i <= lenth; i++) {
+                        a a2 = a.fromJson(A.getJSONObject(i - 1));
+                        if (a2.getTargetWord() == null) {
+                            a2.setTargetWord(ImageUrls.toList(ImageUrls.A_targetWord[i - 1]));
+                        }
+                        if (a2.getTarget() == null) {
+                            a2.setTarget(imageUrlsC[i - 1]);
+                        }
+                        a2.setAllQuestionListener(allquestioncallback);
+                        evTemp.add(a2);
+                        R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
                     }
-                    a a2 = new a(i, imageUrlsC[i - 1], progress, targettone1, targettone2, audio, time);
-                    a2.setAllQuestionListener(allquestioncallback);
-                    evTemp.add(a2);
-                    R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
-                    R_id2.add(target_tone[i-1]);
                 }
-            }
-            testcontext.getInstance().setEvaluations(evTemp);
+                testcontext.getInstance().setEvaluations(evTemp);
+                adapter = new testpageradapter(R.layout.pronounciation_test1, R_id, Tb, evTemp, null, null, imageUrlsC, counter, timer);
+                viewPager.setAdapter(adapter);
+                viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+            } else {
+                if (A.length() == 0) {
+                    for (int i = 1; i <= lenth; i++) {
+                        a a1 = new a(i, imageUrlsC[i - 1], null, target_tone[i - 1][0], target_tone[i - 1][1], null, null);
+                        a1.setAllQuestionListener(allquestioncallback);
+                        evTemp.add(a1);
+                        R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
+                        R_id2.add(target_tone[i - 1]);
+                    }
+                } else {
+                    String progress;
+                    String targettone1;
+                    String targettone2;
+                    audio audio;
+                    String time;
+                    for (int i = 1; i <= lenth; i++) {
+                        if (A.getJSONObject(i - 1).has("time") && !A.getJSONObject(i - 1).isNull("time") && !A.getJSONObject(i - 1).getString("time").equals("null")) {
+                            progress = A.getJSONObject(i - 1).getString("progress");
+                            if (A.getJSONObject(i - 1).has("target_tone1") && !A.getJSONObject(i - 1).isNull("target_tone1")) {
+                                targettone1 = A.getJSONObject(i - 1).getString("target_tone1");
+                            } else {
+                                targettone1 = "";
+                            }
 
-            adapter = new testpageradapter(R.layout.pronounciation_test1, R_id, Tb, evTemp, null,R_id2,imageUrlsC,counter, timer);
-            viewPager.setAdapter(adapter);
-            viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+                            if (A.getJSONObject(i - 1).has("target_tone2") && !A.getJSONObject(i - 1).isNull("target_tone2")) {
+                                targettone2 = A.getJSONObject(i - 1).getString("target_tone2");
+                            } else {
+                                targettone2 = "";
+                            }
+                            audio = new audio(A.getJSONObject(i - 1).getString("audioPath"));
+                            time = A.getJSONObject(i - 1).getString("time");
+                        } else {
+                            progress = null;
+                            targettone1 = null;
+                            targettone2 = null;
+                            audio = null;
+                            time = null;
+                        }
+                        a a2 = new a(i, imageUrlsC[i - 1], progress, targettone1, targettone2, audio, time);
+                        a2.setAllQuestionListener(allquestioncallback);
+                        evTemp.add(a2);
+                        R_id.add(getResources().getIdentifier(imageUrls[i - 1], "drawable", getPackageName()));
+                        R_id2.add(target_tone[i - 1]);
+                    }
+                }
+                testcontext.getInstance().setEvaluations(evTemp);
+                adapter = new testpageradapter(R.layout.pronounciation_test1, R_id, Tb, evTemp, null, R_id2, imageUrlsC, counter, timer);
+                viewPager.setAdapter(adapter);
+                viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+            }
 
         } else if (format.equals("E")) {
 

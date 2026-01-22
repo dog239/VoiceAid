@@ -121,54 +121,83 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             tv2.setVisibility(View.GONE);
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("A");
-            if(jsonArray.length()>0){
-                view.setVisibility(View.VISIBLE);
-                table.setVisibility(View.VISIBLE);
-            }
-            evaluations.add(new a(0,null,null,null,null,null,null));//首行
-            for(int i=0;i<jsonArray.length();i++){
+            boolean hasPhonology = false;
+            for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject object = jsonArray.getJSONObject(i);
-                if(object.has("time")&&!object.isNull("time")){
-                    if(!object.getString("target_tone1").equals("")){
-                        String originalString = object.getString("target_tone1");
-                        for(int j=0;j<characs.length;j++){
-                            if (characs[j].equals(originalString)){
-                                score[j]++;
-                            }
-                        }
-                    }
-                    if(!object.getString("target_tone2").equals("")){
-                        String originalString = object.getString("target_tone2");
-                        for(int j=0;j<characs.length;j++){
-                            if (characs[j].equals(originalString)){
-                                score[j]++;
-                            }
-                        }
-                    }
-
-                    evaluations.add(new a(i+1,object.getString("target"),object.getString("progress"),
-                            object.getString("target_tone1"), object.getString("target_tone2"),new audio(object.getString("audioPath")),
-                            object.getString("time")));
-                }
-                else {
-                    evaluations.add(new a(i+1,object.getString("target"),null,null,null,null,null));
+                if (object.has("targetWord") && !object.isNull("targetWord")) {
+                    hasPhonology = true;
+                    break;
                 }
             }
-            int num[] = ImageUrls.A_nums;
-            if(jsonArray.length()>0){
-                for(int i=0;i<num.length;++i){
-                    double lenthe = num[i];
-                    double scoree = (score[i]/lenthe)*100;
-                    String stre = String.format("%.2f%%",scoree);
-                    tvs[i].setText(stre);
-                    if(scoree>=67){
-                        tvs[i].setBackgroundResource(R.drawable.right_button);
-                    }else if(scoree>=34) {
-                        tvs[i].setBackgroundResource(R.drawable.justsoso_button);
-                    }else {
-                        tvs[i].setBackgroundResource(R.drawable.wrong_button);
+            if (hasPhonology) {
+                ImageUrls.initAPhonologyLexicon();
+                view.setVisibility(View.GONE);
+                table.setVisibility(View.GONE);
+                if (ImageUrls.A_targetWord.length > 0) {
+                    evaluations.add(new a(0, ImageUrls.toList(ImageUrls.A_targetWord[0]), null, null, null));
+                } else {
+                    evaluations.add(new a(0, (java.util.List<a.CharacterPhonology>) null, null, null, null));
+                }
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    a item = a.fromJson(jsonArray.getJSONObject(i));
+                    if (item.getTargetWord() == null && i < ImageUrls.A_targetWord.length) {
+                        item.setTargetWord(ImageUrls.toList(ImageUrls.A_targetWord[i]));
                     }
+                    if (item.getTarget() == null && i < ImageUrls.A_newImageUrlsC.length) {
+                        item.setTarget(ImageUrls.A_newImageUrlsC[i]);
+                    }
+                    evaluations.add(item);
+                }
+            } else {
+                if(jsonArray.length()>0){
+                    view.setVisibility(View.VISIBLE);
+                    table.setVisibility(View.VISIBLE);
+                }
+                evaluations.add(new a(0,null,null,null,null,null,null));//首行
+                for(int i=0;i<jsonArray.length();i++){
+                    JSONObject object = jsonArray.getJSONObject(i);
+                    if(object.has("time")&&!object.isNull("time")){
+                        String tone1 = object.optString("target_tone1", "");
+                        String tone2 = object.optString("target_tone2", "");
+                        if(!tone1.equals("")){
+                            for(int j=0;j<characs.length;j++){
+                                if (characs[j].equals(tone1)){
+                                    score[j]++;
+                                }
+                            }
+                        }
+                        if(!tone2.equals("")){
+                            for(int j=0;j<characs.length;j++){
+                                if (characs[j].equals(tone2)){
+                                    score[j]++;
+                                }
+                            }
+                        }
 
+                        evaluations.add(new a(i+1,object.getString("target"),object.optString("progress", ""),
+                                tone1, tone2,new audio(object.getString("audioPath")),
+                                object.getString("time")));
+                    }
+                    else {
+                        evaluations.add(new a(i+1,object.getString("target"),null,null,null,null,null));
+                    }
+                }
+                int num[] = ImageUrls.A_nums;
+                if(jsonArray.length()>0){
+                    for(int i=0;i<num.length;++i){
+                        double lenthe = num[i];
+                        double scoree = (score[i]/lenthe)*100;
+                        String stre = String.format("%.2f%%",scoree);
+                        tvs[i].setText(stre);
+                        if(scoree>=67){
+                            tvs[i].setBackgroundResource(R.drawable.right_button);
+                        }else if(scoree>=34) {
+                            tvs[i].setBackgroundResource(R.drawable.justsoso_button);
+                        }else {
+                            tvs[i].setBackgroundResource(R.drawable.wrong_button);
+                        }
+
+                    }
                 }
             }
 
