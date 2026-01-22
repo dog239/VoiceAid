@@ -65,9 +65,9 @@ public class historylist extends AppCompatActivity {
                         String fname = data.getString(String.valueOf(i));
                         JSONObject child = dataManager.getInstance().loadData(fname);
                         JSONObject info = child.getJSONObject("info");
-                        String currentDate = info.getString("testDate");
-                        String name = info.getString("name");
-                        String tester = info.getString("examiner");
+                        String currentDate = info.optString("testDate", "未提供");
+                        String name = info.optString("name", "未提供");
+                        String tester = info.optString("examiner", "未提供");
                         news.title = "时间：" + currentDate + "儿童：" + name + " 测试员：" + tester;
                         news.fname = fname;
                         mNewsList.add(news);

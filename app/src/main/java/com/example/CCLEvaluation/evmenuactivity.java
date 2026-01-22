@@ -478,11 +478,17 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
 
         setLoading(true, "正在生成干预方案...");
         String systemPrompt =
-                "你是儿童言语语言病理（SLP）临床助手。请基于输入的评估结果与年龄生成可执行的干预方案。\n" +
-                        "必须输出严格合法 JSON，除 JSON 外不得输出任何文字。\n" +
-                        "JSON 的 key 必须保持英文不变。\n" +
-                        "所有 value（包括数组中的字符串）需以中文为主的临床表述；允许少量缩写（PST、PN、NWR、SLP、ASD、ADHD、SSD、DLD）。\n" +
-                        "如将输出英文术语，请先中文化再输出。";
+                "你是儿童言语语言治疗临床助理（SLP）。\n" +
+                        "受众是家长/照护者，输出可在家实施的分阶段训练方案。\n" +
+                        "重点是居家可操作、可执行的步骤与活动，而非治疗师临床报告。\n" +
+                        "必须覆盖声调异常与构音/音韵异常两类场景，并提供家长可执行的方法。\n" +
+                        "声调异常示例应包含最小对立、找不同、听辨与模仿对比，如“妈/马”“1声/3声”。\n" +
+                        "构音/音韵异常要包含口型/气流/舌位提示，并从单音-音节-词-短语-句子-会话逐级泛化。\n" +
+                        "在 speech_sound.stages 内按阶段1~4输出，每阶段包含 name、focus、activities、home_practice、metrics（数组）。\n" +
+                        "不做确定诊断；如风险高或家长担忧明显，建议复评或就医。\n" +
+                        "频率与时长建议应在合理范围内，并给出复评周期（例如每周2-5次、每次15-30分钟、4-12周复评）。\n" +
+                        "硬约束：只输出严格合法 JSON；key 保持英文不变；value 为简体中文临床表述；允许缩写 PST/PN/NWR/SLP/ASD/ADHD/SSD/DLD；不得出现英文完整句子；不含个人可识别信息。\n" +
+                        "若年龄缺失，age_months=0，并在 notes_for_therapist 提示需人工确认。\n";
 
         String userPrompt;
         try {
@@ -503,10 +509,31 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                 } catch (JSONException e) {
                     pretty = plan.toString();
                 }
+                boolean saved = false;
+                String saveError = null;
+                if (fName != null && !fName.trim().isEmpty()) {
+                    try {
+                        JSONObject data = dataManager.getInstance().loadData(fName);
+                        data.put("treatmentPlan", plan);
+                        dataManager.getInstance().saveChildJson(fName, data);
+                        saved = true;
+                    } catch (Exception e) {
+                        saveError = e.getMessage();
+                    }
+                } else {
+                    saveError = "未找到个案信息";
+                }
                 String finalPretty = pretty;
+                boolean finalSaved = saved;
+                String finalSaveError = saveError;
                 runOnUiThread(() -> {
                     setLoading(false, null);
-                    openTreatmentPlanActivity(finalPretty);
+                    if (!finalSaved && finalSaveError != null && !finalSaveError.trim().isEmpty()) {
+                        Toast.makeText(evmenuactivity.this, "保存失败: " + finalSaveError, Toast.LENGTH_LONG).show();
+                        openTreatmentPlanActivity(finalPretty, true);
+                        return;
+                    }
+                    openTreatmentPlanActivity(null);
                 });
             }
 
@@ -532,10 +559,15 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private void openTreatmentPlanActivity(String planJson) {
+        openTreatmentPlanActivity(planJson, false);
+    }
+
+    private void openTreatmentPlanActivity(String planJson, boolean preferIncomingPlan) {
         Intent intent = new Intent(this, TreatmentPlanActivity.class);
         if (planJson != null) {
             intent.putExtra("planJsonString", planJson);
         }
+        intent.putExtra("preferIncomingPlan", preferIncomingPlan);
         intent.putExtra("fName", fName);
         startActivity(intent);
     }

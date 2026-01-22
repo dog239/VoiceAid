@@ -6,6 +6,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -23,8 +25,14 @@ import okhttp3.Response;
 
 public class LlmPlanService {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
-    private static final double ENGLISH_RATIO_THRESHOLD = 0.12;
-    private static final int ENGLISH_COUNT_THRESHOLD = 30;
+    private static final String TAG = "LlmPlanService";
+    private static final double DEFAULT_TEMPERATURE = 0.2;
+    private static final double REWRITE_TEMPERATURE = 0.0;
+    private static final int MAX_REWRITE_ATTEMPTS = 2;
+    private static final int LOG_CONTENT_LIMIT = 800;
+    private static final double ENGLISH_RATIO_THRESHOLD = 0.08;
+    private static final int ENGLISH_COUNT_THRESHOLD = 20;
+    private static final int ENGLISH_VALUE_THRESHOLD = 12;
     private static final String[] ENGLISH_ABBREVIATION_WHITELIST = {
             "PST", "PN", "NWR", "SLP", "ASD", "ADHD", "SSD", "DLD"
     };
@@ -48,10 +56,10 @@ public class LlmPlanService {
     }
 
     public void generateTreatmentPlan(String systemPrompt, String userPrompt, PlanCallback callback) {
-        generateTreatmentPlanInternal(systemPrompt, userPrompt, callback, 0);
+        generateTreatmentPlanInternal(systemPrompt, userPrompt, callback, 0, DEFAULT_TEMPERATURE);
     }
 
-    private void generateTreatmentPlanInternal(String systemPrompt, String userPrompt, PlanCallback callback, int retryCount) {
+    private void generateTreatmentPlanInternal(String systemPrompt, String userPrompt, PlanCallback callback, int retryCount, double temperature) {
         if (callback == null) {
             return;
         }
@@ -63,12 +71,18 @@ public class LlmPlanService {
         try {
             JSONObject payload = new JSONObject();
             payload.put("model", "deepseek-chat");
-            payload.put("temperature", 0.2);
+            payload.put("temperature", temperature);
             payload.put("stream", false);
             payload.put("response_format", new JSONObject().put("type", "json_object"));
             JSONArray messages = new JSONArray();
             messages.put(new JSONObject().put("role", "system").put("content", systemPrompt));
-            messages.put(new JSONObject().put("role", "user").put("content", userPrompt));
+            String enhancedUserPrompt = userPrompt
+                    + "\n\n重要提示："
+                    + "\n1) 请务必用简体中文输出所有 value（值），JSON 的 key 仍保持英文不变"
+                    + "\n2) 所有内容都必须使用中文临床表述（允许少量缩写：PST、PN、NWR、SLP、ASD、ADHD、SSD、DLD）"
+                    + "\n3) 输出必须是严格合法 JSON（不要输出任何 JSON 以外的文字）"
+                    + "\n4) 如需使用英文术语，请先中文化再输出，不要输出英文句子";
+            messages.put(new JSONObject().put("role", "user").put("content", enhancedUserPrompt));
             payload.put("messages", messages);
 
             RequestBody body = RequestBody.create(payload.toString(), JSON);
@@ -111,9 +125,16 @@ public class LlmPlanService {
                         }
                         JSONObject plan = new JSONObject(content);
                         boolean shouldRewrite = shouldRewriteToChinese(plan);
-                        if (shouldRewrite && retryCount < 1) {
-                            String rewriteSystemPrompt = "\u4f60\u662fJSON\u4e34\u5e8a\u6587\u6848\u6539\u5199\u5668\uff1b\u4fdd\u6301 key/\u7ed3\u6784\u5b8c\u5168\u4e0d\u53d8\uff1b\u6240\u6709 value \u6539\u5199\u4e3a\u4e2d\u6587\u4e3a\u4e3b\u7684\u4e34\u5e8a\u8868\u8ff0\uff1b\u5141\u8bb8\u5c11\u91cf\u7f29\u5199\uff1b\u53ea\u8f93\u51fa\u4e25\u683c\u5408\u6cd5 JSON\u3002";
-                            String rewriteUserPrompt = plan.toString();
+                        if (retryCount == 0) {
+                            logContent(content, shouldRewrite, retryCount, false);
+                        }
+                        if (shouldRewrite && retryCount < MAX_REWRITE_ATTEMPTS) {
+                            String rewriteSystemPrompt = "\u4f60\u662fJSON\u4e34\u5e8a\u6587\u6848\u6539\u5199\u5668\u3002"
+                                    + "\u4fdd\u6301\u6240\u6709key\u3001\u7ed3\u6784\u3001\u6570\u7ec4\u957f\u5ea6\u548c\u7c7b\u578b\u5b8c\u5168\u4e0d\u53d8\u3002"
+                                    + "\u5c06\u6240\u6709value\u6539\u5199\u4e3a\u7b80\u4f53\u4e2d\u6587\u4e34\u5e8a\u8868\u8ff0\u3002"
+                                    + "\u5fc5\u987b\u4f7f\u7528\u4e2d\u6587\uff0c\u4e0d\u5141\u8bb8\u8f93\u51fa\u82f1\u6587\u53e5\u5b50\uff08\u5141\u8bb8\u7684\u7f29\u5199\uff1aPST\u3001PN\u3001NWR\u3001SLP\u3001ASD\u3001ADHD\u3001SSD\u3001DLD\uff09\u3002"
+                                    + "\u53ea\u8f93\u51fa\u4e25\u683c\u5408\u6cd5JSON\uff0c\u4e0d\u8981\u8f93\u51fa\u4efb\u4f55\u5176\u4ed6\u6587\u5b57\u3002";
+                            String rewriteUserPrompt = buildRewriteUserPrompt(plan);
                             generateTreatmentPlanInternal(rewriteSystemPrompt, rewriteUserPrompt, new PlanCallback() {
                                 @Override
                                 public void onSuccess(JSONObject rewritten) {
@@ -126,8 +147,11 @@ public class LlmPlanService {
                                     attachOptionalWarningIfNeeded(plan);
                                     callback.onSuccess(plan);
                                 }
-                            }, retryCount + 1);
+                            }, retryCount + 1, REWRITE_TEMPERATURE);
                             return;
+                        }
+                        if (retryCount > 0) {
+                            logContent(content, shouldRewrite, retryCount, true);
                         }
                         attachOptionalWarningIfNeeded(plan);
                         callback.onSuccess(plan);
@@ -175,9 +199,21 @@ public class LlmPlanService {
         }
         List<String> values = new ArrayList<>();
         collectAllStringValues(plan, values);
+        for (String value : values) {
+            if (value == null || value.trim().isEmpty()) {
+                continue;
+            }
+            String normalized = stripWhitelistedAbbreviations(value);
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            if (!containsChinese(normalized) && countEnglishLetters(normalized) >= ENGLISH_VALUE_THRESHOLD) {
+                return true;
+            }
+        }
         EnglishStats stats = countEnglishStats(values);
         double ratio = stats.totalChars == 0 ? 0.0 : (double) stats.englishLetters / stats.totalChars;
-        return stats.englishLetters > ENGLISH_COUNT_THRESHOLD && ratio > ENGLISH_RATIO_THRESHOLD;
+        return stats.englishLetters >= ENGLISH_COUNT_THRESHOLD && ratio >= ENGLISH_RATIO_THRESHOLD;
     }
 
     private void attachOptionalWarningIfNeeded(JSONObject plan) {
@@ -228,6 +264,11 @@ public class LlmPlanService {
         return stats;
     }
 
+    private String buildRewriteUserPrompt(JSONObject plan) {
+        return "\u8bf7\u4e0d\u6539\u53d8\u4efb\u4f55 key/\u7ed3\u6784/\u6570\u7ec4\u957f\u5ea6/\u7c7b\u578b\uff0c\u5c06\u4ee5\u4e0b JSON \u7684\u6240\u6709 value \u6539\u5199\u4e3a\u7b80\u4f53\u4e2d\u6587\u4e34\u5e8a\u8868\u8ff0\uff0c\u53ea\u8f93\u51fa\u4e25\u683c\u5408\u6cd5 JSON\uff0c\u4e0d\u8981\u8f93\u51fa\u5176\u4ed6\u6587\u5b57\uff1a\n"
+                + plan.toString();
+    }
+
     private String stripWhitelistedAbbreviations(String text) {
         String normalized = text;
         for (String abbr : ENGLISH_ABBREVIATION_WHITELIST) {
@@ -236,8 +277,44 @@ public class LlmPlanService {
         return normalized;
     }
 
+    private int countEnglishLetters(String text) {
+        int count = 0;
+        for (int i = 0; i < text.length(); i++) {
+            if (isEnglishLetter(text.charAt(i))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private boolean containsChinese(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c >= '\u4E00' && c <= '\u9FFF') {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean isEnglishLetter(char c) {
         return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
+
+    private void logContent(String content, boolean shouldRewrite, int retryCount, boolean isRewrite) {
+        String truncated = truncateContent(content, LOG_CONTENT_LIMIT);
+        String label = isRewrite ? "REWRITE " : "";
+        Log.i(TAG, label + "content=" + truncated + " | shouldRewrite=" + shouldRewrite + " | retryCount=" + retryCount);
+    }
+
+    private String truncateContent(String content, int maxChars) {
+        if (content == null) {
+            return "";
+        }
+        if (content.length() <= maxChars) {
+            return content;
+        }
+        return content.substring(0, maxChars);
     }
 
     private static class EnglishStats {

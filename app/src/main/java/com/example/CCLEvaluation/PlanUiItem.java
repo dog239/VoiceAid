@@ -2,6 +2,7 @@ package com.example.CCLEvaluation;
 
 import androidx.annotation.IntDef;
 
+import java.util.List;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -10,8 +11,14 @@ public abstract class PlanUiItem {
     public static final int TYPE_KEY_VALUE = 1;
     public static final int TYPE_LIST_ITEM = 2;
     public static final int TYPE_ADD_BUTTON = 3;
+    public static final int TYPE_CARD_HEADER = 4;
+    public static final int TYPE_CARD_END = 5;
+    public static final int TYPE_LIST_MIRROR = 6;
+    public static final int TYPE_STAGE_HEADER = 7;
+    public static final int TYPE_STAGE_END = 8;
 
-    @IntDef({TYPE_SECTION, TYPE_KEY_VALUE, TYPE_LIST_ITEM, TYPE_ADD_BUTTON})
+    @IntDef({TYPE_SECTION, TYPE_KEY_VALUE, TYPE_LIST_ITEM, TYPE_ADD_BUTTON,
+            TYPE_CARD_HEADER, TYPE_CARD_END, TYPE_LIST_MIRROR, TYPE_STAGE_HEADER, TYPE_STAGE_END})
     @Retention(RetentionPolicy.SOURCE)
     public @interface ItemType {}
 
@@ -69,6 +76,55 @@ public abstract class PlanUiItem {
             super(TYPE_ADD_BUTTON);
             this.listPath = listPath;
             this.label = label;
+        }
+    }
+
+    public static class CardHeader extends PlanUiItem {
+        public final String title;
+        public final String cardId;
+        public final boolean collapsible;
+        public boolean expanded;
+
+        public CardHeader(String title, String cardId, boolean collapsible, boolean expanded) {
+            super(TYPE_CARD_HEADER);
+            this.title = title;
+            this.cardId = cardId;
+            this.collapsible = collapsible;
+            this.expanded = expanded;
+        }
+    }
+
+    public static class CardEnd extends PlanUiItem {
+        public CardEnd() {
+            super(TYPE_CARD_END);
+        }
+    }
+
+    public static class ListMirror extends PlanUiItem {
+        public final String listPath;
+        public final List<String> fallbackValues;
+        public final String emptyHint;
+
+        public ListMirror(String listPath, List<String> fallbackValues, String emptyHint) {
+            super(TYPE_LIST_MIRROR);
+            this.listPath = listPath;
+            this.fallbackValues = fallbackValues;
+            this.emptyHint = emptyHint;
+        }
+    }
+
+    public static class StageHeader extends PlanUiItem {
+        public final String title;
+
+        public StageHeader(String title) {
+            super(TYPE_STAGE_HEADER);
+            this.title = title;
+        }
+    }
+
+    public static class StageEnd extends PlanUiItem {
+        public StageEnd() {
+            super(TYPE_STAGE_END);
         }
     }
 }

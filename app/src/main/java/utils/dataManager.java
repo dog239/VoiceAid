@@ -52,6 +52,11 @@ public class dataManager {
         info.put("testDate", testData);
         info.put("testLocation", testLocation);
         info.put("examiner", examiner);
+        info.put("gender", "");
+        info.put("address", "");
+        info.put("phone", "");
+        info.put("familyStatus", "");
+        info.put("familyMembers", new JSONArray());
 
         JSONObject evaluations = new JSONObject();
         evaluations.put("A", new JSONArray());
@@ -67,6 +72,22 @@ public class dataManager {
 
         return childUser;
 
+    }
+
+    public JSONObject createData(JSONObject info) throws JSONException {
+        JSONObject childUser = new JSONObject();
+        JSONObject evaluations = new JSONObject();
+        evaluations.put("A", new JSONArray());
+        evaluations.put("E", new JSONArray());
+        evaluations.put("NWR", new JSONArray());
+        evaluations.put("PN", new JSONArray());
+        evaluations.put("PST", new JSONArray());
+        evaluations.put("RE", new JSONArray());
+        evaluations.put("RG", new JSONArray());
+        evaluations.put("S", new JSONArray());
+        childUser.put("info", info == null ? new JSONObject() : info);
+        childUser.put("evaluations", evaluations);
+        return childUser;
     }
 
     public void createIndex(String name,String index) throws Exception {

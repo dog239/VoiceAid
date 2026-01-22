@@ -31,7 +31,13 @@ public class TreatmentPromptBuilder {
             "      \"methods\": [],\n" +
             "      \"sample_activities\": [],\n" +
             "      \"home_practice\": [],\n" +
-            "      \"metrics\": []\n" +
+            "      \"metrics\": [],\n" +
+            "      \"stages\": [\n" +
+            "        { \"name\": \"\u9636\u6bb51\uff1a\u542c\u8fa8\u4e0e\u6ce8\u610f\", \"focus\": [], \"activities\": [], \"home_practice\": [], \"metrics\": [] },\n" +
+            "        { \"name\": \"\u9636\u6bb52\uff1a\u6a21\u4eff\u4e0e\u63a7\u5236\", \"focus\": [], \"activities\": [], \"home_practice\": [], \"metrics\": [] },\n" +
+            "        { \"name\": \"\u9636\u6bb53\uff1a\u8bcd/\u77ed\u8bed\u5c42\u7ea7\", \"focus\": [], \"activities\": [], \"home_practice\": [], \"metrics\": [] },\n" +
+            "        { \"name\": \"\u9636\u6bb54\uff1a\u65e5\u5e38\u6cdb\u5316\", \"focus\": [], \"activities\": [], \"home_practice\": [], \"metrics\": [] }\n" +
+            "      ]\n" +
             "    },\n" +
             "    \"prelinguistic\": { \"targets\": [], \"activities\": [], \"home_practice\": [], \"metrics\": [] },\n" +
             "    \"vocabulary\": { \"targets\": [], \"activities\": [], \"home_practice\": [], \"metrics\": [] },\n" +
@@ -66,6 +72,7 @@ public class TreatmentPromptBuilder {
         }
 
         StringBuilder prompt = new StringBuilder();
+        prompt.append("\u786c\u7ea6\u675f\uff1a\u6240\u6709 value \u5fc5\u987b\u4e3a\u7b80\u4f53\u4e2d\u6587\u4e34\u5e8a\u8868\u8ff0\uff0c\u51fa\u73b0\u82f1\u6587\u53e5\u5b50\u89c6\u4e3a\u4e0d\u5408\u683c\u9700\u6539\u5199\uff0c\u4e14\u4e0d\u8981\u4fee\u6539 SCHEMA \u7684\u82f1\u6587 key\u3002\n");
         prompt.append("\u786C\u6027\u8981\u6C42\uFF1A\u53EA\u8F93\u51FA\u4E25\u683C\u5408\u6CD5\u7684JSON\uFF1BJSON\u952E\u4FDD\u6301\u82F1\u6587\u4E0D\u53D8\uFF1B\u6240\u6709\u503C\u4EE5\u4E2D\u6587\u4E3A\u4E3B\u7684\u4E34\u5E8A\u8868\u8FF0\uFF1B\u5141\u8BB8\u5C11\u91CF\u7F29\u5199\uFF08PST/PN/NWR/SLP/ASD/ADHD/SSD/DLD\uFF09\uFF1B\u9664JSON\u5916\u4E0D\u8981\u8F93\u51FA\u5176\u4ED6\u6587\u5B57\u3002\n");
         if (ageMonths == 0) {
             prompt.append("\u5e74\u9f84\uff08\u6708\uff09\uff1a0\uff08\u4fe1\u606f\u4e0d\u8db3\uff0c\u9700\u4eba\u5de5\u786e\u8ba4\uff09\n");

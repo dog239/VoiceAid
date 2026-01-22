@@ -3,16 +3,27 @@
     android:id="@+id/card_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginTop="12dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
     android:paddingStart="12dp"
     android:paddingTop="10dp"
     android:paddingEnd="12dp"
-    android:paddingBottom="4dp">
+    android:paddingBottom="8dp">
 
     <TextView
-        android:id="@+id/tv_section_title"
-        android:layout_width="match_parent"
+        android:id="@+id/tv_card_title"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:textColor="@android:color/black"
         android:textSize="16sp"
         android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/btn_card_toggle"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:contentDescription="折叠"
+        android:src="@android:drawable/arrow_down_float" />
 </LinearLayout>

@@ -237,9 +237,9 @@ public class privatehistorylist extends AppCompatActivity {
                 JSONObject child = dataManager.getInstance().loadData(String.valueOf(intArray[i]) + "_" + Uid + ".json");
                 Log.d("dashabi", child.toString());
                 JSONObject info = child.getJSONObject("info");
-                String currentDate = info.getString("testDate");
-                String name = info.getString("name");
-                String tester = info.getString("examiner");
+                String currentDate = info.optString("testDate", "未提供");
+                String name = info.optString("name", "未提供");
+                String tester = info.optString("examiner", "未提供");
                 news.title = "时间：" + currentDate + " 儿童：" + name + " 测试员：" + tester;
                 news.fname = String.valueOf(intArray[i]) + "_" + Uid + ".json";
                 news.childID = child.getString("ID");

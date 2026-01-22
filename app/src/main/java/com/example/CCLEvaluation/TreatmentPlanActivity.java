@@ -25,8 +25,28 @@ import utils.dataManager;
 
 public class TreatmentPlanActivity extends AppCompatActivity {
     private static final int REQUEST_EXPORT_PDF = 3001;
+    private static final String[] DEFAULT_SPEECH_STAGE_NAMES = {
+            "\u9636\u6bb51\uff1a\u542c\u8fa8\u4e0e\u6ce8\u610f",
+            "\u9636\u6bb52\uff1a\u6a21\u4eff\u4e0e\u63a7\u5236",
+            "\u9636\u6bb53\uff1a\u8bcd/\u77ed\u8bed\u5c42\u7ea7",
+            "\u9636\u6bb54\uff1a\u65e5\u5e38\u6cdb\u5316"
+    };
+    private static final String CARD_BASE_INFO = "\u57fa\u7840\u4fe1\u606f";
+    private static final String CARD_SPEECH_SOUND = "\u8bed\u97f3/\u6784\u97f3";
+    private static final String CARD_PRELINGUISTIC = "\u524d\u8bed\u8a00";
+    private static final String CARD_VOCABULARY = "\u8bcd\u6c47";
+    private static final String CARD_SYNTAX = "\u53e5\u6cd5";
+    private static final String CARD_SOCIAL = "\u793e\u4f1a\u4ea4\u5f80";
+    private static final String CARD_SCHEDULE = "\u9891\u6b21\u5efa\u8bae";
+    private static final String CARD_NOTES_THERAPIST = "\u6cbb\u7597\u5e08\u5907\u6ce8";
+    private static final String CARD_NOTES_PARENTS = "\u5bb6\u957f\u5efa\u8bae";
+    private static final String SECTION_FINDINGS = "\u8bca\u65ad\u53d1\u73b0";
+    private static final String SECTION_PLAN = "\u5e72\u9884\u8ba1\u5212";
+    private static final String SECTION_STAGES = "\u9636\u6bb5\u8bad\u7ec3";
+    private static final String PLACEHOLDER_TEXT = "\uff08\u6839\u636e\u8bc4\u4f30\u60c5\u51b5\u5f85\u5b9a\uff09";
     private String fName;
     private final List<PlanUiItem> items = new ArrayList<>();
+    private final List<String> speechStageNames = new ArrayList<>();
     private TreatmentPlanAdapter adapter;
 
     @Override
@@ -40,10 +60,13 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         if (planJson == null || planJson.trim().isEmpty()) {
             planJson = getIntent().getStringExtra("planJson");
         }
+        boolean preferIncomingPlan = getIntent().getBooleanExtra("preferIncomingPlan", false);
 
-        String savedPlan = loadPlanFromFile(fName);
-        if (savedPlan != null && !savedPlan.trim().isEmpty()) {
-            planJson = savedPlan;
+        if (!preferIncomingPlan) {
+            String savedPlan = loadPlanFromFile(fName);
+            if (savedPlan != null && !savedPlan.trim().isEmpty()) {
+                planJson = savedPlan;
+            }
         }
 
         JSONObject planObject = parsePlan(planJson);
@@ -186,65 +209,64 @@ public class TreatmentPlanActivity extends AppCompatActivity {
 
     private List<PlanUiItem> buildUiItems(JSONObject plan) {
         List<PlanUiItem> list = new ArrayList<>();
+        speechStageNames.clear();
 
         JSONObject caseSummary = plan.optJSONObject("case_summary");
         int ageMonths = caseSummary == null ? 0 : caseSummary.optInt("age_months", 0);
         String chiefComplaint = caseSummary == null ? "" : caseSummary.optString("chief_complaint", "");
+        List<String> keyFindings = getStringList(caseSummary, "key_findings");
 
-        list.add(new PlanUiItem.SectionHeader("\u4e2a\u6848\u6458\u8981", 0));
+        list.add(new PlanUiItem.CardHeader(CARD_BASE_INFO, "card_base_info", true, true));
         list.add(new PlanUiItem.KeyValue("case_summary.age_months", "\u5e74\u9f84", formatAgeMonths(ageMonths), InputType.TYPE_CLASS_TEXT));
         list.add(new PlanUiItem.KeyValue("case_summary.chief_complaint", "\u4e3b\u8bc9", chiefComplaint, InputType.TYPE_CLASS_TEXT));
-
-        addListGroup(list, "\u5173\u952e\u53d1\u73b0", "case_summary.key_findings",
-                getStringList(caseSummary, "key_findings"), 1);
-        addListGroup(list, "\u7591\u4f3c\u8bca\u65ad", "case_summary.suspected_diagnosis",
-                getStringList(caseSummary, "suspected_diagnosis"), 1);
-        addListGroup(list, "\u98ce\u9669\u63d0\u793a", "case_summary.risk_flags",
-                getStringList(caseSummary, "risk_flags"), 1);
-
-        JSONObject overallGoals = plan.optJSONObject("overall_goals");
-        list.add(new PlanUiItem.SectionHeader("\u603b\u4f53\u76ee\u6807", 0));
-        addListGroup(list, "\u0034\u5468\u5185\u76ee\u6807", "overall_goals.within_4_weeks",
-                getStringList(overallGoals, "within_4_weeks"), 1);
-        addListGroup(list, "\u0031\u0032\u5468\u5185\u76ee\u6807", "overall_goals.within_12_weeks",
-                getStringList(overallGoals, "within_12_weeks"), 1);
-        addListGroup(list, "\u0032\u0034\u5468\u5185\u76ee\u6807", "overall_goals.within_24_weeks",
-                getStringList(overallGoals, "within_24_weeks"), 1);
+        list.add(new PlanUiItem.CardEnd());
 
         JSONObject modulePlan = plan.optJSONObject("module_plan");
-        list.add(new PlanUiItem.SectionHeader("\u6a21\u5757\u8ba1\u5212", 0));
-        addModuleSection(list, "\u8bed\u97f3", "speech_sound",
-                modulePlan == null ? null : modulePlan.optJSONObject("speech_sound"), true);
-        addModuleSection(list, "\u8bed\u524d", "prelinguistic",
-                modulePlan == null ? null : modulePlan.optJSONObject("prelinguistic"), false);
-        addModuleSection(list, "\u8bcd\u6c47", "vocabulary",
-                modulePlan == null ? null : modulePlan.optJSONObject("vocabulary"), false);
-        addModuleSection(list, "\u53e5\u6cd5", "syntax",
-                modulePlan == null ? null : modulePlan.optJSONObject("syntax"), false);
-        addModuleSection(list, "\u793e\u4ea4", "social_pragmatics",
-                modulePlan == null ? null : modulePlan.optJSONObject("social_pragmatics"), false);
+        addModuleCard(list, CARD_SPEECH_SOUND, "speech_sound",
+                modulePlan == null ? null : modulePlan.optJSONObject("speech_sound"), true, keyFindings);
+        addModuleCard(list, CARD_PRELINGUISTIC, "prelinguistic",
+                modulePlan == null ? null : modulePlan.optJSONObject("prelinguistic"), false, keyFindings);
+        addModuleCard(list, CARD_VOCABULARY, "vocabulary",
+                modulePlan == null ? null : modulePlan.optJSONObject("vocabulary"), false, keyFindings);
+        addModuleCard(list, CARD_SYNTAX, "syntax",
+                modulePlan == null ? null : modulePlan.optJSONObject("syntax"), false, keyFindings);
+        addModuleCard(list, CARD_SOCIAL, "social_pragmatics",
+                modulePlan == null ? null : modulePlan.optJSONObject("social_pragmatics"), false, keyFindings);
 
         JSONObject schedule = plan.optJSONObject("schedule_recommendation");
         int sessionsPerWeek = schedule == null ? 0 : schedule.optInt("sessions_per_week", 0);
         int minutesPerSession = schedule == null ? 0 : schedule.optInt("minutes_per_session", 0);
         int reviewWeeks = schedule == null ? 0 : schedule.optInt("review_in_weeks", 0);
 
-        list.add(new PlanUiItem.SectionHeader("\u9891\u6b21\u5efa\u8bae", 0));
+        list.add(new PlanUiItem.CardHeader(CARD_SCHEDULE, "card_schedule", true, true));
         list.add(new PlanUiItem.KeyValue("schedule_recommendation.sessions_per_week", "\u6bcf\u5468\u6b21\u6570", String.valueOf(sessionsPerWeek), InputType.TYPE_CLASS_NUMBER));
         list.add(new PlanUiItem.KeyValue("schedule_recommendation.minutes_per_session", "\u6bcf\u6b21\u65f6\u957f\u0028\u5206\u949f\u0029", String.valueOf(minutesPerSession), InputType.TYPE_CLASS_NUMBER));
         list.add(new PlanUiItem.KeyValue("schedule_recommendation.review_in_weeks", "\u590d\u8bc4\u5468\u671f\u0028\u5468\u0029", String.valueOf(reviewWeeks), InputType.TYPE_CLASS_NUMBER));
+        list.add(new PlanUiItem.CardEnd());
 
-        list.add(new PlanUiItem.SectionHeader("\u6cbb\u7597\u5e08\u5907\u6ce8", 0));
+        list.add(new PlanUiItem.CardHeader(CARD_NOTES_THERAPIST, "card_notes_therapist", true, true));
         addListGroup(list, null, "notes_for_therapist", getStringList(plan, "notes_for_therapist"), 1);
+        list.add(new PlanUiItem.CardEnd());
 
-        list.add(new PlanUiItem.SectionHeader("\u5bb6\u957f\u5efa\u8bae", 0));
+        list.add(new PlanUiItem.CardHeader(CARD_NOTES_PARENTS, "card_notes_parents", true, true));
         addListGroup(list, null, "notes_for_parents", getStringList(plan, "notes_for_parents"), 1);
+        list.add(new PlanUiItem.CardEnd());
 
         return list;
     }
 
-    private void addModuleSection(List<PlanUiItem> list, String label, String moduleKey, JSONObject moduleObj, boolean speech) {
-        list.add(new PlanUiItem.SectionHeader(label, 1));
+    private void addModuleCard(List<PlanUiItem> list, String label, String moduleKey, JSONObject moduleObj,
+                               boolean speech, List<String> caseFindings) {
+        list.add(new PlanUiItem.CardHeader(label, "card_module_" + moduleKey, true, true));
+        list.add(new PlanUiItem.SectionHeader(SECTION_FINDINGS, 1));
+        if (speech) {
+            addListGroup(list, null, "case_summary.key_findings", caseFindings, 2);
+        } else {
+            List<String> moduleFindings = getStringList(moduleObj, "key_findings");
+            list.add(new PlanUiItem.ListMirror("case_summary.key_findings", moduleFindings, PLACEHOLDER_TEXT));
+        }
+
+        list.add(new PlanUiItem.SectionHeader(SECTION_PLAN, 1));
         addListGroup(list, "\u76ee\u6807", "module_plan." + moduleKey + ".targets",
                 getStringList(moduleObj, "targets"), 2);
         if (speech) {
@@ -264,6 +286,36 @@ public class TreatmentPlanActivity extends AppCompatActivity {
                 getStringList(moduleObj, "home_practice"), 2);
         addListGroup(list, "\u6307\u6807", "module_plan." + moduleKey + ".metrics",
                 getStringList(moduleObj, "metrics"), 2);
+        if (speech) {
+            list.add(new PlanUiItem.SectionHeader(SECTION_STAGES, 1));
+            addSpeechStageCards(list, moduleObj);
+        }
+        list.add(new PlanUiItem.CardEnd());
+    }
+
+    private void addSpeechStageCards(List<PlanUiItem> list, JSONObject moduleObj) {
+        JSONArray stages = moduleObj == null ? null : moduleObj.optJSONArray("stages");
+        int stageCount = Math.max(stages == null ? 0 : stages.length(), DEFAULT_SPEECH_STAGE_NAMES.length);
+        for (int i = 0; i < stageCount; i++) {
+            JSONObject stageObj = stages == null ? null : stages.optJSONObject(i);
+            String name = stageObj == null ? "" : stageObj.optString("name", "");
+            if (name == null || name.trim().isEmpty()) {
+                name = i < DEFAULT_SPEECH_STAGE_NAMES.length ? DEFAULT_SPEECH_STAGE_NAMES[i] : "\u9636\u6bb5" + (i + 1);
+            }
+            speechStageNames.add(name);
+            list.add(new PlanUiItem.StageHeader(name));
+            // stages\u4f7f\u7528 module_plan.speech_sound.stages[i].<field> \u8def\u5f84\u56de\u5199 JSON
+            String base = "module_plan.speech_sound.stages[" + i + "]";
+            addListGroup(list, "\u8bad\u7ec3\u91cd\u70b9", base + ".focus",
+                    getStringList(stageObj, "focus"), 3);
+            addListGroup(list, "\u6d3b\u52a8", base + ".activities",
+                    getStringList(stageObj, "activities"), 3);
+            addListGroup(list, "\u5bb6\u5ead\u7ec3\u4e60", base + ".home_practice",
+                    getStringList(stageObj, "home_practice"), 3);
+            addListGroup(list, "\u6307\u6807", base + ".metrics",
+                    getStringList(stageObj, "metrics"), 3);
+            list.add(new PlanUiItem.StageEnd());
+        }
     }
 
     private void addListGroup(List<PlanUiItem> list, String title, String listPath, List<String> values, int level) {
@@ -330,11 +382,11 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         plan.put("overall_goals", overallGoals);
 
         JSONObject modulePlan = new JSONObject();
-        modulePlan.put("speech_sound", buildModulePlan(listValues, "module_plan.speech_sound", true));
-        modulePlan.put("prelinguistic", buildModulePlan(listValues, "module_plan.prelinguistic", false));
-        modulePlan.put("vocabulary", buildModulePlan(listValues, "module_plan.vocabulary", false));
-        modulePlan.put("syntax", buildModulePlan(listValues, "module_plan.syntax", false));
-        modulePlan.put("social_pragmatics", buildModulePlan(listValues, "module_plan.social_pragmatics", false));
+        modulePlan.put("speech_sound", buildSpeechModulePlan(listValues));
+        modulePlan.put("prelinguistic", buildModulePlan(listValues, "module_plan.prelinguistic"));
+        modulePlan.put("vocabulary", buildModulePlan(listValues, "module_plan.vocabulary"));
+        modulePlan.put("syntax", buildModulePlan(listValues, "module_plan.syntax"));
+        modulePlan.put("social_pragmatics", buildModulePlan(listValues, "module_plan.social_pragmatics"));
         plan.put("module_plan", modulePlan);
 
         JSONObject schedule = new JSONObject();
@@ -349,14 +401,42 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         return plan;
     }
 
-    private JSONObject buildModulePlan(Map<String, List<String>> listValues, String base, boolean speech) throws JSONException {
+    private JSONObject buildSpeechModulePlan(Map<String, List<String>> listValues) throws JSONException {
+        String base = "module_plan.speech_sound";
         JSONObject module = new JSONObject();
         module.put("targets", toArray(listValues.get(base + ".targets")));
-        if (speech) {
-            module.put("methods", toArray(listValues.get(base + ".methods")));
-        } else {
-            module.put("activities", toArray(listValues.get(base + ".activities")));
+        module.put("methods", toArray(listValues.get(base + ".methods")));
+        module.put("sample_activities", toArray(listValues.get(base + ".sample_activities")));
+        module.put("home_practice", toArray(listValues.get(base + ".home_practice")));
+        module.put("metrics", toArray(listValues.get(base + ".metrics")));
+        module.put("stages", buildSpeechStages(listValues, base));
+        return module;
+    }
+
+    private JSONArray buildSpeechStages(Map<String, List<String>> listValues, String base) throws JSONException {
+        JSONArray stages = new JSONArray();
+        int stageCount = Math.max(speechStageNames.size(), DEFAULT_SPEECH_STAGE_NAMES.length);
+        for (int i = 0; i < stageCount; i++) {
+            String name = i < speechStageNames.size() ? speechStageNames.get(i) : "";
+            if (name == null || name.trim().isEmpty()) {
+                name = i < DEFAULT_SPEECH_STAGE_NAMES.length ? DEFAULT_SPEECH_STAGE_NAMES[i] : "\u9636\u6bb5" + (i + 1);
+            }
+            JSONObject stage = new JSONObject();
+            stage.put("name", name);
+            String stageBase = base + ".stages[" + i + "]";
+            stage.put("focus", toArray(listValues.get(stageBase + ".focus")));
+            stage.put("activities", toArray(listValues.get(stageBase + ".activities")));
+            stage.put("home_practice", toArray(listValues.get(stageBase + ".home_practice")));
+            stage.put("metrics", toArray(listValues.get(stageBase + ".metrics")));
+            stages.put(stage);
         }
+        return stages;
+    }
+
+    private JSONObject buildModulePlan(Map<String, List<String>> listValues, String base) throws JSONException {
+        JSONObject module = new JSONObject();
+        module.put("targets", toArray(listValues.get(base + ".targets")));
+        module.put("activities", toArray(listValues.get(base + ".activities")));
         module.put("home_practice", toArray(listValues.get(base + ".home_practice")));
         module.put("metrics", toArray(listValues.get(base + ".metrics")));
         return module;
