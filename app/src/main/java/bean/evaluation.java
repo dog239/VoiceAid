@@ -18,6 +18,7 @@ public abstract class evaluation {
     public final static String RG  = "语法理解";
     public final static String PST  = "看图说故事";
     public final static String PN  = "个人生活经验";
+    public final static String PL  = "前语言能力";
 
     public evaluation(int num) {
         this.num = num;

@@ -2,6 +2,7 @@ package com.example.CCLEvaluation;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
@@ -61,6 +62,8 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     private Button WordResult1, WordResult2, WordResult3, WordResult4;
     private Button Pronunciation;
     private Button PronunciationResult;
+    private Button Prelinguistic;
+    private Button PrelinguisticResult;
     private Button Grammar;
     private Button GrammarResult;
     private Button Narrate1, Narrate2;
@@ -71,10 +74,13 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     private String childUser;
     private String uid;
     private LinearLayout wd;
+    private LinearLayout prelinguisticLayout;
     private LinearLayout pn;
     private LinearLayout gm;
     private LinearLayout nr;
     private static final int MY_PERMISSIONS_REQUEST_READ_OR_WRITE_EXTERNAL_STORAGE = 1;
+    private static final String FORMAT_PL = "11";
+    private static final String MODULE_PL = "PL";
 
     private Map<String, Map<String, String>> audioPaths;
 
@@ -95,6 +101,8 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         WordResult4 = findViewById(R.id.btn_wordResult4);
         Pronunciation = findViewById(R.id.btn_pronunciationTest);
         PronunciationResult = findViewById(R.id.btn_pronunciationResult);
+        Prelinguistic = findViewById(R.id.btn_prelinguisticTest);
+        PrelinguisticResult = findViewById(R.id.btn_prelinguisticResult);
         Grammar = findViewById(R.id.btn_grammarTest);
         GrammarResult = findViewById(R.id.btn_grammarResult);
         Narrate1 = findViewById(R.id.btn_narrateTest1);
@@ -107,6 +115,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         Plan = findViewById(R.id.btn_plan);
         PlanView = findViewById(R.id.btn_plan_view);
         wd = findViewById(R.id.wd);
+        prelinguisticLayout = findViewById(R.id.pl_module);
         pn = findViewById(R.id.pn);
         gm = findViewById(R.id.gm);
         nr = findViewById(R.id.nr);
@@ -127,6 +136,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                 String RG = jsonObject.getString("RG");
                 String PN = jsonObject.getString("PN");
                 String PST = jsonObject.getString("PST");
+                String PL = jsonObject.optString("PL", "0");
 
                 if(E.equals("1") && RE.equals("1") && S.equals("1") && NWR.equals("1")){
                     wd.setVisibility(View.VISIBLE);
@@ -148,6 +158,11 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                 }else{
                     nr.setVisibility(View.GONE);
                 }
+                if(PL.equals("1")){
+                    prelinguisticLayout.setVisibility(View.VISIBLE);
+                }else{
+                    prelinguisticLayout.setVisibility(View.GONE);
+                }
 
 
             }
@@ -167,6 +182,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         Word3.setOnClickListener(this);
         Word4.setOnClickListener(this);
         Pronunciation.setOnClickListener(this);
+        Prelinguistic.setOnClickListener(this);
         Grammar.setOnClickListener(this);
         Narrate1.setOnClickListener(this);
         Narrate2.setOnClickListener(this);
@@ -175,6 +191,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         WordResult3.setOnClickListener(this);
         WordResult4.setOnClickListener(this);
         PronunciationResult.setOnClickListener(this);
+        PrelinguisticResult.setOnClickListener(this);
         GrammarResult.setOnClickListener(this);
         NarrateResult1.setOnClickListener(this);
         NarrateResult2.setOnClickListener(this);
@@ -325,6 +342,20 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             intent.putExtra("fName", fName);
             intent.putExtra("format", "A");
             startActivity(intent);
+        } else if (v.getId() == R.id.btn_prelinguisticTest) {
+            String[] scenes = new String[]{"A 吹泡泡场景", "B 玩球场景"};
+            new AlertDialog.Builder(this)
+                    .setTitle("选择场景")
+                    .setItems(scenes, (dialog, which) -> {
+                        String scene = which == 0 ? "A" : "B";
+                        Intent intent = new Intent(this, testactivity.class);
+                        intent.putExtra("fName", fName);
+                        intent.putExtra("format", FORMAT_PL);
+                        intent.putExtra("moduleKey", MODULE_PL);
+                        intent.putExtra("scene", scene);
+                        startActivity(intent);
+                    })
+                    .show();
         } else if (v.getId() == R.id.btn_grammarTest) {
             Intent intent = new Intent(this, testactivity.class);
             intent.putExtra("fName", fName);
@@ -365,6 +396,12 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             Intent intent = new Intent(this, resultactivity.class);
             intent.putExtra("fName", fName);
             intent.putExtra("format", "A");
+            startActivity(intent);
+        } else if (v.getId() == R.id.btn_prelinguisticResult) {
+            Intent intent = new Intent(this, resultactivity.class);
+            intent.putExtra("fName", fName);
+            intent.putExtra("format", FORMAT_PL);
+            intent.putExtra("moduleKey", MODULE_PL);
             startActivity(intent);
         } else if (v.getId() == R.id.btn_grammarResult) {
             Intent intent = new Intent(this, resultactivity.class);
@@ -675,6 +712,12 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         showDetails(Word3, evaluations.getJSONArray("S"), evaluation.S, ImageUrls.S_words.length);
         showDetails(Word4, evaluations.getJSONArray("NWR"), evaluation.NWR, ImageUrls.NWR_characs.length);
         showDetails(Pronunciation, evaluations.getJSONArray("A"), evaluation.A, ImageUrls.getAImageCount());
+        JSONArray plArray = evaluations.optJSONArray("PL");
+        if (plArray == null) {
+            plArray = new JSONArray();
+            evaluations.put("PL", plArray);
+        }
+        showDetails(Prelinguistic, plArray, evaluation.PL, ImageUrls.PL_SKILLS.length);
         showDetails(Grammar, evaluations.getJSONArray("RG"), evaluation.RG, ImageUrls.RG_hints.length);
         showDetails(Narrate1, evaluations.getJSONArray("PST"), evaluation.PST, ImageUrls.PST_imageUrls.length);
         showDetails(Narrate2, evaluations.getJSONArray("PN"), evaluation.PN, ImageUrls.PN_hints.length);

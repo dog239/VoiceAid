@@ -88,6 +88,21 @@
                 android:orientation="horizontal"
                 android:layout_marginTop="10dp"
                 >
+                <CheckBox
+                    android:id="@+id/prelinguistic"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="match_parent"
+                    android:text="前语言能力"
+                    android:textSize="20dp"
+                    />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="10dp"
+                >
                 <Button
                     android:id="@+id/btn_sure1"
                     android:layout_width="0dp"

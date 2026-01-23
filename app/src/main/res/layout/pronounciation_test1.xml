@@ -23,7 +23,6 @@
             android:layout_height="310dp"
             android:scaleType="fitCenter"
             android:layout_centerHorizontal="true"
-            android:rotation="180"
             android:visibility="invisible"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

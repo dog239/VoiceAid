@@ -66,7 +66,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintTop_toBottomOf="@id/tv_1"
-        app:layout_constraintBottom_toTopOf="@id/pn"
+        app:layout_constraintBottom_toTopOf="@id/pl_module"
         >
         <TextView
             android:id="@+id/tv_2"
@@ -193,15 +193,61 @@
         </LinearLayout>
     </LinearLayout>
 
-
-
+    <LinearLayout
+        android:id="@+id/pl_module"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/wd"
+        app:layout_constraintBottom_toTopOf="@id/pn"
+        >
+        <TextView
+            android:id="@+id/tv_pl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="前语言能力"
+            android:textColor="@color/black"
+            android:textSize="25dp"
+            android:background="@color/warm_blue"
+            />
+        <LinearLayout
+            android:layout_marginTop="10dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="1dp"
+            >
+            <Button
+                android:id="@+id/btn_prelinguisticTest"
+                android:layout_width="0dp"
+                android:layout_weight="2"
+                android:layout_height="wrap_content"
+                android:text="前语言能力测试"
+                android:layout_gravity="center"
+                android:layout_marginRight="1dp"
+                android:background="@drawable/btn_left"
+                />
+            <Button
+                android:id="@+id/btn_prelinguisticResult"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="评测结果"
+                android:layout_gravity="center"
+                android:layout_marginLeft="1dp"
+                android:background="@drawable/btn_right"
+                />
+        </LinearLayout>
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/pn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintTop_toBottomOf="@id/wd"
+        app:layout_constraintTop_toBottomOf="@id/pl_module"
         app:layout_constraintBottom_toTopOf="@id/gm"
         >
         <TextView

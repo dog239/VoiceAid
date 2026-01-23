@@ -9,10 +9,13 @@ import org.json.JSONObject;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.regex.Pattern;
 
 import okhttp3.Call;
@@ -48,10 +51,11 @@ public class LlmPlanService {
 
     public LlmPlanService() {
         client = new OkHttpClient.Builder()
-                .connectTimeout(60, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
-                .callTimeout(60, TimeUnit.SECONDS)
+                .connectTimeout(180, TimeUnit.SECONDS)
+                .readTimeout(180, TimeUnit.SECONDS)
+                .writeTimeout(180, TimeUnit.SECONDS)
+                .callTimeout(180, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(false)
                 .build();
     }
 
@@ -78,10 +82,12 @@ public class LlmPlanService {
             messages.put(new JSONObject().put("role", "system").put("content", systemPrompt));
             String enhancedUserPrompt = userPrompt
                     + "\n\n重要提示："
-                    + "\n1) 请务必用简体中文输出所有 value（值），JSON 的 key 仍保持英文不变"
-                    + "\n2) 所有内容都必须使用中文临床表述（允许少量缩写：PST、PN、NWR、SLP、ASD、ADHD、SSD、DLD）"
-                    + "\n3) 输出必须是严格合法 JSON（不要输出任何 JSON 以外的文字）"
-                    + "\n4) 如需使用英文术语，请先中文化再输出，不要输出英文句子";
+                    + "\n1) 只输出严格合法 JSON；key 保持英文不变；value 为简体中文临床表述；允许缩写（PST/PN/NWR/SLP/ASD/ADHD/SSD/DLD）；不得出现英文完整句子。"
+                    + "\n2) JSON 字符串值使用 \\n 进行逻辑换行。"
+                    + "\n3) speech_sound.articulation 的已掌握/重点关注列表项必须以 \"•\" 开头。"
+                    + "\n4) 构音计划只使用构音数据；前语言计划只使用前语言数据；禁止串台。"
+                    + "\n5) 构音/前语言文本需遵循对应模板话术（《构音模块.docx》《前语言模块.docx》）。"
+                    + "\n6) 构音模块 overall_summary 必须包含清晰度等级、诊断（如有）、评估建议。";
             messages.put(new JSONObject().put("role", "user").put("content", enhancedUserPrompt));
             payload.put("messages", messages);
 
@@ -93,10 +99,23 @@ public class LlmPlanService {
                     .post(body)
                     .build();
 
+            final long requestStartMs = System.currentTimeMillis();
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
-                    callback.onError("Network error: " + e.getMessage());
+                    long elapsedMs = System.currentTimeMillis() - requestStartMs;
+                    String errorMessage;
+                    if (isTimeoutError(e)) {
+                        errorMessage = "Request timeout after " + elapsedMs + " ms.";
+                        Log.w(TAG, "Timeout after " + elapsedMs + " ms: " + e.getClass().getSimpleName(), e);
+                    } else if (isSocketClosed(e)) {
+                        errorMessage = "Network disconnected: " + e.getMessage();
+                        Log.w(TAG, "Network disconnected after " + elapsedMs + " ms: " + e.getClass().getSimpleName(), e);
+                    } else {
+                        errorMessage = "Network error: " + e.getMessage();
+                        Log.w(TAG, "Network error after " + elapsedMs + " ms: " + e.getClass().getSimpleName(), e);
+                    }
+                    callback.onError(errorMessage);
                 }
 
                 @Override
@@ -275,6 +294,28 @@ public class LlmPlanService {
             normalized = normalized.replaceAll("(?i)\\b" + Pattern.quote(abbr) + "\\b", "");
         }
         return normalized;
+    }
+
+    private boolean isTimeoutError(IOException e) {
+        if (e == null) {
+            return false;
+        }
+        if (e instanceof SocketTimeoutException || e instanceof InterruptedIOException) {
+            return true;
+        }
+        String message = e.getMessage();
+        return message != null && message.toLowerCase().contains("timeout");
+    }
+
+    private boolean isSocketClosed(IOException e) {
+        if (e == null) {
+            return false;
+        }
+        if (e instanceof SocketException) {
+            return true;
+        }
+        String message = e.getMessage();
+        return message != null && message.toLowerCase().contains("socket closed");
     }
 
     private int countEnglishLetters(String text) {

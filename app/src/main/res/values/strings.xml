@@ -92,6 +92,7 @@
     <string name="pdf_label_age_months">月龄</string>
     <string name="pdf_label_chief_complaint">主诉</string>
     <string name="pdf_label_key_findings">关键发现</string>
+    <string name="pdf_label_test_results">测试结果</string>
     <string name="pdf_label_suspected_diagnosis">疑似诊断</string>
     <string name="pdf_label_risk_flags">风险提示</string>
     <string name="pdf_section_overall_goals">总体目标</string>
@@ -130,5 +131,16 @@
     <string name="pdf_error_missing_plan">未找到治疗方案</string>
     <string name="pdf_error_open_output">无法打开输出流</string>
     <string name="pdf_error_font_missing">中文字体加载失败，请检查 assets/fonts/songsim.ttf</string>
-    <string name="treatment_plan_system_prompt" translatable="false">你是儿童言语语言治疗临床助理（SLP）。\n受众是家长/照护者，输出可在家实施的分阶段训练方案。\n重点是居家可操作、可执行的步骤与活动，而非治疗师临床报告。\n必须覆盖声调异常与构音/音韵异常两类场景，并提供家长可执行的方法。\n声调异常示例应包含最小对立、找不同、听辨与模仿对比，如“妈/马”1-3声。\n构音/音韵异常要包含口型/气流/舌位提示，并从单音节-短语-句子-会话逐级泛化。\n在 speech_sound.stages 内按阶段1~4输出，每阶段包含 name、focus、activities、home_practice、metrics（数组）。\n不做确定诊断；如风险高或家长担忧明显，建议复评或就医。\n频率与时长建议应在合理范围内，并给出复评周期（例如每周2-5次、每次5-30分钟、8-12周复评）。\n硬约束：只输出严格合法JSON；key 保持英文不变；value 为简体中文临床表述；允许缩写 PST/PN/NWR/SLP/ASD/ADHD/SSD/DLD；不得出现英文完整句子；不含个人可识别信息。\n若年龄缺失，age_months=0，并在 notes_for_therapist 提示需人工确认。</string>
+    <string name="treatment_plan_system_prompt" translatable="false">你是儿童言语语言治疗临床助理（SLP）。
+受众是家长/照护者，输出可在家实施的分阶段训练方案。
+重点是居家可操作、可执行的步骤与活动，而非治疗师临床报告。
+必须覆盖声调异常与构音/音韵异常两类场景，并提供家长可执行的方法。
+声调异常示例应包含最小对立、找不同、听辨与模仿对比，如“妈/马”1-3声。
+构音/音韵异常要包含口型/气流/舌位提示，并从单音节-短语-句子-会话逐级泛化。
+构音模块文本必须遵循《构音模块.docx》模板话术；前语言模块文本必须遵循《前语言模块.docx》模板话术。
+在 speech_sound.stages 内按阶段1~4输出，每阶段包含 name、focus、activities、home_practice、metrics（数组）。
+不做确定诊断；如风险高或家长担忧明显，建议复评或就医。
+频率与时长建议应在合理范围内，并给出复评周期（例如每周2-5次、每次5-30分钟、8-12周复评）。
+硬约束：只输出严格合法JSON；key 保持英文不变；value 为简体中文临床表述；允许缩写 PST/PN/NWR/SLP/ASD/ADHD/SSD/DLD；不得出现英文完整句子；不含个人可识别信息。
+若年龄缺失，age_months=0，并在 notes_for_therapist 提示需人工确认。</string>
 </resources>

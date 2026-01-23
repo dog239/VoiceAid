@@ -62,6 +62,20 @@ public interface ImageUrls {
 
     String[] PN_imageUrls = { "go_to_hospital","fall_off_the_bike","slide_and_children"};
 
+    String[] PL_SKILLS = {"有功能地玩玩具", "模仿动作", "提要求", "目光注视", "轮流", "指示",
+            "听指令（给妈妈/陪伴者）", "模仿手势（拍自己表示我要）", "确认（点头/摇头）", "发出声音（沟通性声音/语音）"};
+
+    String[] PL_PROMPTS_A = {"孩子拿到泡泡棒会放嘴边吹", "能模仿抓泡泡、拍泡泡其中一种", "看到大人吹自己也要吹",
+            "会看着大人吹", "能等待大人先吹，再给自己吹", "能指一指泡泡", "可以执行给妈妈（或给其他陪伴者）的指令",
+            "能模仿拍拍自己的动作表示我要", "能模仿点头表示肯定、摇头表示否定其中一种", "互动中发出沟通性的声音和（或）语音"};
+
+    String[] PL_PROMPTS_B = {"孩子拿到球会拍", "能模仿拍球、传球其中一种", "看到大人玩球自己也要玩球",
+            "看着大人玩球", "能等待大人先玩球，再给自己玩", "能指一指球", "可以执行给妈妈（或给其他陪伴者）的指令",
+            "能模仿拍拍自己的动作表示我要", "能模仿点头表示肯定、摇头表示否定其中一种", "互动中发出沟通性的声音和（或）语音"};
+
+    String[] PL_IMAGES_A = {"", "", "", "", "", "", "", "", "", ""};
+    String[] PL_IMAGES_B = {"", "", "", "", "", "", "", "", "", ""};
+
     String[] A_imageUrls = {"nose","foot","mouth","tennis","car","woodentable","umbrella","bird","plane","hair",
                             "door","piano","racing","crab","watermelon","dress","apple","vegetables","flower","fatmeat",
                             "ear","mouse","chopsticks","shorts","milk","lantern","panda","hotwater","stairs","stick",

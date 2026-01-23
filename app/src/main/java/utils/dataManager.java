@@ -63,6 +63,7 @@ public class dataManager {
         evaluations.put("E", new JSONArray());
         evaluations.put("NWR", new JSONArray());
         evaluations.put("PN", new JSONArray());
+        evaluations.put("PL", new JSONArray());
         evaluations.put("PST", new JSONArray());
         evaluations.put("RE", new JSONArray());
         evaluations.put("RG", new JSONArray());
@@ -81,6 +82,7 @@ public class dataManager {
         evaluations.put("E", new JSONArray());
         evaluations.put("NWR", new JSONArray());
         evaluations.put("PN", new JSONArray());
+        evaluations.put("PL", new JSONArray());
         evaluations.put("PST", new JSONArray());
         evaluations.put("RE", new JSONArray());
         evaluations.put("RG", new JSONArray());

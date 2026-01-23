@@ -66,6 +66,7 @@ import bean.rg;
 import bean.s;
 import utils.ImageUrls;
 import utils.ArticulationPlanHelper;
+import utils.ModuleReportHelper;
 import utils.dataManager;
 import utils.permissionutils;
 import java.io.File;
@@ -191,7 +192,6 @@ public class PdfGenerator extends evmenuactivity{
     @SuppressLint("NewApi")
     public static void generatePdf(OutputStream outputStream, String fname) {
         try {
-            Context ctx = requireContext();
             String[] scoreA =new String[21];
             String scoreE;
             String scorePNAVE;
@@ -203,32 +203,22 @@ public class PdfGenerator extends evmenuactivity{
             String scoreS;
             String scoreNWR;
             String name;
-            String gender;
             String c;
             String serialNumber;
             String testData;
             String birthDate;
-            String address;
-            String phone;
-            String familyStatus;
             String testLocation;
             String examiner;
-            JSONArray familyMembers;
 
             JSONObject data = dataManager.getInstance().loadData(fname);
-            JSONObject info = data.optJSONObject("info");
-            name = getInfoValue(info, "name");
-            gender = getInfoValue(info, "gender");
-            birthDate = getInfoValue(info, "birthDate");
-            address = getInfoValue(info, "address");
-            phone = getInfoValue(info, "phone");
-            familyStatus = getInfoValue(info, "familyStatus");
-            familyMembers = info != null ? info.optJSONArray("familyMembers") : null;
-            c = getInfoValue(info, "class");
-            serialNumber = getInfoValue(info, "serialNumber");
-            testData = getInfoValue(info, "testDate");
-            testLocation = getInfoValue(info, "testLocation");
-            examiner = getInfoValue(info, "examiner");
+            JSONObject info = data.getJSONObject("info");
+            name = info.getString("name");
+            c = info.getString("class");
+            serialNumber = info.getString("serialNumber");
+            birthDate = info.getString("birthDate");
+            testData = info.getString("testDate");
+            testLocation = info.getString("testLocation");
+            examiner = info.getString("examiner");
 //  A
             String[] characs = ImageUrls.A_characs;
             int[] score = new int[21];
@@ -242,18 +232,16 @@ public class PdfGenerator extends evmenuactivity{
                 for (int i = 0; i < jsonArrayA.length(); i++) {
                     JSONObject object = jsonArrayA.getJSONObject(i);
                     if (object.has("time") && !object.isNull("time") && !object.get("time").equals("null")) {
-                        String tone1 = object.optString("target_tone1", "");
-                        if (!tone1.equals("")) {
-                            String originalString = tone1;
+                        if (!object.getString("target_tone1").equals("")) {
+                            String originalString = object.getString("target_tone1");
                             for (int j = 0; j < characs.length; j++) {
                                 if (characs[j].equals(originalString)) {
                                     score[j]++;
                                 }
                             }
                         }
-                        String tone2 = object.optString("target_tone2", "");
-                        if (!tone2.equals("")) {
-                            String originalString = tone2;
+                        if (!object.getString("target_tone2").equals("")) {
+                            String originalString = object.getString("target_tone2");
                             for (int j = 0; j < characs.length; j++) {
                                 if (characs[j].equals(originalString)) {
                                     score[j]++;
@@ -425,96 +413,44 @@ public class PdfGenerator extends evmenuactivity{
             Document document = new Document();
             PdfWriter.getInstance(document, outputStream);
             document.open();
-            // 鏈€澶у搴?
-            BaseFont baseFont = loadChineseBaseFont(ctx);
-            if (baseFont == null) {
-                Toast.makeText(ctx, getStringRes(R.string.pdf_error_font_missing), Toast.LENGTH_LONG).show();
-                document.close();
-                return;
-            }
-            Font simsun = new Font(baseFont, 10);
-            Font simsunBold = new Font(baseFont, 10, Font.BOLD);
-            Font simsunBig = new Font(baseFont, 18, Font.BOLD);
-            Font simsunSmall = new Font(baseFont, 8, Font.BOLD);
+            // 最大宽度
+            Font simsun = FontFactory.getFont("assets/fonts/songsim.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED, 10);
+            Font simsunBold = new com.itextpdf.text.Font(simsun.getBaseFont(), 10, Font.BOLD);
+            Font simsunBig = new com.itextpdf.text.Font(simsun.getBaseFont(), 18, Font.BOLD);
+            Font simsunSmall = new com.itextpdf.text.Font(simsun.getBaseFont(), 8, Font.BOLD);
 
-            //璁剧疆鍐呭
-            Paragraph paragraph = new Paragraph(getStringRes(R.string.pdf_report_title), simsunBig);
+            //设置内容
+            Paragraph paragraph = new Paragraph("学前儿童汉语测评报告",simsunBig);
             paragraph.setAlignment(1);
-            //寮曠敤瀛椾綋
+            //引用字体
             document.add(paragraph);
 
-
-            PdfPTable baseInfoTable = new PdfPTable(4);
-            baseInfoTable.setWidthPercentage(100);
-            baseInfoTable.setSpacingBefore(20f);
-            baseInfoTable.setSpacingAfter(10f);
-            addHeaderCell(baseInfoTable, getStringRes(R.string.pdf_section_family_info), simsunBold, 4);
-            addHeaderCell(baseInfoTable, getStringRes(R.string.pdf_label_name), simsun, 1);
-            addDataCell(baseInfoTable,name,simsun,1);
-            addHeaderCell(baseInfoTable, getStringRes(R.string.pdf_label_gender), simsun, 1);
-            addDataCell(baseInfoTable,gender,simsun,1);
-            addHeaderCell(baseInfoTable, getStringRes(R.string.pdf_label_birth_date), simsun, 1);
-            addDataCell(baseInfoTable,birthDate,simsun,1);
-            addHeaderCell(baseInfoTable, getStringRes(R.string.pdf_label_phone), simsun, 1);
-            addDataCell(baseInfoTable,phone,simsun,1);
-            addHeaderCell(baseInfoTable, getStringRes(R.string.pdf_label_address), simsun, 1);
-            addDataCellAuto(baseInfoTable,address,simsun,3);
-            addHeaderCell(baseInfoTable, getStringRes(R.string.pdf_label_family_status), simsun, 1);
-            addDataCellAuto(baseInfoTable,familyStatus,simsun,3);
-            document.add(baseInfoTable);
-
-            PdfPTable familyTable = new PdfPTable(5);
-            familyTable.setWidthPercentage(100);
-            familyTable.setSpacingBefore(5f);
-            familyTable.setSpacingAfter(15f);
-            addHeaderCell(familyTable, getStringRes(R.string.pdf_section_family_members), simsunBold, 5);
-            addHeaderCell(familyTable, getStringRes(R.string.pdf_label_family_member_name), simsun, 1);
-            addHeaderCell(familyTable, getStringRes(R.string.pdf_label_relation), simsun, 1);
-            addHeaderCell(familyTable, getStringRes(R.string.pdf_label_phone), simsun, 1);
-            addHeaderCell(familyTable, getStringRes(R.string.pdf_label_occupation), simsun, 1);
-            addHeaderCell(familyTable, getStringRes(R.string.pdf_label_education), simsun, 1);
-            if (hasFamilyMembers(familyMembers)) {
-                for (int i = 0; i < familyMembers.length(); i++) {
-                    JSONObject member = familyMembers.optJSONObject(i);
-                    if (member == null) {
-                        continue;
-                    }
-                    addDataCell(familyTable, valueOrDefault(member.optString("member_name", "")), simsun,1);
-                    addDataCell(familyTable, valueOrDefault(member.optString("relation", "")), simsun,1);
-                    addDataCell(familyTable, valueOrDefault(member.optString("member_phone", "")), simsun,1);
-                    addDataCell(familyTable, valueOrDefault(member.optString("occupation", "")), simsun,1);
-                    addDataCell(familyTable, valueOrDefault(member.optString("education", "")), simsun,1);
-                }
-            } else {
-                addDataCellAuto(familyTable, getStringRes(R.string.pdf_family_empty), simsun, 5);
-            }
-            document.add(familyTable);
 
 
             PdfPTable table = new PdfPTable(6);
             table.setWidthPercentage(100);
-            table.setSpacingBefore(20f);
+            table.setSpacingBefore(40f);
             table.setSpacingAfter(15f);
-            addHeaderCell(table, getStringRes(R.string.pdf_section_child_info), simsunBold, 6);
-            addHeaderCell(table, getStringRes(R.string.pdf_label_name), simsun, 1);
+            addHeaderCell(table,"儿童信息",simsunBold,6);
+            addHeaderCell(table,"姓名",simsun,1);
             addDataCell(table,name,simsun,5);
-            addHeaderCell(table, getStringRes(R.string.pdf_label_class), simsun, 1);
+            addHeaderCell(table,"班级",simsun,1);
             addDataCell(table,c,simsun,2);
-            addHeaderCell(table, getStringRes(R.string.pdf_label_serial_number), simsun, 1);
+            addHeaderCell(table,"序号",simsun,1);
             addDataCell(table,serialNumber,simsun,2);
-            addHeaderCell(table, getStringRes(R.string.pdf_label_birth_date), simsun, 1);
+            addHeaderCell(table,"出生日期",simsun,1);
             addDataCell(table,birthDate,simsun,2);
-            addHeaderCell(table, getStringRes(R.string.pdf_label_test_date), simsun, 1);
+            addHeaderCell(table,"测试日期",simsun,1);
             addDataCell(table,testData,simsun,2);
-            addHeaderCell(table, getStringRes(R.string.pdf_label_test_location), simsun, 1);
+            addHeaderCell(table,"测试地点",simsun,1);
             addDataCell(table,testLocation,simsun,2);
-            addHeaderCell(table, getStringRes(R.string.pdf_label_examiner), simsun, 1);
+            addHeaderCell(table,"测试员",simsun,1);
             addDataCell(table,examiner,simsun,2);
             document.add(table);
 
 
 
-            // 鍒涘缓琛ㄦ牸锛岃缃搴?
+            // 创建表格，设置宽度
             PdfPTable table21 = new PdfPTable(4);
             table21.setWidthPercentage(100);
 
@@ -522,22 +458,22 @@ public class PdfGenerator extends evmenuactivity{
             addHeaderCell(table21, "1", simsun,1);
             addHeaderCell(table21, "2", simsun,1);
             addHeaderCell(table21, "3", simsun,1);
-            addHeaderCell(table21, getStringRes(R.string.pdf_label_average), simsun, 1);
+            addHeaderCell(table21, "平均值", simsun,1);
             for (String scorepn : scorePN) {
                 addDataCell(table21, scorepn, simsun,1);
             }
             addDataCell(table21, scorePNAVE, simsun,1);
-            // 鍒涘缓琛ㄦ牸锛岃缃搴?
+            // 创建表格，设置宽度
             PdfPTable table22 = new PdfPTable(6);
             table22.setWidthPercentage(100);
             table22.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-            // 娣诲姞鏍囬鍗曞厓鏍?
+            // 添加标题单元格
             addHeaderCell(table22, "1", simsun,1);
             addHeaderCell(table22, "2", simsun,1);
             addHeaderCell(table22, "3", simsun,1);
             addHeaderCell(table22, "4", simsun,1);
             addHeaderCell(table22, "5", simsun,1);
-            addHeaderCell(table22, getStringRes(R.string.pdf_label_average), simsunSmall, 1);
+            addHeaderCell(table22, "平均值", simsunSmall,1);
             for (String scorepst : scorePST) {
                 addDataCell(table22, scorepst, simsun,1);
             }
@@ -549,43 +485,96 @@ public class PdfGenerator extends evmenuactivity{
             table2.setSpacingBefore(15f);
             table2.setSpacingAfter(15f);
 
-            addHeaderCell(table2, getStringRes(R.string.pdf_section_eval_results), simsunBold, 6);
-            addHeaderCell(table2, getStringRes(R.string.pdf_eval_vocab_expression), simsun, 1);
+            addHeaderCell(table2,"测评结果",simsunBold,6);
+            addHeaderCell(table2,"词汇表达（E）",simsun,1);
             addDataCell(table2,scoreE,simsun,2);
-            addHeaderCell(table2, getStringRes(R.string.pdf_eval_vocab_comprehension), simsun, 1);
+            addHeaderCell(table2,"词汇理解（RE）",simsun,1);
             addDataCell(table2,scoreRE,simsun,2);
-            addHeaderCell(table2, getStringRes(R.string.pdf_eval_semantics), simsun, 1);
+            addHeaderCell(table2,"词义（S）",simsun,1);
             addDataCell(table2,scoreS,simsun,2);
-            addHeaderCell(table2, getStringRes(R.string.pdf_eval_nonword_repetition), simsun, 1);
+            addHeaderCell(table2,"非词复述（NWR）",simsun,1);
             addDataCell(table2,scoreNWR,simsun,2);
-            addHeaderCell(table2, getStringRes(R.string.pdf_eval_grammar_comprehension), simsun, 1);
+            addHeaderCell(table2,"语法理解（RG）",simsun,1);
             addDataCell(table2,scoreRG,simsun,2);
-            addHeaderCell2(table2, getStringRes(R.string.pdf_eval_picture_story), simsun, 1, LIGHT_GRAY, 30f);
+            addHeaderCell2(table2,"看图说故事（PST）",simsun,1, LIGHT_GRAY,30f);
             addTableCell(table2,table22,2,30f);
-            addHeaderCell2(table2, getStringRes(R.string.pdf_eval_personal_narrative), simsun, 1, LIGHT_GRAY, 30f);
+            addHeaderCell2(table2,"个人生活经验（PN）",simsun,1, LIGHT_GRAY,30f);
             addTableCell(table2,table21,5,30f);
             document.add(table2);
+
+            JSONObject plReport = ModuleReportHelper.loadPrelinguisticReport(data);
+            String plScene = plReport != null ? plReport.optString("scene", "") : "";
+            int plTotalScore = plReport != null ? plReport.optInt("totalScore", -1) : -1;
+            String plSummaryText = plReport != null ? plReport.optString("summaryText", "") : "";
+            String plSuggestionText = plReport != null ? plReport.optString("suggestionText", "") : "";
+            List<String> plStrengths = new ArrayList<>();
+            List<String> plWeaknesses = new ArrayList<>();
+            int computedScore = 0;
+            JSONArray plArray = data.getJSONObject("evaluations").optJSONArray("PL");
+            if (plArray != null) {
+                for (int i = 0; i < plArray.length(); i++) {
+                    JSONObject item = plArray.getJSONObject(i);
+                    int scoreValue = item.has("score") && !item.isNull("score") ? item.optInt("score", 0) : 0;
+                    String skill = item.optString("skill", "");
+                    if (scoreValue == 1) {
+                        computedScore++;
+                        if (!skill.trim().isEmpty()) {
+                            plStrengths.add(skill);
+                        }
+                    } else if (!skill.trim().isEmpty()) {
+                        plWeaknesses.add(skill);
+                    }
+                }
+            }
+            if (plTotalScore < 0) {
+                plTotalScore = computedScore;
+            }
+            if (plSummaryText == null || plSummaryText.trim().isEmpty()) {
+                plSummaryText = ModuleReportHelper.buildPrelinguisticSummaryText(plStrengths, plWeaknesses);
+            }
+            if (plSuggestionText == null || plSuggestionText.trim().isEmpty()) {
+                plSuggestionText = "（请在结果页生成评估建议）";
+            }
+            if (plScene == null || plScene.trim().isEmpty()) {
+                plScene = "未选择";
+            }
+            String plSceneLabel;
+            if ("A".equals(plScene)) {
+                plSceneLabel = "A 吹泡泡场景";
+            } else if ("B".equals(plScene)) {
+                plSceneLabel = "B 玩球场景";
+            } else {
+                plSceneLabel = plScene;
+            }
+            document.add(new Paragraph("二、前语言能力测试模块（模块二）", simsunBold));
+            document.add(new Paragraph("场景：" + plSceneLabel, simsun));
+            document.add(new Paragraph("得分：" + plTotalScore + "/10", simsun));
+            document.add(new Paragraph("（一）前语言能力评估结果", simsunBold));
+            document.add(new Paragraph(plSummaryText, simsun));
+            document.add(new Paragraph("（二）评估建议", simsunBold));
+            document.add(new Paragraph(plSuggestionText, simsun));
+            document.add(new Paragraph(" ", simsun));
 
             PdfPTable table31 = new PdfPTable(1);
             table31.setWidthPercentage(100);
             table31.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-            addHeaderCell2(table31, getStringRes(R.string.pdf_manner_plosive), simsunSmall, 1, BaseColor.ORANGE, 30f);
-            addHeaderCell2(table31, getStringRes(R.string.pdf_manner_nasal), simsunSmall, 1, BaseColor.ORANGE, 15f);
-            addHeaderCell2(table31, getStringRes(R.string.pdf_manner_lateral), simsunSmall, 1, BaseColor.ORANGE, 15f);
-            addHeaderCell2(table31, getStringRes(R.string.pdf_manner_fricative), simsunSmall, 1, BaseColor.ORANGE, 30f);
-            addHeaderCell2(table31, getStringRes(R.string.pdf_manner_affricate), simsunSmall, 1, BaseColor.ORANGE, 30f);
+            addHeaderCell2(table31,"塞音",simsunSmall,1,BaseColor.ORANGE,30f);
+            addHeaderCell2(table31,"鼻音",simsunSmall,1,BaseColor.ORANGE,15f);
+            addHeaderCell2(table31,"边音",simsunSmall,1,BaseColor.ORANGE,15f);
+            addHeaderCell2(table31,"擦音",simsunSmall,1,BaseColor.ORANGE,30f);
+            addHeaderCell2(table31,"塞擦音",simsunSmall,1,BaseColor.ORANGE,30f);
 
             PdfPTable table32 = new PdfPTable(1);
             table32.setWidthPercentage(100);
             table32.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-            addDataCell2(table32, getStringRes(R.string.pdf_label_unaspirated), simsunSmall, 1, 15f);
-            addDataCell2(table32, getStringRes(R.string.pdf_label_aspirated), simsunSmall, 1, 15f);
+            addDataCell2(table32,"不送气",simsunSmall,1,15f);
+            addDataCell2(table32,"送气",simsunSmall,1,15f);
             addDataCell2(table32,"",simsunSmall,1,15f);
             addDataCell2(table32,"",simsunSmall,1,15f);
             addDataCell2(table32,"",simsunSmall,1,15f);
             addDataCell2(table32,"",simsunSmall,1,15f);
-            addDataCell2(table32, getStringRes(R.string.pdf_label_unaspirated), simsunSmall, 1, 15f);
-            addDataCell2(table32, getStringRes(R.string.pdf_label_aspirated), simsunSmall, 1, 15f);
+            addDataCell2(table32,"不送气",simsunSmall,1,15f);
+            addDataCell2(table32,"送气",simsunSmall,1,15f);
 
             PdfPTable table33 = new PdfPTable(3);
             table33.setWidthPercentage(100);
@@ -663,17 +652,17 @@ public class PdfGenerator extends evmenuactivity{
             table3.setWidthPercentage(100);
             table3.setSpacingBefore(15f);
             table3.setSpacingAfter(15f);
-            addHeaderCell2(table3, getStringRes(R.string.pdf_articulation_title), simsun, 9, LIGHT_GRAY, 15f);
-            addHeaderCell2(table3, getStringRes(R.string.pdf_label_manner), simsunSmall, 2, BaseColor.PINK, 15f);
-            addHeaderCell2(table3, getStringRes(R.string.pdf_label_place), simsunSmall, 7, BaseColor.YELLOW, 15f);
+            addHeaderCell2(table3,"构音（A）",simsun,9, LIGHT_GRAY,15f);
+            addHeaderCell2(table3,"发音方式",simsunSmall,2, BaseColor.PINK,15f);
+            addHeaderCell2(table3,"发音部位",simsunSmall,7, BaseColor.YELLOW,15f);
             addHeaderCell2(table3,"",simsunSmall,2, BaseColor.PINK,15f);
-            addHeaderCell2(table3, getStringRes(R.string.pdf_place_bilabial), simsunSmall, 1, BaseColor.YELLOW, 15f);
-            addHeaderCell2(table3, getStringRes(R.string.pdf_place_labiodental), simsunSmall, 1, BaseColor.YELLOW, 15f);
-            addHeaderCell2(table3, getStringRes(R.string.pdf_place_alveolar), simsunSmall, 1, BaseColor.YELLOW, 15f);
-            addHeaderCell2(table3, getStringRes(R.string.pdf_place_alveolar_middle), simsunSmall, 1, BaseColor.YELLOW, 15f);
-            addHeaderCell2(table3, getStringRes(R.string.pdf_place_retroflex), simsunSmall, 1, BaseColor.YELLOW, 15f);
-            addHeaderCell2(table3, getStringRes(R.string.pdf_place_palatal), simsunSmall, 1, BaseColor.YELLOW, 15f);
-            addHeaderCell2(table3, getStringRes(R.string.pdf_place_velar), simsunSmall, 1, BaseColor.YELLOW, 15f);
+            addHeaderCell2(table3,"双唇",simsunSmall,1, BaseColor.YELLOW,15f);
+            addHeaderCell2(table3,"唇齿音",simsunSmall,1, BaseColor.YELLOW,15f);
+            addHeaderCell2(table3,"舌尖中",simsunSmall,1, BaseColor.YELLOW,15f);
+            addHeaderCell2(table3,"舌尖前",simsunSmall,1, BaseColor.YELLOW,15f);
+            addHeaderCell2(table3,"舌面前",simsunSmall,1, BaseColor.YELLOW,15f);
+            addHeaderCell2(table3,"舌尖后",simsunSmall,1, BaseColor.YELLOW,15f);
+            addHeaderCell2(table3,"舌根",simsunSmall,1, BaseColor.YELLOW,15f);
             addTableCell(table3,table31,1,120f);
             addTableCell(table3,table32,1,120f);
             addTableCell(table3,table33,1,120f);
@@ -683,15 +672,10 @@ public class PdfGenerator extends evmenuactivity{
             addTableCell(table3,table37,1,120f);
             document.add(table3);
 
-            JSONObject treatmentPlan = data.optJSONObject("treatmentPlan");
-            if (treatmentPlan != null) {
-                addTreatmentPlanSection(document, simsunBold, simsun, treatmentPlan);
-            }
-
             document.close();
 
 
-            Toast.makeText(ctx, getStringRes(R.string.pdf_export_success), Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "文件已保存", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1027,6 +1011,7 @@ public class PdfGenerator extends evmenuactivity{
         final String labelAgeMonths;
         final String labelChiefComplaint;
         final String labelKeyFindings;
+        final String labelTestResults;
         final String labelSuspectedDiagnosis;
         final String labelRiskFlags;
         final String sectionOverallGoals;
@@ -1080,6 +1065,7 @@ public class PdfGenerator extends evmenuactivity{
                 String labelAgeMonths,
                 String labelChiefComplaint,
                 String labelKeyFindings,
+                String labelTestResults,
                 String labelSuspectedDiagnosis,
                 String labelRiskFlags,
                 String sectionOverallGoals,
@@ -1131,6 +1117,7 @@ public class PdfGenerator extends evmenuactivity{
             this.labelAgeMonths = labelAgeMonths;
             this.labelChiefComplaint = labelChiefComplaint;
             this.labelKeyFindings = labelKeyFindings;
+            this.labelTestResults = labelTestResults;
             this.labelSuspectedDiagnosis = labelSuspectedDiagnosis;
             this.labelRiskFlags = labelRiskFlags;
             this.sectionOverallGoals = sectionOverallGoals;
@@ -1186,6 +1173,7 @@ public class PdfGenerator extends evmenuactivity{
                     context.getString(R.string.pdf_label_age_months),
                     context.getString(R.string.pdf_label_chief_complaint),
                     context.getString(R.string.pdf_label_key_findings),
+                    context.getString(R.string.pdf_label_test_results),
                     context.getString(R.string.pdf_label_suspected_diagnosis),
                     context.getString(R.string.pdf_label_risk_flags),
                     context.getString(R.string.pdf_section_overall_goals),
@@ -1523,7 +1511,7 @@ public class PdfGenerator extends evmenuactivity{
 
         private void drawModuleBlock(String title, JSONObject moduleData, JSONObject summaryData, boolean drawLine) {
             drawModuleHeader(title, drawLine);
-            drawFindingsCard(moduleData, summaryData);
+            drawFindingsCard(MODULE_TITLE_SPEECH_SOUND.equals(title), moduleData, summaryData);
             if (MODULE_TITLE_SPEECH_SOUND.equals(title) && hasArticulation(moduleData)) {
                 drawArticulationPlan(moduleData);
             } else {
@@ -1548,16 +1536,17 @@ public class PdfGenerator extends evmenuactivity{
             y += titleHeight + LINE_GAP;
         }
 
-        private void drawFindingsCard(JSONObject moduleData, JSONObject summaryData) {
+        private void drawFindingsCard(boolean isSpeechSound, JSONObject moduleData, JSONObject summaryData) {
             List<String> keyFindings = getList(moduleData, "key_findings");
             if (keyFindings.isEmpty()) {
                 keyFindings = new ArrayList<>();
                 keyFindings.add(placeholderText());
             }
 
+            String label = isSpeechSound ? strings.labelTestResults : strings.labelKeyFindings;
             float contentWidth = getContentWidth() - FINDINGS_PADDING * 2f;
             float height = FINDINGS_PADDING;
-            height += measureBulletSectionHeight(strings.labelKeyFindings, keyFindings, contentWidth);
+            height += measureBulletSectionHeight(label, keyFindings, contentWidth);
             height += FINDINGS_PADDING;
 
             ensureSpace(height + LINE_GAP);
@@ -1566,7 +1555,7 @@ public class PdfGenerator extends evmenuactivity{
                 canvas.drawRoundRect(rect, FINDINGS_RADIUS, FINDINGS_RADIUS, sectionFillPaint);
             }
             float cursorY = y + FINDINGS_PADDING;
-            cursorY += drawBulletSectionAt(strings.labelKeyFindings, keyFindings, MARGIN + FINDINGS_PADDING, cursorY, contentWidth);
+            cursorY += drawBulletSectionAt(label, keyFindings, MARGIN + FINDINGS_PADDING, cursorY, contentWidth);
             y += height + LINE_GAP;
         }
 

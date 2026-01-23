@@ -29,6 +29,7 @@ import bean.s;
 import bean.pst;
 import bean.nwr;
 import bean.pn;
+import bean.pl;
 import bean.evaluation;
 import utils.AudioRecorder;
 import utils.Chinesenumbers;
@@ -36,6 +37,7 @@ import utils.allquestionlistener;
 import utils.dataManager;
 import utils.dialogUtils;
 import utils.ImageUrls;
+import utils.ModuleReportHelper;
 import utils.testcontext;
 
 public class testactivity extends AppCompatActivity implements View.OnClickListener {
@@ -45,6 +47,10 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
     private ArrayList<evaluation> evTemp;
     private TextView exit, counter, timer;
     private String format;
+    private String scene;
+    private String moduleKey;
+    private static final String FORMAT_PL = "11";
+    private static final String MODULE_PL = "PL";
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -111,11 +117,17 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         //获取上个页面传来的信息，即测试哪种题目
         Intent intent = getIntent();
         format = intent.getStringExtra("format");
+        moduleKey = intent.getStringExtra("moduleKey");
+        scene = intent.getStringExtra("scene");
+        if (scene == null || scene.trim().isEmpty()) {
+            scene = "A";
+        }
         fName = intent.getStringExtra("fName");
         JSONObject evaluations = dataManager.getInstance().loadData(fName).getJSONObject("evaluations");
-        if (format == null)
+        String resolvedKey = moduleKey != null ? moduleKey : format;
+        if (resolvedKey == null)
             return;
-        if (format.equals("A")) {
+        if (resolvedKey.equals("A")) {
             boolean useNewA = ImageUrls.useNewAPhonology();
             if (useNewA) {
                 ImageUrls.initAPhonologyLexicon();
@@ -210,7 +222,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                 viewPager.setCurrentItem(testcontext.getInstance().searchOne());
             }
 
-        } else if (format.equals("E")) {
+        } else if (resolvedKey.equals("E")) {
 
             String[] imageUrls = ImageUrls.E_imageUrls;
             String[] imageUrlsC = ImageUrls.E_imageUrlsC;
@@ -257,7 +269,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             viewPager.setAdapter(adapter);
             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
 
-        } else if (format.equals("NWR")) {
+        } else if (resolvedKey.equals("NWR")) {
             String[][] words = ImageUrls.NWR_characs;
             String[][] wordsC = ImageUrls.NWR_characsC;
             int lenth  = words.length;
@@ -314,7 +326,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             viewPager.setAdapter(adapter);
             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
 
-        } else if (format.equals("PN")) {
+        } else if (resolvedKey.equals("PN")) {
 
             String[] imageUrls = ImageUrls.PN_imageUrls;
             String[] pnHints = ImageUrls.PN_hints;
@@ -371,7 +383,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             viewPager.setAdapter(adapter);
             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
 
-        } else if (format.equals("PST")) {
+        } else if (resolvedKey.equals("PST")) {
             String[] imageUrls = ImageUrls.PST_imageUrls;
             //String[][] pstHints = ImageUrls.PST_hints;
             int lenth = imageUrls.length;
@@ -421,7 +433,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             adapter = new testpageradapter(R.layout.narrate_tests, R_id, Tb, evTemp, null,null,null,counter, timer);
             viewPager.setAdapter(adapter);
             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
-        } else if (format.equals("RE")) {
+        } else if (resolvedKey.equals("RE")) {
             String[] imageUrls = ImageUrls.RE_imageUrls;
             String[] imageUrlsC = ImageUrls.RE_imageUrlsC;
             int[][] turn = ImageUrls.RE_turn;
@@ -481,7 +493,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             adapter = new testpageradapter(R.layout.word_test2, null, Tb, evTemp, R_id,null,null,counter, timer);
             viewPager.setAdapter(adapter);
             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
-        } else if (format.equals("RG")) {
+        } else if (resolvedKey.equals("RG")) {
 
             String[] imageUrlsC = ImageUrls.RG_hints;
             String[] ans = ImageUrls.RG_Ans;
@@ -530,7 +542,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             viewPager.setAdapter(adapter);
             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
 
-        } else if (format.equals("S")) {
+        } else if (resolvedKey.equals("S")) {
             String[] sWords = ImageUrls.S_words;
             String[] sWordsAns = ImageUrls.S_wordsAns;
             int lenth = sWords.length;
@@ -569,6 +581,56 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             testcontext.getInstance().setEvaluations(evTemp);
 
             adapter = new testpageradapter(R.layout.word_test3, null, Tb, evTemp, null,null,sWords,counter, timer);
+            viewPager.setAdapter(adapter);
+            viewPager.setCurrentItem(testcontext.getInstance().searchOne());
+
+        } else if (resolvedKey.equals(MODULE_PL) || FORMAT_PL.equals(resolvedKey) || FORMAT_PL.equals(format)) {
+            String[] skills = ImageUrls.PL_SKILLS;
+            String[] prompts = "B".equals(scene) ? ImageUrls.PL_PROMPTS_B : ImageUrls.PL_PROMPTS_A;
+            String[] imageNames = "B".equals(scene) ? ImageUrls.PL_IMAGES_B : ImageUrls.PL_IMAGES_A;
+            int length = skills.length;
+            testcontext.getInstance().setLengths(length);
+            JSONArray PL = evaluations.optJSONArray("PL");
+            if (PL == null) {
+                PL = new JSONArray();
+                evaluations.put("PL", PL);
+            }
+            evTemp = new ArrayList<evaluation>(length);
+
+            ArrayList<Integer> imageIds = new ArrayList<Integer>(length);
+            boolean hasImage = false;
+            for (int i = 0; i < length; i++) {
+                int resId = 0;
+                if (imageNames != null && i < imageNames.length) {
+                    String name = imageNames[i];
+                    if (name != null && !name.trim().isEmpty()) {
+                        resId = getResources().getIdentifier(name, "drawable", getPackageName());
+                    }
+                }
+                imageIds.add(resId);
+                if (resId != 0) {
+                    hasImage = true;
+                }
+            }
+            String[] Tb = Chinesenumbers.generateChineseNumbersArray(length);
+
+            for (int i = 1; i <= length; i++) {
+                pl item;
+                if (PL.length() >= i) {
+                    item = pl.fromJson(PL.getJSONObject(i - 1));
+                } else {
+                    item = new pl(i, null, null, null, null, null, null);
+                }
+                if (item.getSkill() == null || item.getSkill().trim().isEmpty()) {
+                    item.setSkill(skills[i - 1]);
+                }
+                item.setPrompt(prompts[i - 1]);
+                item.setAllQuestionListener(allquestioncallback);
+                evTemp.add(item);
+            }
+
+            testcontext.getInstance().setEvaluations(evTemp);
+            adapter = new testpageradapter(R.layout.word_test1, hasImage ? imageIds : null, Tb, evTemp, null, null, null, counter, timer);
             viewPager.setAdapter(adapter);
             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
 
@@ -640,36 +702,61 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             // 创建一个新的空的 JSONArray
             JSONArray emptyArray = new JSONArray();
 
-            if(format!=null){
-                if (format.equals("A")) {
+            String resolvedKey = moduleKey != null ? moduleKey : format;
+            boolean isPrelinguistic = MODULE_PL.equals(resolvedKey) || FORMAT_PL.equals(resolvedKey) || FORMAT_PL.equals(format);
+            if(resolvedKey!=null){
+                if (resolvedKey.equals("A")) {
                     evaluations.put("A", emptyArray);
                 }
-                else if (format.equals("E")) {
+                else if (resolvedKey.equals("E")) {
                     evaluations.put("E", emptyArray);
                 }
-                else if (format.equals("NWR")) {
+                else if (resolvedKey.equals("NWR")) {
                     evaluations.put("NWR", emptyArray);
 
-                } else if (format.equals("PN")) {
+                } else if (resolvedKey.equals("PN")) {
                     evaluations.put("PN", emptyArray);
 
-                } else if (format.equals("PST")) {
+                } else if (resolvedKey.equals("PST")) {
                     evaluations.put("PST", emptyArray);
 
-                } else if (format.equals("RE")) {
+                } else if (resolvedKey.equals("RE")) {
                     evaluations.put("RE", emptyArray);
 
-                } else if (format.equals("RG")) {
+                } else if (resolvedKey.equals("RG")) {
                     evaluations.put("RG", emptyArray);
 
-                } else if (format.equals("S")) {
+                } else if (resolvedKey.equals("S")) {
                     evaluations.put("S", emptyArray);
+
+                } else if (isPrelinguistic) {
+                    evaluations.put("PL", emptyArray);
 
                 } else {
 
                 }
                 for(int i = 0; i< evTemp.size(); i++){
                     evTemp.get(i).toJson(evaluations);
+                }
+                if (isPrelinguistic) {
+                    ArrayList<String> strengths = new ArrayList<>();
+                    ArrayList<String> weaknesses = new ArrayList<>();
+                    int totalScore = 0;
+                    for (evaluation evaluation : evTemp) {
+                        if (!(evaluation instanceof pl)) {
+                            continue;
+                        }
+                        pl item = (pl) evaluation;
+                        int score = item.getScore() == null ? 0 : item.getScore();
+                        if (score == 1) {
+                            strengths.add(item.getSkill());
+                            totalScore++;
+                        } else {
+                            weaknesses.add(item.getSkill());
+                        }
+                    }
+                    JSONObject report = ModuleReportHelper.buildPrelinguisticReport(scene, totalScore, strengths, weaknesses);
+                    ModuleReportHelper.savePrelinguisticReport(data, report);
                 }
                 dataManager.getInstance().saveData(fName,data);
             }

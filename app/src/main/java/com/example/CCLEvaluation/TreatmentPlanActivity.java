@@ -43,6 +43,7 @@ public class TreatmentPlanActivity extends AppCompatActivity {
     private static final String CARD_NOTES_THERAPIST = "\u6cbb\u7597\u5e08\u5907\u6ce8";
     private static final String CARD_NOTES_PARENTS = "\u5bb6\u957f\u5efa\u8bae";
     private static final String SECTION_FINDINGS = "\u8bca\u65ad\u53d1\u73b0";
+    private static final String SECTION_TEST_RESULTS = "\u6d4b\u8bd5\u7ed3\u679c";
     private static final String SECTION_PLAN = "\u5e72\u9884\u8ba1\u5212";
     private static final String SECTION_STAGES = "\u9636\u6bb5\u8bad\u7ec3";
     private static final String SECTION_ARTICULATION_OVERALL = "\u8bc4\u4f30\u7ed3\u679c\uff08\u6574\u4f53\uff09";
@@ -302,7 +303,8 @@ public class TreatmentPlanActivity extends AppCompatActivity {
     private void addModuleCard(List<PlanUiItem> list, String label, String moduleKey, JSONObject moduleObj,
                                boolean speech, List<String> caseFindings) {
         list.add(new PlanUiItem.CardHeader(label, "card_module_" + moduleKey, true, true));
-        list.add(new PlanUiItem.SectionHeader(SECTION_FINDINGS, 1));
+        String findingsTitle = speech ? SECTION_TEST_RESULTS : SECTION_FINDINGS;
+        list.add(new PlanUiItem.SectionHeader(findingsTitle, 1));
         List<String> moduleFindings = getStringList(moduleObj, "key_findings");
         if (speech) {
             addListGroup(list, null, "module_plan." + moduleKey + ".key_findings", moduleFindings, 2);

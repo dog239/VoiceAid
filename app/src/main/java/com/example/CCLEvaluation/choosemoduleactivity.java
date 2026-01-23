@@ -44,8 +44,8 @@ public class choosemoduleactivity extends AppCompatActivity {
 
     private Button Sure1;
     private Button Back1;
-    private CheckBox[] checkBoxes = new CheckBox[4];
-    private Boolean[] chooseWhat = new Boolean[4];
+    private CheckBox[] checkBoxes = new CheckBox[5];
+    private Boolean[] chooseWhat = new Boolean[5];
     private String Uid;
 
     @Override
@@ -58,10 +58,12 @@ public class choosemoduleactivity extends AppCompatActivity {
         checkBoxes[1] = findViewById(R.id.pronounciation);
         checkBoxes[2] = findViewById(R.id.grammar);
         checkBoxes[3] = findViewById(R.id.narrator);
+        checkBoxes[4] = findViewById(R.id.prelinguistic);
         checkBoxes[0].setVisibility(View.INVISIBLE);
         checkBoxes[1].setVisibility(View.INVISIBLE);
         checkBoxes[2].setVisibility(View.INVISIBLE);
         checkBoxes[3].setVisibility(View.INVISIBLE);
+        checkBoxes[4].setVisibility(View.INVISIBLE);
 
         Uid = getIntent().getStringExtra("Uid");
 //        Toast.makeText(choosemoduleactivity.this,Uid,Toast.LENGTH_SHORT).show();
@@ -77,6 +79,7 @@ public class choosemoduleactivity extends AppCompatActivity {
                 String RG = jsonObject.getString("RG");
                 String PN = jsonObject.getString("PN");
                 String PST = jsonObject.getString("PST");
+                String PL = jsonObject.optString("PL", "0");
 
                 if(E.equals("1") && RE.equals("1") && S.equals("1") && NWR.equals("1")){
                     chooseWhat[0] = true;
@@ -113,6 +116,15 @@ public class choosemoduleactivity extends AppCompatActivity {
                     chooseWhat[3] = false;
                     checkBoxes[3].setChecked(false);
                     checkBoxes[3].setVisibility(View.VISIBLE);
+                }
+                if(PL.equals("1")){
+                    chooseWhat[4] = true;
+                    checkBoxes[4].setChecked(true);
+                    checkBoxes[4].setVisibility(View.VISIBLE);
+                }else{
+                    chooseWhat[4] = false;
+                    checkBoxes[4].setChecked(false);
+                    checkBoxes[4].setVisibility(View.VISIBLE);
                 }
 
 
@@ -167,6 +179,17 @@ public class choosemoduleactivity extends AppCompatActivity {
                 }
             }
         });
+        checkBoxes[4].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                // 将RadioButton的选中状态存储到SharedPreferences中
+                if(isChecked){
+                    chooseWhat[4] = true;
+                }else{
+                    chooseWhat[4] = false;
+                }
+            }
+        });
 
 
         Sure1.setOnClickListener(new View.OnClickListener() {
@@ -201,6 +224,11 @@ public class choosemoduleactivity extends AppCompatActivity {
                     }else{
                         jsonObject.put("PST",0);
                         jsonObject.put("PN",0);
+                    }
+                    if(chooseWhat[4]){
+                        jsonObject.put("PL",1);
+                    }else{
+                        jsonObject.put("PL",0);
                     }
                     Log.d("10086",jsonObject.toString());
                     Netinteractutils.getInstance(choosemoduleactivity.this).updateModule(Uid,jsonObject);

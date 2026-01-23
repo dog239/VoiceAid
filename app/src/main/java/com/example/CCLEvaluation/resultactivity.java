@@ -12,13 +12,20 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 import adapter.resultadapter;
 import bean.a;
@@ -27,11 +34,13 @@ import bean.e;
 import bean.evaluation;
 import bean.pn;
 import bean.pst;
+import bean.pl;
 import bean.re;
 import bean.rg;
 import bean.s;
 import utils.AudioPlayer;
 import utils.ImageUrls;
+import utils.ModuleReportHelper;
 import utils.dataManager;
 import utils.ResultContext;
 
@@ -39,12 +48,57 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
 
     private RecyclerView recyclerView;
     private resultadapter adapter;
-    private View view;
     private TextView tv2;
-    private LinearLayout table;
     private ArrayList<evaluation> evaluations;
     private Button back;
-    private TextView[] tvs = new TextView[21];
+    private String fName;
+    private LinearLayout extraAResults;
+    private LinearLayout extraASuggestions;
+    private EditText vowelAccuracy;
+    private EditText initialAccuracy;
+    private EditText speechClarity;
+    private CheckBox diagNormal;
+    private CheckBox diagPhonology;
+    private CheckBox diagTone;
+    private CheckBox suggestNone;
+    private CheckBox suggestFollow;
+    private CheckBox suggestTrad;
+    private CheckBox suggestPhono;
+    private CheckBox suggestMore;
+    private EditText followMonths;
+    private EditText tradFreq;
+    private EditText phonoFreq;
+    private LinearLayout plSuggestions;
+    private LinearLayout plOption1Container;
+    private LinearLayout plOption2Container;
+    private RadioGroup plOptionGroup;
+    private RadioGroup plFreqGroup;
+    private RadioGroup plMinutesGroup;
+    private RadioGroup plParentMinutesGroup;
+    private RadioGroup plFollowupGroup;
+    private TextView plSuggestionText;
+    private Button plSaveButton;
+    private static final String FORMAT_PL = "11";
+    private static final String MODULE_PL = "PL";
+    private String plSummaryTextValue;
+    private String plSuggestionTextValue;
+    private boolean isPrelinguisticResult;
+    private boolean isArticulationResult;
+    private final int[] initialIds = new int[]{
+            R.id.initial_b, R.id.initial_p, R.id.initial_m, R.id.initial_f,
+            R.id.initial_d, R.id.initial_t, R.id.initial_n, R.id.initial_l,
+            R.id.initial_g, R.id.initial_k, R.id.initial_h, R.id.initial_j,
+            R.id.initial_q, R.id.initial_x, R.id.initial_zh, R.id.initial_ch,
+            R.id.initial_sh, R.id.initial_r, R.id.initial_z, R.id.initial_c
+    };
+    private final String[] initialLabels = new String[]{
+            "b", "p", "m", "f",
+            "d", "t", "n", "l",
+            "g", "k", "h", "j",
+            "q", "x", "zh", "ch",
+            "sh", "r", "z", "c"
+    };
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,22 +107,41 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         recyclerView = findViewById(R.id.recyclerview);
         back = findViewById(R.id.back);
         tv2 = findViewById(R.id.tv_2);
-        table = findViewById(R.id.table);
-        view = findViewById(R.id.line);
-        String[] charc = ImageUrls.A_characs;
-        Resources res = getResources();
-        for(int k=0; k < charc.length;++k){
-            int start = charc[k].indexOf('/');
-            int end = charc[k].lastIndexOf('/');
-            String extractedString = charc[k].substring(start + 1, end).toUpperCase();
-            tvs[k] = findViewById(res.getIdentifier(extractedString,"id",getPackageName()));
-        }
+        extraAResults = findViewById(R.id.extra_a_results);
+        extraASuggestions = findViewById(R.id.extra_a_suggestions);
+        vowelAccuracy = findViewById(R.id.extra_a_vowel_accuracy);
+        initialAccuracy = findViewById(R.id.extra_a_initial_accuracy);
+        speechClarity = findViewById(R.id.extra_a_speech_clarity);
+        diagNormal = findViewById(R.id.extra_a_diag_normal);
+        diagPhonology = findViewById(R.id.extra_a_diag_phonology);
+        diagTone = findViewById(R.id.extra_a_diag_tone);
+        suggestNone = findViewById(R.id.extra_a_suggest_none);
+        suggestFollow = findViewById(R.id.extra_a_suggest_follow);
+        suggestTrad = findViewById(R.id.extra_a_suggest_trad);
+        suggestPhono = findViewById(R.id.extra_a_suggest_phono);
+        suggestMore = findViewById(R.id.extra_a_suggest_more);
+        followMonths = findViewById(R.id.extra_a_follow_months);
+        tradFreq = findViewById(R.id.extra_a_trad_freq);
+        phonoFreq = findViewById(R.id.extra_a_phono_freq);
+        plSuggestions = findViewById(R.id.pl_suggestions);
+        plOptionGroup = findViewById(R.id.pl_option_group);
+        plOption1Container = findViewById(R.id.pl_option1_container);
+        plOption2Container = findViewById(R.id.pl_option2_container);
+        plFreqGroup = findViewById(R.id.pl_freq_group);
+        plMinutesGroup = findViewById(R.id.pl_minutes_group);
+        plParentMinutesGroup = findViewById(R.id.pl_parent_minutes_group);
+        plFollowupGroup = findViewById(R.id.pl_followup_group);
+        plSuggestionText = findViewById(R.id.pl_suggestion_text);
+        plSaveButton = findViewById(R.id.pl_save_button);
         try {
             initData();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         back.setOnClickListener(this);
+        if (plSaveButton != null) {
+            plSaveButton.setOnClickListener(this);
+        }
 
     }
     public void onConfigurationChanged(Configuration newConfig) {
@@ -96,6 +169,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         ResultContext.getInstance().setContext(this);
 
         evaluations = new ArrayList<evaluation>();
+        if (plSuggestions != null) {
+            plSuggestions.setVisibility(View.GONE);
+        }
         //示例，该结果展示PST对象，手动初始化
         /*
             evaluations.add(new PST(0,0));
@@ -112,97 +188,105 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         Intent intent = getIntent();
         String fName = intent.getStringExtra("fName");
         String format = intent.getStringExtra("format");
+        String moduleKey = intent.getStringExtra("moduleKey");
+        this.fName = fName;
         JSONObject data = dataManager.getInstance().loadData(fName);
-        if(format==null)
+        if(format==null && moduleKey == null)
             return;
-        if(format.equals("A")){
-            String[] characs = ImageUrls.A_characs;
-            int[] score = new int[21];
+        String safeFormat = format == null ? "" : format;
+        boolean isPrelinguistic = MODULE_PL.equals(moduleKey) || MODULE_PL.equals(format) || FORMAT_PL.equals(format);
+        isPrelinguisticResult = isPrelinguistic;
+        boolean isArticulation = "A".equals(safeFormat);
+        isArticulationResult = isArticulation;
+        if(isArticulation){
             tv2.setVisibility(View.GONE);
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("A");
-            boolean hasPhonology = false;
-            for (int i = 0; i < jsonArray.length(); i++) {
+            if (extraAResults != null) extraAResults.setVisibility(View.VISIBLE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.VISIBLE);
+            evaluations.add(new a(0, (List<a.CharacterPhonology>) null, null, null, null)); // 首行
+            // 逐题读取
+            List<a> aItems = new ArrayList<>();
+            for(int i=0;i<jsonArray.length();i++){
                 JSONObject object = jsonArray.getJSONObject(i);
-                if (object.has("targetWord") && !object.isNull("targetWord")) {
-                    hasPhonology = true;
-                    break;
-                }
+                a item = a.fromJson(object);
+                aItems.add(item);
+                evaluations.add(item);
             }
-            if (hasPhonology) {
-                ImageUrls.initAPhonologyLexicon();
-                view.setVisibility(View.GONE);
-                table.setVisibility(View.GONE);
-                if (ImageUrls.A_targetWord.length > 0) {
-                    evaluations.add(new a(0, ImageUrls.toList(ImageUrls.A_targetWord[0]), null, null, null));
-                } else {
-                    evaluations.add(new a(0, (java.util.List<a.CharacterPhonology>) null, null, null, null));
-                }
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    a item = a.fromJson(jsonArray.getJSONObject(i));
-                    if (item.getTargetWord() == null && i < ImageUrls.A_targetWord.length) {
-                        item.setTargetWord(ImageUrls.toList(ImageUrls.A_targetWord[i]));
-                    }
-                    if (item.getTarget() == null && i < ImageUrls.A_newImageUrlsC.length) {
-                        item.setTarget(ImageUrls.A_newImageUrlsC[i]);
-                    }
-                    evaluations.add(item);
-                }
-            } else {
-                if(jsonArray.length()>0){
-                    view.setVisibility(View.VISIBLE);
-                    table.setVisibility(View.VISIBLE);
-                }
-                evaluations.add(new a(0,null,null,null,null,null,null));//首行
-                for(int i=0;i<jsonArray.length();i++){
-                    JSONObject object = jsonArray.getJSONObject(i);
-                    if(object.has("time")&&!object.isNull("time")){
-                        String tone1 = object.optString("target_tone1", "");
-                        String tone2 = object.optString("target_tone2", "");
-                        if(!tone1.equals("")){
-                            for(int j=0;j<characs.length;j++){
-                                if (characs[j].equals(tone1)){
-                                    score[j]++;
-                                }
-                            }
+            // 统计声母正确率：每个声母独立 “正确/总”
+            int[] correctInitial = new int[initialLabels.length];
+            int[] totalInitial = new int[initialLabels.length];
+            int vowelCorrect = 0;
+            int vowelTotal = 0;
+            for (a item : aItems) {
+                List<a.CharacterPhonology> targets = item.getTargetWord();
+                List<a.CharacterPhonology> answers = item.getAnswerPhonology();
+                if (targets == null) continue;
+                for (int idx = 0; idx < targets.size(); idx++) {
+                    a.CharacterPhonology tgt = targets.get(idx);
+                    a.CharacterPhonology ans = (answers != null && idx < answers.size()) ? answers.get(idx) : null;
+                    String tgtInitial = safeLower(initialOf(tgt));
+                    String ansInitial = safeLower(initialOf(ans));
+                    if (!tgtInitial.isEmpty()) {
+                        int pos = initialIndexOf(tgtInitial);
+                        if (pos >= 0) {
+                            totalInitial[pos]++;
+                            if (tgtInitial.equals(ansInitial)) correctInitial[pos]++;
                         }
-                        if(!tone2.equals("")){
-                            for(int j=0;j<characs.length;j++){
-                                if (characs[j].equals(tone2)){
-                                    score[j]++;
-                                }
-                            }
-                        }
-
-                        evaluations.add(new a(i+1,object.getString("target"),object.optString("progress", ""),
-                                tone1, tone2,new audio(object.getString("audioPath")),
-                                object.getString("time")));
                     }
-                    else {
-                        evaluations.add(new a(i+1,object.getString("target"),null,null,null,null,null));
-                    }
-                }
-                int num[] = ImageUrls.A_nums;
-                if(jsonArray.length()>0){
-                    for(int i=0;i<num.length;++i){
-                        double lenthe = num[i];
-                        double scoree = (score[i]/lenthe)*100;
-                        String stre = String.format("%.2f%%",scoree);
-                        tvs[i].setText(stre);
-                        if(scoree>=67){
-                            tvs[i].setBackgroundResource(R.drawable.right_button);
-                        }else if(scoree>=34) {
-                            tvs[i].setBackgroundResource(R.drawable.justsoso_button);
-                        }else {
-                            tvs[i].setBackgroundResource(R.drawable.wrong_button);
-                        }
-
+                    String tgtVowel = vowelString(tgt);
+                    if (!tgtVowel.isEmpty()) {
+                        vowelTotal++;
+                        if (tgtVowel.equals(vowelString(ans))) vowelCorrect++;
                     }
                 }
             }
-
+            // 填充声母表格
+            for (int i = 0; i < initialIds.length && i < initialLabels.length; i++) {
+                EditText et = findViewById(initialIds[i]);
+                if (et != null) {
+                    int total = totalInitial[i];
+                    int correct = correctInitial[i];
+                    et.setText(total > 0 ? (correct + "/" + total) : "0/0");
+                }
+            }
+            // 填充总体声母正确率
+            double initialRate = 0d;
+            if (initialAccuracy != null) {
+                int sumTotal = 0, sumCorrect = 0;
+                for (int i = 0; i < totalInitial.length; i++) { sumTotal += totalInitial[i]; sumCorrect += correctInitial[i]; }
+                initialRate = sumTotal > 0 ? (sumCorrect * 1.0d / sumTotal) : 0d;
+                String rateStr = sumTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (initialRate * 100.0d)) : "0%";
+                initialAccuracy.setText(rateStr);
+            }
+            // 填充韵母正确率
+            if (vowelAccuracy != null) {
+                String rate = vowelTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (vowelCorrect * 100.0f / vowelTotal)) : "0%";
+                vowelAccuracy.setText(rate);
+            }
+            // 根据声母总正确率填写语音清晰度等级
+            if (speechClarity != null) {
+                String level;
+                if (initialRate >= 0.85d) level = "轻度";
+                else if (initialRate >= 0.65d) level = "轻中度";
+                else if (initialRate >= 0.50d) level = "中重度";
+                else level = "重度";
+                speechClarity.setText(level);
+            }
+            JSONObject evaluations = data.optJSONObject("evaluations");
+            if (evaluations != null) {
+                String savedClarity = safeText(evaluations.optString("speech_intelligibility", ""));
+                if (savedClarity.isEmpty()) {
+                    savedClarity = safeText(evaluations.optString("intelligibility_level", ""));
+                }
+                if (!savedClarity.isEmpty() && speechClarity != null) {
+                    speechClarity.setText(savedClarity);
+                }
+            }
         }
-        else if (format.equals("E")) {
+        else if (safeFormat.equals("E")) {
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             double counte = 0;
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("E");
             evaluations.add(new e(0, null, null, null, null));//首行
@@ -222,7 +306,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             String stre = String.format("%.2f%%", scoree);
             tv2.setText("本题正确率为：" + stre);
 
-        }else if(format.equals("PN")){
+        }else if(safeFormat.equals("PN")){
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("PN");
             evaluations.add(new pn(0,null,null,null));//首行
             for(int i=0;i<jsonArray.length();i++){
@@ -234,7 +320,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     evaluations.add(new pn(i+1,null,null,null));
                 }
             }
-        } else if(format.equals("PST")){
+        } else if(safeFormat.equals("PST")){
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("PST");
             evaluations.add(new pst(0,null,null,null));//首行
             for(int i=0;i<jsonArray.length();i++){
@@ -246,7 +334,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     evaluations.add(new pst(i+1,null,null,null));
                 }
             }
-        } else if (format.equals("RE")) {
+        } else if (safeFormat.equals("RE")) {
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             double countre=0;
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("RE");
             evaluations.add(new re(0,null,null,null,-1,null,null,null));//首行
@@ -269,7 +359,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             String strre = String.format("%.2f%%",scorere);
             tv2.setText("本题正确率为："+strre);
         }
-        else if(format.equals("RG")){
+        else if(safeFormat.equals("RG")){
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             double countre=0;
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("RG");
             evaluations.add(new rg(0,null,null,null,null,-1,null,null));//首行
@@ -292,7 +384,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             tv2.setText("本题正确率为："+strre);
 
         }
-        else if(format.equals("S")){
+        else if(safeFormat.equals("S")){
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             double countre=0;
             JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("S");
             evaluations.add(new s(0,null,null,null,null,null));//首行
@@ -313,8 +407,90 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             String strre = String.format("%.2f%%",scorere);
             tv2.setText("本题正确率为："+strre);
         }
-        else {
+        else if(isPrelinguistic){
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
+            if (plSuggestions != null) plSuggestions.setVisibility(View.VISIBLE);
 
+            JSONArray jsonArray = data.getJSONObject("evaluations").optJSONArray(MODULE_PL);
+            if (jsonArray == null) {
+                jsonArray = new JSONArray();
+            }
+            evaluations.add(new pl(0, null, null, null, null, null, null));//首行
+            List<pl> plItems = new ArrayList<>();
+            JSONObject report = ModuleReportHelper.loadPrelinguisticReport(data);
+            String scene = report != null ? report.optString("scene", "") : "";
+            if (scene == null || scene.trim().isEmpty()) {
+                scene = "A";
+            }
+            String[] prompts = "B".equals(scene) ? ImageUrls.PL_PROMPTS_B : ImageUrls.PL_PROMPTS_A;
+            String[] skills = ImageUrls.PL_SKILLS;
+            for(int i=0;i<skills.length;i++){
+                pl item;
+                if (jsonArray.length() > i) {
+                    item = pl.fromJson(jsonArray.getJSONObject(i));
+                } else {
+                    item = new pl(i + 1, null, null, null, null, null, null);
+                }
+                if (item.getSkill() == null || item.getSkill().trim().isEmpty()) {
+                    item.setSkill(skills[i]);
+                }
+                if (item.getPrompt() == null || item.getPrompt().trim().isEmpty()) {
+                    item.setPrompt(prompts[i]);
+                }
+                plItems.add(item);
+                evaluations.add(item);
+            }
+            int totalScore = 0;
+            List<String> strengths = new ArrayList<>();
+            List<String> weaknesses = new ArrayList<>();
+            for (pl item : plItems) {
+                int value = item.getScore() == null ? 0 : item.getScore();
+                if (value == 1) {
+                    totalScore++;
+                    strengths.add(item.getSkill());
+                } else {
+                    weaknesses.add(item.getSkill());
+                }
+            }
+            plSummaryTextValue = ModuleReportHelper.buildPrelinguisticSummaryText(strengths, weaknesses);
+            tv2.setText(plSummaryTextValue);
+
+            evaluations.add(new pl(-1, "总分", null, totalScore, null, null, null));
+
+            int option = report != null ? report.optInt("suggestionOption", 1) : 1;
+            JSONObject params = report != null ? report.optJSONObject("suggestionParams") : null;
+            int freq = params != null ? params.optInt("freqPerWeek", 3) : 3;
+            int minutes = params != null ? params.optInt("minutesPerDay", 30) : 30;
+            int parentMinutes = params != null ? params.optInt("parentMinutesPerDay", 30) : 30;
+            int followupMonths = params != null ? params.optInt("followupMonths", 1) : 1;
+            if (plOptionGroup != null) {
+                plOptionGroup.setVisibility(View.VISIBLE);
+                plOptionGroup.check(option == 2 ? R.id.pl_option2 : R.id.pl_option1);
+                plOptionGroup.setOnCheckedChangeListener((group, checkedId) -> {
+                    int selected = checkedId == R.id.pl_option2 ? 2 : 1;
+                    updatePlOptionVisibility(selected);
+                    updatePrelinguisticSuggestionText();
+                });
+            }
+            updatePlOptionVisibility(option);
+            setSelectedValue(plFreqGroup, freq);
+            setSelectedValue(plMinutesGroup, minutes);
+            setSelectedValue(plParentMinutesGroup, parentMinutes);
+            setSelectedValue(plFollowupGroup, followupMonths);
+            attachSuggestionListeners(plFreqGroup);
+            attachSuggestionListeners(plMinutesGroup);
+            attachSuggestionListeners(plParentMinutesGroup);
+            attachSuggestionListeners(plFollowupGroup);
+            updatePrelinguisticSuggestionText();
+
+            if (plSaveButton != null) {
+                plSaveButton.setVisibility(View.GONE);
+            }
+        }
+        else {
+            if (extraAResults != null) extraAResults.setVisibility(View.GONE);
+            if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
         }
         adapter = new resultadapter(this, evaluations);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -334,11 +510,365 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
     }
 
     @Override
+    public void onBackPressed() {
+        savePrelinguisticReport();
+        saveArticulationReport();
+        super.onBackPressed();
+    }
+
+    @Override
     public void onClick(View v) {
         if(v.getId() == R.id.back){
             AudioPlayer.getInstance().setPlayPos(-1);
             AudioPlayer.getInstance().stop();
+            savePrelinguisticReport();
+            saveArticulationReport();
+            finish();
+        } else if (v.getId() == R.id.pl_save_button) {
+            savePrelinguisticReport();
             finish();
         }
     }
+
+    private void updatePlOptionVisibility(int option) {
+        if (plOption1Container != null) {
+            plOption1Container.setVisibility(option == 2 ? View.GONE : View.VISIBLE);
+        }
+        if (plOption2Container != null) {
+            plOption2Container.setVisibility(option == 2 ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void attachSuggestionListeners(RadioGroup group) {
+        if (group == null) {
+            return;
+        }
+        group.setOnCheckedChangeListener((g, checkedId) -> updatePrelinguisticSuggestionText());
+    }
+
+    private void updatePrelinguisticSuggestionText() {
+        if (!isPrelinguisticResult) {
+            return;
+        }
+        int option = plOptionGroup != null && plOptionGroup.getCheckedRadioButtonId() == R.id.pl_option2 ? 2 : 1;
+        int freq = getSelectedValue(plFreqGroup, 3);
+        int minutes = getSelectedValue(plMinutesGroup, 30);
+        int parentMinutes = getSelectedValue(plParentMinutesGroup, 30);
+        int followupMonths = getSelectedValue(plFollowupGroup, 1);
+        plSuggestionTextValue = ModuleReportHelper.buildPrelinguisticSuggestionText(option, freq, minutes, parentMinutes, followupMonths);
+        if (plSuggestionText != null) {
+            plSuggestionText.setText(plSuggestionTextValue);
+        }
+    }
+
+    private void setSelectedValue(RadioGroup group, int value) {
+        if (group == null) {
+            return;
+        }
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View child = group.getChildAt(i);
+            if (child instanceof RadioButton) {
+                RadioButton button = (RadioButton) child;
+                int parsed = parseInt(button.getText().toString(), -1);
+                if (parsed == value) {
+                    group.check(button.getId());
+                    return;
+                }
+            }
+        }
+    }
+
+    private int getSelectedValue(RadioGroup group, int defaultValue) {
+        if (group == null) {
+            return defaultValue;
+        }
+        int id = group.getCheckedRadioButtonId();
+        if (id == -1) {
+            return defaultValue;
+        }
+        RadioButton button = group.findViewById(id);
+        if (button == null) {
+            return defaultValue;
+        }
+        return parseInt(button.getText().toString(), defaultValue);
+    }
+
+    private int parseInt(String raw, int defaultValue) {
+        if (raw == null) {
+            return defaultValue;
+        }
+        String digits = raw.replaceAll("\\D+", "");
+        if (digits.isEmpty()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(digits);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    private void savePrelinguisticReport() {
+        if (!isPrelinguisticResult) {
+            return;
+        }
+        if (fName == null || fName.trim().isEmpty()) {
+            Toast.makeText(this, "未找到评估数据", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        JSONObject data;
+        try {
+            data = dataManager.getInstance().loadData(fName);
+        } catch (Exception e) {
+            Toast.makeText(this, "读取评估数据失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        JSONObject report = ModuleReportHelper.loadPrelinguisticReport(data);
+        if (report == null) {
+            report = new JSONObject();
+        }
+        String scene = report.optString("scene", "A");
+
+        List<String> strengths = new ArrayList<>();
+        List<String> weaknesses = new ArrayList<>();
+        int totalScore = 0;
+        if (evaluations != null) {
+            for (evaluation evaluation : evaluations) {
+                if (!(evaluation instanceof pl)) {
+                    continue;
+                }
+                pl item = (pl) evaluation;
+                String skill = item.getSkill();
+                if (skill == null || skill.trim().isEmpty()) {
+                    continue;
+                }
+                int value = item.getScore() == null ? 0 : item.getScore();
+                if (value == 1) {
+                    totalScore++;
+                    strengths.add(skill);
+                } else {
+                    weaknesses.add(skill);
+                }
+            }
+        }
+
+        int option = plOptionGroup != null && plOptionGroup.getCheckedRadioButtonId() == R.id.pl_option2 ? 2 : 1;
+        int freq = getSelectedValue(plFreqGroup, 3);
+        int minutes = getSelectedValue(plMinutesGroup, 30);
+        int parentMinutes = getSelectedValue(plParentMinutesGroup, 30);
+        int followupMonths = getSelectedValue(plFollowupGroup, 1);
+        String summaryText = plSummaryTextValue != null ? plSummaryTextValue
+                : ModuleReportHelper.buildPrelinguisticSummaryText(strengths, weaknesses);
+        String suggestionText = plSuggestionTextValue != null ? plSuggestionTextValue
+                : ModuleReportHelper.buildPrelinguisticSuggestionText(option, freq, minutes, parentMinutes, followupMonths);
+        JSONObject params = ModuleReportHelper.buildPrelinguisticSuggestionParams(freq, minutes, parentMinutes, followupMonths);
+
+        try {
+            report.put("scene", scene);
+            report.put("totalScore", totalScore);
+            report.put("strengths", new JSONArray(strengths));
+            report.put("weaknesses", new JSONArray(weaknesses));
+            report.put("summaryText", summaryText);
+            report.put("suggestionOption", option);
+            report.put("suggestionParams", params);
+            report.put("suggestionText", suggestionText);
+            ModuleReportHelper.savePrelinguisticReport(data, report);
+            dataManager.getInstance().saveChildJson(fName, data);
+            Toast.makeText(this, "已保存评估报告", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "保存评估报告失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void saveArticulationReport() {
+        if (!isArticulationResult) {
+            return;
+        }
+        if (fName == null || fName.trim().isEmpty()) {
+            Toast.makeText(this, "未找到评估数据", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        JSONObject data;
+        try {
+            data = dataManager.getInstance().loadData(fName);
+        } catch (Exception e) {
+            Toast.makeText(this, "读取评估数据失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        JSONObject evaluations = data.optJSONObject("evaluations");
+        if (evaluations == null) {
+            evaluations = new JSONObject();
+        }
+        try {
+            data.put("evaluations", evaluations);
+            String intelligibility = safeText(getEditTextValue(speechClarity));
+            if (intelligibility.isEmpty()) {
+                intelligibility = safeText(evaluations.optString("speech_intelligibility", ""));
+                if (intelligibility.isEmpty()) {
+                    intelligibility = safeText(evaluations.optString("intelligibility_level", ""));
+                }
+            }
+            String diagnosis = buildDiagnosisText();
+            if (!hasDiagnosisInput() && diagnosis.isEmpty()) {
+                diagnosis = safeText(evaluations.optString("clinical_diagnosis", ""));
+            }
+            String suggestions = buildSuggestionText();
+            if (!hasSuggestionInput() && suggestions.isEmpty()) {
+                suggestions = safeText(evaluations.optString("assessment_suggestions", ""));
+            }
+            evaluations.put("speech_intelligibility", intelligibility);
+            evaluations.put("clinical_diagnosis", diagnosis);
+            evaluations.put("assessment_suggestions", suggestions);
+            String initialText = safeText(getEditTextValue(initialAccuracy));
+            if (initialText.isEmpty()) {
+                initialText = safeText(evaluations.optString("initial_accuracy", ""));
+            }
+            String vowelText = safeText(getEditTextValue(vowelAccuracy));
+            if (vowelText.isEmpty()) {
+                vowelText = safeText(evaluations.optString("vowel_accuracy", ""));
+            }
+            evaluations.put("initial_accuracy", initialText);
+            evaluations.put("vowel_accuracy", vowelText);
+            dataManager.getInstance().saveChildJson(fName, data);
+            Toast.makeText(this, "已保存评估报告", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "保存评估报告失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private String buildDiagnosisText() {
+        List<String> items = new ArrayList<>();
+        addCheckedLabel(items, diagNormal);
+        addCheckedLabel(items, diagPhonology);
+        addCheckedLabel(items, diagTone);
+        return joinText(items, "、");
+    }
+
+    private String buildSuggestionText() {
+        List<String> items = new ArrayList<>();
+        if (suggestNone != null && suggestNone.isChecked()) {
+            addText(items, suggestNone.getText());
+        }
+        if (suggestFollow != null && suggestFollow.isChecked()) {
+            String base = safeText(suggestFollow.getText() == null ? "" : suggestFollow.getText().toString());
+            String months = safeText(getEditTextValue(followMonths));
+            if (!months.isEmpty()) {
+                base = base + months + "个月后复测";
+            }
+            if (!base.isEmpty()) {
+                items.add(base);
+            }
+        }
+        if (suggestTrad != null && suggestTrad.isChecked()) {
+            String base = safeText(suggestTrad.getText() == null ? "" : suggestTrad.getText().toString());
+            String freq = safeText(getEditTextValue(tradFreq));
+            if (!freq.isEmpty()) {
+                base = base + freq + "次/周";
+            }
+            if (!base.isEmpty()) {
+                items.add(base);
+            }
+        }
+        if (suggestPhono != null && suggestPhono.isChecked()) {
+            String base = safeText(suggestPhono.getText() == null ? "" : suggestPhono.getText().toString());
+            String freq = safeText(getEditTextValue(phonoFreq));
+            if (!freq.isEmpty()) {
+                base = base + freq + "次/周";
+            }
+            if (!base.isEmpty()) {
+                items.add(base);
+            }
+        }
+        if (suggestMore != null && suggestMore.isChecked()) {
+            addText(items, suggestMore.getText());
+        }
+        return joinText(items, "；");
+    }
+
+    private boolean hasDiagnosisInput() {
+        return isChecked(diagNormal) || isChecked(diagPhonology) || isChecked(diagTone);
+    }
+
+    private boolean hasSuggestionInput() {
+        return isChecked(suggestNone)
+                || isChecked(suggestFollow)
+                || isChecked(suggestTrad)
+                || isChecked(suggestPhono)
+                || isChecked(suggestMore)
+                || !safeText(getEditTextValue(followMonths)).isEmpty()
+                || !safeText(getEditTextValue(tradFreq)).isEmpty()
+                || !safeText(getEditTextValue(phonoFreq)).isEmpty();
+    }
+
+    private boolean isChecked(CheckBox box) {
+        return box != null && box.isChecked();
+    }
+
+    private void addCheckedLabel(List<String> items, CheckBox box) {
+        if (box != null && box.isChecked()) {
+            addText(items, box.getText());
+        }
+    }
+
+    private void addText(List<String> items, CharSequence text) {
+        String value = safeText(text == null ? "" : text.toString());
+        if (!value.isEmpty()) {
+            items.add(value);
+        }
+    }
+
+    private String joinText(List<String> items, String separator) {
+        if (items == null || items.isEmpty()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (String item : items) {
+            String text = safeText(item);
+            if (text.isEmpty()) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(separator);
+            }
+            builder.append(text);
+        }
+        return builder.toString();
+    }
+
+    private String getEditTextValue(EditText editText) {
+        if (editText == null) {
+            return "";
+        }
+        return editText.getText() == null ? "" : editText.getText().toString();
+    }
+
+    private String safeText(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String initialOf(a.CharacterPhonology cp) {
+        if (cp == null || cp.phonology == null) return "";
+        return cp.phonology.initial == null ? "" : cp.phonology.initial.trim();
+    }
+
+    private String vowelString(a.CharacterPhonology cp) {
+        if (cp == null || cp.phonology == null) return "";
+        String m = cp.phonology.medial == null ? "" : cp.phonology.medial.trim();
+        String n = cp.phonology.nucleus == null ? "" : cp.phonology.nucleus.trim();
+        String c = cp.phonology.coda == null ? "" : cp.phonology.coda.trim();
+        String res = m + n + c;
+        return res.trim();
+    }
+
+    private String safeLower(String s) {
+        return s == null ? "" : s.toLowerCase(Locale.getDefault());
+    }
+
+    private int initialIndexOf(String ini) {
+        for (int i = 0; i < initialLabels.length; i++) {
+            if (initialLabels[i].equalsIgnoreCase(ini)) return i;
+        }
+        return -1;
+    }
+
 }

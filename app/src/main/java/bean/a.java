@@ -10,8 +10,6 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,7 +25,6 @@ import java.util.List;
 
 import utils.AudioPlayer;
 import utils.AudioRecorder;
-import utils.ImageUrls;
 import utils.ResultContext;
 import utils.testcontext;
 
@@ -36,19 +33,13 @@ import utils.testcontext;
  */
 public class a extends evaluation {
     private String target;
-    private String progress;
-    private String target_tone1;
-    private String target_tone2;
     private bean.audio audio;
     private Boolean result;
     private String time;
     private final String colum1 = "题号";
     private final String colum2 = "目标词";
-    private final String colum3 = "产出过程";
-    private final String colum4 = "目标音1";
-    private final String colum5 = "目标音2";
-    private final String colum6 = "答题时长";
-    private final String colum7 = "录音";
+    private final String colum3 = "答题时长";
+    private final String colum4 = "录音";
 
     private long timeInMilliseconds = 0L;
 
@@ -118,9 +109,6 @@ public class a extends evaluation {
     public a(int num, String target, String progress, String target_tone1, String target_tone2, bean.audio audio, String time) {
         super(num);
         this.target = target;
-        this.progress = progress;
-        this.target_tone1 = target_tone1;
-        this.target_tone2 = target_tone2;
         this.audio = audio;
         this.time = time;
         this.errorType = null;
@@ -131,7 +119,6 @@ public class a extends evaluation {
     public a(int num, List<CharacterPhonology> targetWord, String progress, bean.audio audio, String time) {
         super(num);
         this.targetWord = targetWord;
-        this.progress = progress;
         this.audio = audio;
         this.time = time;
         this.errorType = null;
@@ -204,10 +191,6 @@ public class a extends evaluation {
         }
     }
 
-    private boolean usePhonologyMode() {
-        return targetWord != null && !targetWord.isEmpty();
-    }
-
     private utils.allquestionlistener listener;
 
     public void setAllQuestionListener(utils.allquestionlistener listener) {
@@ -228,30 +211,6 @@ public class a extends evaluation {
 
     public void setTarget(String target) {
         this.target = target;
-    }
-
-    public String getProgress() {
-        return progress;
-    }
-
-    public void setProgress(String progress) {
-        this.progress = progress;
-    }
-
-    public String getTarget_tone1() {
-        return target_tone1;
-    }
-
-    public void setTarget_tone1(String target_tone1) {
-        this.target_tone1 = target_tone1;
-    }
-
-    public String getTarget_tone2() {
-        return target_tone2;
-    }
-
-    public void setTarget_tone2(String target_tone2) {
-        this.target_tone2 = target_tone2;
     }
 
     public bean.audio getAudio() {
@@ -278,101 +237,49 @@ public class a extends evaluation {
 
     @Override
     public int handle(View[] views, int position) {
-        if (views == null || views.length == 0) {
-            return 0;
-        }
-
-        if (usePhonologyMode()) {
-            for (View view : views) view.setVisibility(View.GONE);
-            int lastIndex = Math.min(views.length - 1, 10);
-            for (int i = 0; i <= lastIndex; i++) views[i].setVisibility(View.VISIBLE);
-            if (position == 0) {
-                ((TextView) views[0]).setText("词条序号");
-                ((TextView) views[1]).setText("词条");
-                ((TextView) views[2]).setText("拼音");
-                ((TextView) views[3]).setText("声母");
-                ((TextView) views[4]).setText("韵头");
-                ((TextView) views[5]).setText("韵腹");
-                ((TextView) views[6]).setText("韵尾");
-                if (views.length > 7) ((TextView) views[7]).setText("错误类型");
-                if (views.length > 8) ((TextView) views[8]).setText("音系历程");
-                if (views.length > 9) ((TextView) views[9]).setText("是否可诱发");
-                if (views.length > 10) ((TextView) views[10]).setText("录音");
-            } else {
-                ((TextView) views[0]).setText(String.valueOf(num));
-                ((TextView) views[1]).setText(buildTargetHanzi());
-                String pinyinValue = computePinyinFallback();
-                ((TextView) views[2]).setText(pinyinValue == null ? "" : pinyinValue);
-                ((TextView) views[3]).setText(joinParts(answerPhonology, PartType.INITIAL));
-                ((TextView) views[4]).setText(joinParts(answerPhonology, PartType.MEDIAL));
-                ((TextView) views[5]).setText(joinParts(answerPhonology, PartType.NUCLEUS));
-                ((TextView) views[6]).setText(joinParts(answerPhonology, PartType.CODA));
-                if (views.length > 7) {
-                    ((TextView) views[7]).setText(errorType == null ? "" : errorType);
-                }
-                if (views.length > 8) {
-                    ((TextView) views[8]).setText(phonologyProcess == null ? "" : phonologyProcess);
-                }
-                if (views.length > 9) {
-                    ((TextView) views[9]).setText(joinInducible(answerPhonology));
-                }
-                if (views.length > 10) {
-                    TextView audioView = (TextView) views[10];
-                    audioView.setText("");
-                    if (audio != null && time != null) {
-                        audioView.setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
-                        audioView.setText(ResultContext.getInstance().getContext().getString(R.string.audio));
-                        AudioPlayer.getInstance().addIcon(audioView);
-                        views[10].setOnClickListener(v -> AudioPlayer.getInstance().play(audio.getPath(), position - 1));
-                    }
-                }
-            }
-            return lastIndex;
-        }
-
-        String[][] a_ans = ImageUrls.A_proAns;
-        for (View view : views) view.setVisibility(View.GONE);
-        int lastIndex = Math.min(views.length - 1, 6);
-        for (int i = 0; i <= lastIndex; i++) views[i].setVisibility(View.VISIBLE);
+        // 词条序号 | 词条 | 拼音 | 声母 | 韵头 | 韵腹 | 韵尾 | 错误类型 | 音系历程 | 是否可诱发 | 录音
+        for (int i = 0; i < views.length; i++) views[i].setVisibility(View.GONE);
+        for (int i = 0; i < 11 && i < views.length; i++) views[i].setVisibility(View.VISIBLE);
         if (position == 0) {
-            ((TextView) views[0]).setText(colum1);
-            ((TextView) views[1]).setText(colum2);
-            ((TextView) views[2]).setText(colum3);
-            ((TextView) views[3]).setText(colum4);
-            ((TextView) views[4]).setText(colum5);
-            ((TextView) views[5]).setText(colum6);
-            ((TextView) views[6]).setText(colum7);
+            ((TextView) views[0]).setText("词条序号");
+            ((TextView) views[1]).setText("词条");
+            ((TextView) views[2]).setText("拼音");
+            ((TextView) views[3]).setText("声母");
+            ((TextView) views[4]).setText("韵头");
+            ((TextView) views[5]).setText("韵腹");
+            ((TextView) views[6]).setText("韵尾");
+            ((TextView) views[7]).setText("错误类型");
+            ((TextView) views[8]).setText("音系历程");
+            ((TextView) views[9]).setText("是否可诱发");
+            if (views.length > 10) ((TextView) views[10]).setText("录音");
         } else {
             ((TextView) views[0]).setText(String.valueOf(num));
-            ((TextView) views[1]).setText(target);
-            if (progress != null) {
-                ((TextView) views[2]).setText(progress);
+            ((TextView) views[1]).setText(buildTargetHanzi());
+            String pinyinValue = computePinyinFallback();
+            ((TextView) views[2]).setText(pinyinValue == null ? "" : pinyinValue);
+            ((TextView) views[3]).setText(joinParts(answerPhonology, PartType.INITIAL));
+            ((TextView) views[4]).setText(joinParts(answerPhonology, PartType.MEDIAL));
+            ((TextView) views[5]).setText(joinParts(answerPhonology, PartType.NUCLEUS));
+            ((TextView) views[6]).setText(joinParts(answerPhonology, PartType.CODA));
+            ((TextView) views[7]).setText(errorType == null ? "" : errorType);
+            if (views.length > 8) {
+                ((TextView) views[8]).setText(phonologyProcess == null ? "" : phonologyProcess);
             }
-            if (target_tone1 != null) {
-                if (position - 1 < a_ans.length && target_tone1.equals(a_ans[position - 1][0])) {
-                    ((TextView) views[3]).setText(target_tone1);
+            if (views.length > 9) {
+                ((TextView) views[9]).setText(joinInducible(answerPhonology));
+            }
+            if (views.length > 10) {
+                if (audio != null && time != null) {
+                    ((TextView) views[10]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
+                    ((TextView) views[10]).setText(ResultContext.getInstance().getContext().getString(R.string.audio));
+                    AudioPlayer.getInstance().addIcon((TextView) views[10]);
+                    views[10].setOnClickListener(v -> AudioPlayer.getInstance().play(audio.getPath(), position - 1));
                 } else {
-                    ((TextView) views[3]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.red));
-                    ((TextView) views[3]).setText(ResultContext.getInstance().getContext().getResources().getString(R.string.wrong));
+                    ((TextView) views[10]).setText("");
                 }
-            }
-            if (target_tone2 != null) {
-                if (position - 1 < a_ans.length && target_tone2.equals(a_ans[position - 1][1])) {
-                    ((TextView) views[4]).setText(target_tone2);
-                } else {
-                    ((TextView) views[4]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.red));
-                    ((TextView) views[4]).setText(ResultContext.getInstance().getContext().getResources().getString(R.string.wrong));
-                }
-            }
-            if (audio != null) {
-                ((TextView) views[5]).setText(time);
-                ((TextView) views[6]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
-                ((TextView) views[6]).setText(ResultContext.getInstance().getContext().getResources().getString(R.string.audio));
-                AudioPlayer.getInstance().addIcon((TextView) views[6]);
-                views[6].setOnClickListener(v -> AudioPlayer.getInstance().play(audio.getPath(), position - 1));
             }
         }
-        return lastIndex;
+        return 10;
     }
 
     private enum PartType {INITIAL, MEDIAL, NUCLEUS, CODA}
@@ -455,21 +362,6 @@ public class a extends evaluation {
             }
         }
         object.put("answerPhonology", arrAns);
-        if (progress != null) {
-            object.put("progress", progress);
-        } else {
-            object.put("progress", JSONObject.NULL);
-        }
-        if (target_tone1 != null) {
-            object.put("target_tone1", target_tone1);
-        } else {
-            object.put("target_tone1", JSONObject.NULL);
-        }
-        if (target_tone2 != null) {
-            object.put("target_tone2", target_tone2);
-        } else {
-            object.put("target_tone2", JSONObject.NULL);
-        }
         if (audio != null && time != null) {
             object.put("audioPath", audio.getPath());
             object.put("time", time);
@@ -485,9 +377,6 @@ public class a extends evaluation {
         String target = object.optString("target", null);
         String audioPath = object.isNull("audioPath") ? null : object.optString("audioPath", null);
         String time = object.isNull("time") ? null : object.optString("time", null);
-        String progress = object.isNull("progress") ? null : object.optString("progress", null);
-        String targetTone1 = object.isNull("target_tone1") ? null : object.optString("target_tone1", null);
-        String targetTone2 = object.isNull("target_tone2") ? null : object.optString("target_tone2", null);
 
         String error = object.optString("errorType", "");
         if (error != null && error.isEmpty()) error = null;
@@ -556,8 +445,8 @@ public class a extends evaluation {
         if (audioPath != null && !audioPath.equals(JSONObject.NULL)) {
             audioObj = new audio(audioPath);
         }
-        a item = new a(num, target, progress, targetTone1, targetTone2, audioObj, time);
-        item.setTargetWord(targetWord);
+        a item = new a(num, targetWord, null, audioObj, time);
+        item.setTarget(target);
         item.setAnswerPhonology(answerPhonology);
         item.setErrorType(error);
         item.setPhonologyProcess(phonologyProcess);
@@ -569,15 +458,6 @@ public class a extends evaluation {
     public void test(View view, int position, List<Integer> ImageIdList, List<Integer[]> ImageGroupIdList,
                      List<String[]> StringGroupIdList, String[] Hint, String[] TabString,
                      TextView counter, TextView timer) {
-        if (usePhonologyMode()) {
-            runPhonologyTest(view, position, ImageIdList, Hint, TabString, counter, timer);
-        } else {
-            runLegacyTest(view, position, ImageIdList, StringGroupIdList, Hint, TabString, counter, timer);
-        }
-    }
-
-    private void runPhonologyTest(View view, int position, List<Integer> ImageIdList, String[] Hint, String[] TabString,
-                                  TextView counter, TextView timer) {
         ImageView imageView = view.findViewById(R.id.imageView);
         TextView numberTextView = view.findViewById(R.id.tv_2);
         TextView ansTextView = view.findViewById(R.id.tv_ans);
@@ -694,170 +574,6 @@ public class a extends evaluation {
         LinearLayout phonologyContainer = view.findViewById(R.id.ll_phonology_container);
         ensureAnswerSizeFromTarget();
         renderPhonologyTable(phonologyContainer);
-    }
-
-    private void runLegacyTest(View view, int position, List<Integer> ImageIdList, List<String[]> StringGroupIdList,
-                               String[] Hint, String[] TabString, TextView counter, TextView timer) {
-        ImageView imageView = view.findViewById(R.id.imageView);
-        TextView numberTextView = view.findViewById(R.id.tv_2);
-        TextView ansTextView = view.findViewById(R.id.tv_ans);
-        RadioGroup radioGroup = view.findViewById(R.id.radioGroup);
-        RadioButton radioButton1 = view.findViewById(R.id.rb1);
-        RadioButton radioButton2 = view.findViewById(R.id.rb2);
-        CheckBox checkBox1 = view.findViewById(R.id.cb1);
-        CheckBox checkBox2 = view.findViewById(R.id.cb2);
-        LinearLayout phonologyContainer = view.findViewById(R.id.ll_phonology_container);
-        Spinner spError = view.findViewById(R.id.sp_error_type);
-        Spinner spPhonologyProcess = view.findViewById(R.id.sp_phonology_process);
-
-        if (phonologyContainer != null) phonologyContainer.setVisibility(View.GONE);
-        if (spError != null) spError.setVisibility(View.GONE);
-        if (spPhonologyProcess != null) spPhonologyProcess.setVisibility(View.GONE);
-
-        Button startButton = view.findViewById(R.id.btn_start);
-        Button nextButton = view.findViewById(R.id.btn_next);
-
-        if (ImageIdList != null && imageView != null) {
-            imageView.setImageResource(ImageIdList.get(position));
-        }
-        if (numberTextView != null && TabString != null) {
-            numberTextView.setText("第" + TabString[position] + "题：图片画的是什么？");
-        }
-        if (counter != null) {
-            counter.setText(testcontext.getInstance().getCount() + "/" + testcontext.getInstance().getLengths());
-        }
-        if (ansTextView != null && Hint != null) {
-            ansTextView.setText(Hint[position]);
-        }
-        if (radioButton1 != null) radioButton1.setText("自发");
-        if (radioButton2 != null) radioButton2.setText("仿说");
-        if (checkBox1 != null && StringGroupIdList != null && !StringGroupIdList.isEmpty()) {
-            checkBox1.setText(StringGroupIdList.get(position)[0]);
-        }
-        if (checkBox2 != null && StringGroupIdList != null && !StringGroupIdList.isEmpty() && !StringGroupIdList.get(position)[1].equals("")) {
-            checkBox2.setText(StringGroupIdList.get(position)[1]);
-        }
-
-        if (time != null) {
-            if (ansTextView != null) ansTextView.setVisibility(View.VISIBLE);
-            if (imageView != null) imageView.setVisibility(View.VISIBLE);
-            if (radioButton1 != null) {
-                radioButton1.setVisibility(View.VISIBLE);
-                radioButton1.setEnabled(false);
-            }
-            if (radioButton2 != null) {
-                radioButton2.setVisibility(View.VISIBLE);
-                radioButton2.setEnabled(false);
-            }
-            if (progress != null && radioButton1 != null && radioButton2 != null) {
-                if (progress.equals("自发")) {
-                    radioButton1.setChecked(true);
-                    radioButton2.setChecked(false);
-                } else if (progress.equals("仿说")) {
-                    radioButton2.setChecked(true);
-                    radioButton1.setChecked(false);
-                } else {
-                    radioButton1.setChecked(false);
-                    radioButton2.setChecked(false);
-                }
-            }
-            if (checkBox1 != null) {
-                checkBox1.setVisibility(View.VISIBLE);
-                checkBox1.setEnabled(false);
-                checkBox1.setChecked(target_tone1 != null && !target_tone1.equals(""));
-            }
-            if (checkBox2 != null && StringGroupIdList != null && !StringGroupIdList.isEmpty() && !StringGroupIdList.get(position)[1].equals("")) {
-                checkBox2.setVisibility(View.VISIBLE);
-                checkBox2.setEnabled(false);
-                checkBox2.setChecked(target_tone2 != null && !target_tone2.equals(""));
-            }
-            if (startButton != null) startButton.setEnabled(false);
-        }
-
-        AudioRecorder.OnRefreshUIThreadListener listener = time -> {
-            this.time = time;
-            if (timer != null) timer.setText(time);
-        };
-
-        if (radioGroup != null) {
-            radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-                if (checkedId == R.id.rb1) {
-                    progress = "自发";
-                }
-                if (checkedId == R.id.rb2) {
-                    progress = "仿说";
-                }
-            });
-        }
-        if (checkBox1 != null && StringGroupIdList != null && !StringGroupIdList.isEmpty()) {
-            checkBox1.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                if (isChecked) {
-                    target_tone1 = StringGroupIdList.get(position)[0];
-                } else {
-                    target_tone1 = "";
-                }
-            });
-        }
-        if (checkBox2 != null && StringGroupIdList != null && !StringGroupIdList.isEmpty()) {
-            checkBox2.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                if (isChecked) {
-                    target_tone2 = StringGroupIdList.get(position)[1];
-                } else {
-                    target_tone2 = "";
-                }
-            });
-        }
-
-        if (startButton != null) {
-            startButton.setOnClickListener(v -> {
-                try {
-                    if (ansTextView != null) ansTextView.setVisibility(View.VISIBLE);
-                    if (radioButton1 != null) radioButton1.setVisibility(View.VISIBLE);
-                    if (radioButton2 != null) radioButton2.setVisibility(View.VISIBLE);
-                    if (checkBox1 != null) checkBox1.setVisibility(View.VISIBLE);
-                    if (checkBox2 != null && StringGroupIdList != null && !StringGroupIdList.isEmpty() && !StringGroupIdList.get(position)[1].equals("")) {
-                        checkBox2.setVisibility(View.VISIBLE);
-                    }
-                    target_tone1 = "";
-                    target_tone2 = "";
-                    progress = "";
-                    testcontext.getInstance().getViewPager().setPagingEnabled(false);
-
-                    startButton.setEnabled(false);
-                    if (imageView != null) imageView.setVisibility(View.VISIBLE);
-                    AudioRecorder.getInstance().setOnRefreshUIThreadListener(listener);
-                    AudioRecorder.getInstance().startRecorder();
-                    audio = new audio(AudioRecorder.getInstance().getOutputFilePath());
-                    testcontext.getInstance().incrementCount();
-                    if (counter != null) {
-                        counter.setText(testcontext.getInstance().getCount() + "/" + testcontext.getInstance().getLengths());
-                    }
-
-                } catch (IOException e) {
-                    Toast.makeText(testcontext.getInstance().getContext(), "录制失败！", Toast.LENGTH_SHORT).show();
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-
-        if (nextButton != null) {
-            nextButton.setOnClickListener(v -> {
-                testcontext.getInstance().getViewPager().setPagingEnabled(true);
-
-                if (audio != null) {
-                    if (radioGroup != null) {
-                        for (int i = 0; i < radioGroup.getChildCount(); i++) {
-                            radioGroup.getChildAt(i).setEnabled(false);
-                        }
-                    }
-                    if (checkBox1 != null) checkBox1.setEnabled(false);
-                    if (checkBox2 != null) checkBox2.setEnabled(false);
-                    AudioRecorder.getInstance().stopRecorder();
-                    result = Boolean.TRUE;
-                }
-                nextPage(position, testcontext.getInstance().getCount(), testcontext.getInstance().getLengths());
-            });
-        }
     }
 
     private void renderPhonologyTable(LinearLayout container) {
