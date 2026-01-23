@@ -2,7 +2,6 @@ package com.example.CCLEvaluation;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
@@ -44,13 +43,11 @@ import java.util.concurrent.Executors;
 
 import bean.evaluation;
 import utils.AudioRecorder;
-import utils.ArticulationPlanHelper;
 import utils.dataManager;
 import utils.dialogUtils;
 import utils.dirpath;
 import utils.ImageUrls;
 import utils.LlmPlanService;
-import utils.ModuleReportHelper;
 import utils.Netinteractutils;
 import utils.TreatmentPromptBuilder;
 
@@ -62,8 +59,6 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     private Button WordResult1, WordResult2, WordResult3, WordResult4;
     private Button Pronunciation;
     private Button PronunciationResult;
-    private Button Prelinguistic;
-    private Button PrelinguisticResult;
     private Button Grammar;
     private Button GrammarResult;
     private Button Narrate1, Narrate2;
@@ -74,13 +69,10 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     private String childUser;
     private String uid;
     private LinearLayout wd;
-    private LinearLayout prelinguisticLayout;
     private LinearLayout pn;
     private LinearLayout gm;
     private LinearLayout nr;
     private static final int MY_PERMISSIONS_REQUEST_READ_OR_WRITE_EXTERNAL_STORAGE = 1;
-    private static final String FORMAT_PL = "11";
-    private static final String MODULE_PL = "PL";
 
     private Map<String, Map<String, String>> audioPaths;
 
@@ -101,8 +93,6 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         WordResult4 = findViewById(R.id.btn_wordResult4);
         Pronunciation = findViewById(R.id.btn_pronunciationTest);
         PronunciationResult = findViewById(R.id.btn_pronunciationResult);
-        Prelinguistic = findViewById(R.id.btn_prelinguisticTest);
-        PrelinguisticResult = findViewById(R.id.btn_prelinguisticResult);
         Grammar = findViewById(R.id.btn_grammarTest);
         GrammarResult = findViewById(R.id.btn_grammarResult);
         Narrate1 = findViewById(R.id.btn_narrateTest1);
@@ -115,7 +105,6 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         Plan = findViewById(R.id.btn_plan);
         PlanView = findViewById(R.id.btn_plan_view);
         wd = findViewById(R.id.wd);
-        prelinguisticLayout = findViewById(R.id.pl_module);
         pn = findViewById(R.id.pn);
         gm = findViewById(R.id.gm);
         nr = findViewById(R.id.nr);
@@ -136,7 +125,6 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                 String RG = jsonObject.getString("RG");
                 String PN = jsonObject.getString("PN");
                 String PST = jsonObject.getString("PST");
-                String PL = jsonObject.optString("PL", "0");
 
                 if(E.equals("1") && RE.equals("1") && S.equals("1") && NWR.equals("1")){
                     wd.setVisibility(View.VISIBLE);
@@ -158,11 +146,6 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                 }else{
                     nr.setVisibility(View.GONE);
                 }
-                if(PL.equals("1")){
-                    prelinguisticLayout.setVisibility(View.VISIBLE);
-                }else{
-                    prelinguisticLayout.setVisibility(View.GONE);
-                }
 
 
             }
@@ -174,7 +157,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         try {
             initData();
         } catch (Exception e) {
-            Toast.makeText(this, "数据加载失败，请重试", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "数据加载失败！", Toast.LENGTH_SHORT).show();
             throw new RuntimeException(e);
         }
         Word1.setOnClickListener(this);
@@ -182,7 +165,6 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         Word3.setOnClickListener(this);
         Word4.setOnClickListener(this);
         Pronunciation.setOnClickListener(this);
-        Prelinguistic.setOnClickListener(this);
         Grammar.setOnClickListener(this);
         Narrate1.setOnClickListener(this);
         Narrate2.setOnClickListener(this);
@@ -191,7 +173,6 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         WordResult3.setOnClickListener(this);
         WordResult4.setOnClickListener(this);
         PronunciationResult.setOnClickListener(this);
-        PrelinguisticResult.setOnClickListener(this);
         GrammarResult.setOnClickListener(this);
         NarrateResult1.setOnClickListener(this);
         NarrateResult2.setOnClickListener(this);
@@ -212,7 +193,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
 //
 //        Netinteractutils.getInstance(this).setListener(new Netinteractutils.UiRefreshListener() {
 //            /**
-//             * @param isPlaying Whether to show loading animation
+//             * @param isPlaying 是否需要打开等待动画中
 //             */
 //            @Override
 //            public void refreshUI(Boolean isPlaying) {
@@ -247,7 +228,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             data = dataManager.getInstance().loadData(fName);
             completeDetails(data.getJSONObject("evaluations"));
         } catch (Exception e) {
-            Toast.makeText(this, "数据加载失败，请重试", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "数据加载失败！", Toast.LENGTH_SHORT).show();
             throw new RuntimeException(e);
         }
 
@@ -297,7 +278,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                     decodeAudio = android.util.Base64.decode(audioByte, android.util.Base64.DEFAULT);
                 }
                 File file = new File(audioPaths.get(title).get(num));
-                if (!file.getParentFile().exists()) {// Parent directory missing
+                if (!file.getParentFile().exists()) {//父目录文件夹不存在
                     File dir = new File(dirpath.PATH_FETCH_DIR_AUDIO);
                     dir.mkdirs();
                 }
@@ -342,20 +323,6 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             intent.putExtra("fName", fName);
             intent.putExtra("format", "A");
             startActivity(intent);
-        } else if (v.getId() == R.id.btn_prelinguisticTest) {
-            String[] scenes = new String[]{"A 吹泡泡场景", "B 玩球场景"};
-            new AlertDialog.Builder(this)
-                    .setTitle("选择场景")
-                    .setItems(scenes, (dialog, which) -> {
-                        String scene = which == 0 ? "A" : "B";
-                        Intent intent = new Intent(this, testactivity.class);
-                        intent.putExtra("fName", fName);
-                        intent.putExtra("format", FORMAT_PL);
-                        intent.putExtra("moduleKey", MODULE_PL);
-                        intent.putExtra("scene", scene);
-                        startActivity(intent);
-                    })
-                    .show();
         } else if (v.getId() == R.id.btn_grammarTest) {
             Intent intent = new Intent(this, testactivity.class);
             intent.putExtra("fName", fName);
@@ -397,12 +364,6 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             intent.putExtra("fName", fName);
             intent.putExtra("format", "A");
             startActivity(intent);
-        } else if (v.getId() == R.id.btn_prelinguisticResult) {
-            Intent intent = new Intent(this, resultactivity.class);
-            intent.putExtra("fName", fName);
-            intent.putExtra("format", FORMAT_PL);
-            intent.putExtra("moduleKey", MODULE_PL);
-            startActivity(intent);
         } else if (v.getId() == R.id.btn_grammarResult) {
             Intent intent = new Intent(this, resultactivity.class);
             intent.putExtra("fName", fName);
@@ -423,7 +384,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                     "确认", () -> {
                         if (childUser != null) {
                             Netinteractutils.getInstance(this).deleteEvaluation(uid, childUser);
-                            childUser = null;
+                            childUser = null;//防止用户连点，例如两次删除，后面一次会有已删除的提示，而这是上传，不应该提示
                         }
                         data = dataManager.getInstance().loadData(fName);//必须重新加载，可能会更新
                         Netinteractutils.getInstance(this).uploadEvaluation(uid, data.toString());
@@ -515,61 +476,39 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             return;
         }
 
-        JSONObject evaluations = latestData.optJSONObject("evaluations");
-        JSONArray evaluationsA = evaluations == null ? null : evaluations.optJSONArray("A");
-
         setLoading(true, "正在生成干预方案...");
-        String systemPrompt = getString(R.string.treatment_plan_system_prompt);
+        String systemPrompt =
+                "你是儿童言语语言病理（SLP）临床助手。请基于输入的评估结果与年龄生成可执行的干预方案。\n" +
+                        "必须输出严格合法 JSON，除 JSON 外不得输出任何文字。\n" +
+                        "JSON 的 key 必须保持英文不变。\n" +
+                        "所有 value（包括数组中的字符串）需以中文为主的临床表述；允许少量缩写（PST、PN、NWR、SLP、ASD、ADHD、SSD、DLD）。\n" +
+                        "如将输出英文术语，请先中文化再输出。\n" +
+                        "请用中文回答所有问题，生成中文报告。"
+                ;
 
         String userPrompt;
         try {
             userPrompt = TreatmentPromptBuilder.buildUserPrompt(latestData);
         } catch (JSONException e) {
             setLoading(false, null);
-            Toast.makeText(this, "生成提示词失败，请重试", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "生成提示词失败", Toast.LENGTH_SHORT).show();
             return;
         }
 
         LlmPlanService service = new LlmPlanService();
-        JSONArray finalEvaluationsA = evaluationsA;
-        JSONObject finalEvaluations = evaluations;
         service.generateTreatmentPlan(systemPrompt, userPrompt, new LlmPlanService.PlanCallback() {
             @Override
             public void onSuccess(JSONObject plan) {
-                ArticulationPlanHelper.ensureArticulation(plan, finalEvaluationsA);
-                ArticulationPlanHelper.applyArticulationReport(plan, latestData, finalEvaluationsA);
-                ModuleReportHelper.applyModuleFindings(plan, finalEvaluations);
                 String pretty;
                 try {
                     pretty = plan.toString(2);
                 } catch (JSONException e) {
                     pretty = plan.toString();
                 }
-                boolean saved = false;
-                String saveError = null;
-                if (fName != null && !fName.trim().isEmpty()) {
-                    try {
-                        JSONObject data = dataManager.getInstance().loadData(fName);
-                        data.put("treatmentPlan", plan);
-                        dataManager.getInstance().saveChildJson(fName, data);
-                        saved = true;
-                    } catch (Exception e) {
-                        saveError = e.getMessage();
-                    }
-                } else {
-                    saveError = "未找到个案信息";
-                }
                 String finalPretty = pretty;
-                boolean finalSaved = saved;
-                String finalSaveError = saveError;
                 runOnUiThread(() -> {
                     setLoading(false, null);
-                    if (!finalSaved && finalSaveError != null && !finalSaveError.trim().isEmpty()) {
-                        Toast.makeText(evmenuactivity.this, "保存失败: " + finalSaveError, Toast.LENGTH_LONG).show();
-                        openTreatmentPlanActivity(finalPretty, true);
-                        return;
-                    }
-                    openTreatmentPlanActivity(null);
+                    openTreatmentPlanActivity(finalPretty);
                 });
             }
 
@@ -595,15 +534,10 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private void openTreatmentPlanActivity(String planJson) {
-        openTreatmentPlanActivity(planJson, false);
-    }
-
-    private void openTreatmentPlanActivity(String planJson, boolean preferIncomingPlan) {
         Intent intent = new Intent(this, TreatmentPlanActivity.class);
         if (planJson != null) {
             intent.putExtra("planJsonString", planJson);
         }
-        intent.putExtra("preferIncomingPlan", preferIncomingPlan);
         intent.putExtra("fName", fName);
         startActivity(intent);
     }
@@ -661,7 +595,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         Netinteractutils.getInstance(this).setUploadEvaluationCallback(uploadEvaluationCallback);
         Netinteractutils.getInstance(this).setAudioCallback(audioCallback);
 
-        // Load data and render
+        //获取信息并展示
         fName = getIntent().getStringExtra("fName");
         uid = getIntent().getStringExtra("Uid");
         childUser = getIntent().getStringExtra("childID");
@@ -670,7 +604,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         completeDetails(evaluations);
 
 
-        if (childUser != null) {// Downloaded from network; continue fetching audio
+        if (childUser != null) {//是从网络下载的，需要继续获取录音
             audioPaths = new HashMap<String, Map<String, String>>();
             Iterator<String> items = evaluations.keys();
             while (items.hasNext()) {
@@ -687,7 +621,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                 }
                 audioPaths.put(title, temp);
             }
-            // Spawn a worker thread to download audio
+            //开一个子线程去完成语音下载
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -711,13 +645,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         showDetails(Word2, evaluations.getJSONArray("RE"), evaluation.RE, ImageUrls.RE_imageUrls.length);
         showDetails(Word3, evaluations.getJSONArray("S"), evaluation.S, ImageUrls.S_words.length);
         showDetails(Word4, evaluations.getJSONArray("NWR"), evaluation.NWR, ImageUrls.NWR_characs.length);
-        showDetails(Pronunciation, evaluations.getJSONArray("A"), evaluation.A, ImageUrls.getAImageCount());
-        JSONArray plArray = evaluations.optJSONArray("PL");
-        if (plArray == null) {
-            plArray = new JSONArray();
-            evaluations.put("PL", plArray);
-        }
-        showDetails(Prelinguistic, plArray, evaluation.PL, ImageUrls.PL_SKILLS.length);
+        showDetails(Pronunciation, evaluations.getJSONArray("A"), evaluation.A, ImageUrls.A_imageUrls.length);
         showDetails(Grammar, evaluations.getJSONArray("RG"), evaluation.RG, ImageUrls.RG_hints.length);
         showDetails(Narrate1, evaluations.getJSONArray("PST"), evaluation.PST, ImageUrls.PST_imageUrls.length);
         showDetails(Narrate2, evaluations.getJSONArray("PN"), evaluation.PN, ImageUrls.PN_hints.length);
@@ -739,7 +667,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
 
 
     private void uploadAudioInParallel(String Uid, String childUser, JSONObject evaluations) throws JSONException {
-        ExecutorService executorService = Executors.newFixedThreadPool(4); // Create a thread pool with fixed size
+        ExecutorService executorService = Executors.newFixedThreadPool(4); // 创建一个线程池，指定线程数量
 
         Iterator<String> it = evaluations.keys();
         while (it.hasNext()) {
@@ -763,7 +691,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             }
         }
 
-        executorService.shutdown(); // 关闭线程?
+        executorService.shutdown(); // 关闭线程池
     }
 
     public static void copyFile(String sourcePath, String destPath) throws IOException {
@@ -781,7 +709,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             destDir.mkdirs();
         }
 
-        // Copy file with streams
+        // 使用文件输入输出流进行文件复制
         try (FileInputStream fis = new FileInputStream(sourceFile);
              FileOutputStream fos = new FileOutputStream(destFile)) {
 
