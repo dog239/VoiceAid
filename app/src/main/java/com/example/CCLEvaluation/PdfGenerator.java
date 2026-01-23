@@ -65,6 +65,7 @@ import bean.re;
 import bean.rg;
 import bean.s;
 import utils.ImageUrls;
+import utils.ArticulationPlanHelper;
 import utils.dataManager;
 import utils.permissionutils;
 import java.io.File;
@@ -1249,6 +1250,13 @@ public class PdfGenerator extends evmenuactivity{
         private static final String MODULE_TITLE_SYNTAX = "句法";
         private static final String MODULE_TITLE_SOCIAL = "社会交往";
         private static final String SECTION_INTERVENTION_GUIDE = "干预指导";
+        private static final String SECTION_ARTICULATION_OVERALL = "评估结果（整体）";
+        private static final String SECTION_ARTICULATION_MASTERED = "本次评估中已掌握的能力";
+        private static final String SECTION_ARTICULATION_NOT_MASTERED = "未掌握能力的整体说明";
+        private static final String SECTION_ARTICULATION_FOCUS = "需要重点关注的能力";
+        private static final String SECTION_ARTICULATION_UNSTABLE = "不稳定的能力";
+        private static final String SECTION_ARTICULATION_SMART = "干预目标（SMART）";
+        private static final String SECTION_ARTICULATION_HOME = "家庭干预指导建议";
         private static final String LABEL_AGE = "年龄";
         private static final String AGE_MISSING_TEXT = "未提供";
         private static final String MEMBER_SEPARATOR = "｜";
@@ -1331,10 +1339,11 @@ public class PdfGenerator extends evmenuactivity{
             this.pageNumber = 0;
             startPage();
             drawPersonalInfo();
-            drawSectionHeader(SECTION_INTERVENTION_GUIDE, accentSectionFillPaint);
+            drawAccentSectionHeader(SECTION_INTERVENTION_GUIDE);
             drawModuleBlocks();
-            drawSchedule();
-            drawNotes();
+            // TODO(隐藏需求): 频次建议与备注区块暂时隐藏，后续恢复时取消注释。
+            // drawSchedule();
+            // drawNotes();
             finishPage();
             return pageNumber;
         }
@@ -1412,7 +1421,7 @@ public class PdfGenerator extends evmenuactivity{
         }
 
         private void drawPersonalInfo() {
-            drawSectionHeader(strings.sectionPersonalInfo, accentSectionFillPaint);
+            drawAccentSectionHeader(strings.sectionPersonalInfo);
             List<Field> fields = new ArrayList<>();
             fields.add(new Field(strings.labelName, infoValue("name"), 1, false));
             fields.add(new Field(strings.labelGender, infoValue("gender"), 1, false));
@@ -1440,12 +1449,10 @@ public class PdfGenerator extends evmenuactivity{
             List<String> keyFindings = getList(summary, "key_findings");
             List<String> suspected = getList(summary, "suspected_diagnosis");
             List<String> risks = getList(summary, "risk_flags");
-            int ageMonths = summary.optInt("age_months", 0);
-            if (ageMonths <= 0 && chief.isEmpty() && keyFindings.isEmpty() && suspected.isEmpty() && risks.isEmpty()) {
+            if (chief.isEmpty() && keyFindings.isEmpty() && suspected.isEmpty() && risks.isEmpty()) {
                 return;
             }
             drawSectionHeader(strings.sectionCaseSummary);
-            drawLabelValue(LABEL_AGE, formatAgeDisplay(ageMonths));
             drawLabelValue(strings.labelChiefComplaint, chief);
             drawBulletSection(strings.labelKeyFindings, keyFindings, false);
             drawBulletSection(strings.labelSuspectedDiagnosis, suspected, false);
@@ -1517,8 +1524,12 @@ public class PdfGenerator extends evmenuactivity{
         private void drawModuleBlock(String title, JSONObject moduleData, JSONObject summaryData, boolean drawLine) {
             drawModuleHeader(title, drawLine);
             drawFindingsCard(moduleData, summaryData);
-            drawPlanList(moduleData);
-            drawStageCards(moduleData);
+            if (MODULE_TITLE_SPEECH_SOUND.equals(title) && hasArticulation(moduleData)) {
+                drawArticulationPlan(moduleData);
+            } else {
+                drawPlanList(moduleData);
+                drawStageCards(moduleData);
+            }
             y += SECTION_GAP;
         }
 
@@ -1538,30 +1549,15 @@ public class PdfGenerator extends evmenuactivity{
         }
 
         private void drawFindingsCard(JSONObject moduleData, JSONObject summaryData) {
-            JSONObject summary = resolveCaseSummary(summaryData);
-            int ageMonths = summary == null ? 0 : summary.optInt("age_months", 0);
-            String ageLine = LABEL_AGE + strings.labelSeparator + formatAgeDisplay(ageMonths);
-
             List<String> keyFindings = getList(moduleData, "key_findings");
-            if (keyFindings.isEmpty()) {
-                keyFindings = getList(summary, "key_findings");
-            }
             if (keyFindings.isEmpty()) {
                 keyFindings = new ArrayList<>();
                 keyFindings.add(placeholderText());
             }
 
-            List<String> metrics = getList(moduleData, "metrics");
-            if (metrics.isEmpty()) {
-                metrics = new ArrayList<>();
-                metrics.add(placeholderText());
-            }
-
             float contentWidth = getContentWidth() - FINDINGS_PADDING * 2f;
             float height = FINDINGS_PADDING;
-            height += measureTextHeight(ageLine, bodyPaint, contentWidth, Layout.Alignment.ALIGN_NORMAL) + LINE_GAP;
             height += measureBulletSectionHeight(strings.labelKeyFindings, keyFindings, contentWidth);
-            height += measureBulletSectionHeight(LABEL_SCORE_DATA, metrics, contentWidth);
             height += FINDINGS_PADDING;
 
             ensureSpace(height + LINE_GAP);
@@ -1570,10 +1566,7 @@ public class PdfGenerator extends evmenuactivity{
                 canvas.drawRoundRect(rect, FINDINGS_RADIUS, FINDINGS_RADIUS, sectionFillPaint);
             }
             float cursorY = y + FINDINGS_PADDING;
-            cursorY += drawTextBlock(ageLine, bodyPaint, MARGIN + FINDINGS_PADDING, cursorY, contentWidth, Layout.Alignment.ALIGN_NORMAL);
-            cursorY += LINE_GAP;
             cursorY += drawBulletSectionAt(strings.labelKeyFindings, keyFindings, MARGIN + FINDINGS_PADDING, cursorY, contentWidth);
-            cursorY += drawBulletSectionAt(LABEL_SCORE_DATA, metrics, MARGIN + FINDINGS_PADDING, cursorY, contentWidth);
             y += height + LINE_GAP;
         }
 
@@ -1668,6 +1661,84 @@ public class PdfGenerator extends evmenuactivity{
             drawBulletSection(strings.labelHomePractice, homePractice, true);
         }
 
+        private boolean hasArticulation(JSONObject moduleData) {
+            return moduleData != null && moduleData.optJSONObject("articulation") != null;
+        }
+
+        private void drawArticulationPlan(JSONObject moduleData) {
+            if (moduleData == null) {
+                return;
+            }
+            JSONObject articulation = moduleData.optJSONObject("articulation");
+            if (articulation == null) {
+                return;
+            }
+
+            JSONObject overall = articulation.optJSONObject("overall_summary");
+            drawSubHeader(SECTION_ARTICULATION_OVERALL);
+            drawParagraph(overall == null ? "" : overall.optString("text", ""));
+
+            JSONObject mastered = articulation.optJSONObject("mastered");
+            drawSubHeader(SECTION_ARTICULATION_MASTERED);
+            String masteredIntro = mastered == null ? "" : safeText(mastered.optString("intro", ""));
+            if (!masteredIntro.isEmpty()) {
+                drawParagraph(masteredIntro);
+            }
+            drawBulletSection(null, getList(mastered, "items"), true);
+
+            JSONObject notMastered = articulation.optJSONObject("not_mastered_overview");
+            drawSubHeader(SECTION_ARTICULATION_NOT_MASTERED);
+            drawParagraph(notMastered == null ? "" : notMastered.optString("text", ""));
+
+            JSONObject focus = articulation.optJSONObject("focus");
+            String focusTitle = focus == null ? "" : safeText(focus.optString("title", ""));
+            drawArticulationList(resolveArticulationTitle(focusTitle, SECTION_ARTICULATION_FOCUS),
+                    getList(focus, "items"));
+            String focusNote = focus == null ? "" : safeText(focus.optString("note", ""));
+            if (!focusNote.isEmpty()) {
+                drawParagraph(focusNote);
+            }
+
+            JSONObject unstable = articulation.optJSONObject("unstable");
+            String unstableTitle = unstable == null ? "" : safeText(unstable.optString("title", ""));
+            drawArticulationList(resolveArticulationTitle(unstableTitle, SECTION_ARTICULATION_UNSTABLE),
+                    getList(unstable, "items"));
+
+            JSONObject smartGoal = articulation.optJSONObject("smart_goal");
+            drawSubHeader(SECTION_ARTICULATION_SMART);
+            String smartText = smartGoal == null ? "" : safeText(smartGoal.optString("text", ""));
+            if (smartText.isEmpty() && smartGoal != null) {
+                smartText = ArticulationPlanHelper.buildSmartGoalText(smartGoal);
+            }
+            drawParagraph(smartText);
+
+            JSONObject homeGuidance = articulation.optJSONObject("home_guidance");
+            drawArticulationList(SECTION_ARTICULATION_HOME, getList(homeGuidance, "items"));
+        }
+
+        private void drawArticulationList(String title, List<String> items) {
+            drawSubHeader(title);
+            List<String> filtered = new ArrayList<>();
+            if (items != null) {
+                for (String item : items) {
+                    String text = safeText(item);
+                    if (text.isEmpty() || PLACEHOLDER_TEXT.equals(text) || ArticulationPlanHelper.MISSING_DETAIL_HINT.equals(text)) {
+                        continue;
+                    }
+                    filtered.add(text);
+                }
+            }
+            if (filtered.isEmpty()) {
+                drawParagraph(ArticulationPlanHelper.MISSING_DETAIL_HINT);
+                return;
+            }
+            drawBulletSection(null, filtered, false);
+        }
+
+        private String resolveArticulationTitle(String title, String fallback) {
+            return safeText(title).isEmpty() ? fallback : title.trim();
+        }
+
         private void drawStageCards(JSONObject moduleData) {
             List<StageData> stages = getStageDataList(moduleData);
             if (stages.isEmpty()) {
@@ -1759,7 +1830,6 @@ public class PdfGenerator extends evmenuactivity{
             List<String> methods = getList(module, "methods");
             List<String> sampleActivities = getList(module, "sample_activities");
             List<String> homePractice = getList(module, "home_practice");
-            List<String> metrics = getList(module, "metrics");
 
             drawBulletSection(strings.labelTargets, targets, false);
             if (speechSound) {
@@ -1776,7 +1846,6 @@ public class PdfGenerator extends evmenuactivity{
                 drawBulletSection(strings.labelMethods, methods, false);
             }
             drawBulletSection(strings.labelHomePractice, homePractice, false);
-            drawBulletSection(strings.labelMetrics, metrics, false);
 
             if (speechSound) {
                 drawSpeechStages(module);
@@ -1822,7 +1891,6 @@ public class PdfGenerator extends evmenuactivity{
             cursorY += LINE_GAP;
             cursorY += drawBulletSectionAt(strings.labelFocus, stage.focus, MARGIN + CARD_PADDING, cursorY, contentWidth);
             cursorY += drawBulletSectionAt(STAGE_LABEL_ACTIVITIES, stage.activities, MARGIN + CARD_PADDING, cursorY, contentWidth);
-            cursorY += drawBulletSectionAt(STAGE_LABEL_METRICS, stage.metrics, MARGIN + CARD_PADDING, cursorY, contentWidth);
             y += cardHeight + CARD_GAP;
         }
 
@@ -1832,24 +1900,31 @@ public class PdfGenerator extends evmenuactivity{
             height += LINE_GAP;
             height += measureBulletSectionHeight(strings.labelFocus, stage.focus, contentWidth);
             height += measureBulletSectionHeight(STAGE_LABEL_ACTIVITIES, stage.activities, contentWidth);
-            height += measureBulletSectionHeight(STAGE_LABEL_METRICS, stage.metrics, contentWidth);
             height += CARD_PADDING;
             return height;
         }
 
         private void drawSectionHeader(String title) {
-            drawSectionHeader(title, sectionFillPaint);
+            drawSectionHeader(title, sectionFillPaint, Layout.Alignment.ALIGN_NORMAL);
         }
 
         private void drawSectionHeader(String title, Paint backgroundPaint) {
+            drawSectionHeader(title, backgroundPaint, Layout.Alignment.ALIGN_NORMAL);
+        }
+
+        private void drawAccentSectionHeader(String title) {
+            drawSectionHeader(title, accentSectionFillPaint, Layout.Alignment.ALIGN_CENTER);
+        }
+
+        private void drawSectionHeader(String title, Paint backgroundPaint, Layout.Alignment alignment) {
             float contentWidth = getContentWidth();
-            float textHeight = measureTextHeight(title, boldPaint, contentWidth - SECTION_PADDING * 2f, Layout.Alignment.ALIGN_NORMAL);
+            float textHeight = measureTextHeight(title, boldPaint, contentWidth - SECTION_PADDING * 2f, alignment);
             float boxHeight = textHeight + SECTION_PADDING * 2f;
             ensureSpace(boxHeight + SECTION_GAP);
             if (!measureOnly) {
                 canvas.drawRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + boxHeight, backgroundPaint);
                 drawTextBlock(title, boldPaint, MARGIN + SECTION_PADDING, y + SECTION_PADDING,
-                        contentWidth - SECTION_PADDING * 2f, Layout.Alignment.ALIGN_NORMAL);
+                        contentWidth - SECTION_PADDING * 2f, alignment);
             }
             y += boxHeight + SECTION_GAP;
         }

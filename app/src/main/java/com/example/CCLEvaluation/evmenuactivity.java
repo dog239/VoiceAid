@@ -43,11 +43,13 @@ import java.util.concurrent.Executors;
 
 import bean.evaluation;
 import utils.AudioRecorder;
+import utils.ArticulationPlanHelper;
 import utils.dataManager;
 import utils.dialogUtils;
 import utils.dirpath;
 import utils.ImageUrls;
 import utils.LlmPlanService;
+import utils.ModuleReportHelper;
 import utils.Netinteractutils;
 import utils.TreatmentPromptBuilder;
 
@@ -157,7 +159,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         try {
             initData();
         } catch (Exception e) {
-            Toast.makeText(this, "数据加载失败！", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "数据加载失败，请重试", Toast.LENGTH_SHORT).show();
             throw new RuntimeException(e);
         }
         Word1.setOnClickListener(this);
@@ -193,7 +195,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
 //
 //        Netinteractutils.getInstance(this).setListener(new Netinteractutils.UiRefreshListener() {
 //            /**
-//             * @param isPlaying 是否需要打开等待动画中
+//             * @param isPlaying Whether to show loading animation
 //             */
 //            @Override
 //            public void refreshUI(Boolean isPlaying) {
@@ -228,7 +230,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             data = dataManager.getInstance().loadData(fName);
             completeDetails(data.getJSONObject("evaluations"));
         } catch (Exception e) {
-            Toast.makeText(this, "数据加载失败！", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "数据加载失败，请重试", Toast.LENGTH_SHORT).show();
             throw new RuntimeException(e);
         }
 
@@ -278,7 +280,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                     decodeAudio = android.util.Base64.decode(audioByte, android.util.Base64.DEFAULT);
                 }
                 File file = new File(audioPaths.get(title).get(num));
-                if (!file.getParentFile().exists()) {//父目录文件夹不存在
+                if (!file.getParentFile().exists()) {// Parent directory missing
                     File dir = new File(dirpath.PATH_FETCH_DIR_AUDIO);
                     dir.mkdirs();
                 }
@@ -384,7 +386,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                     "确认", () -> {
                         if (childUser != null) {
                             Netinteractutils.getInstance(this).deleteEvaluation(uid, childUser);
-                            childUser = null;//防止用户连点，例如两次删除，后面一次会有已删除的提示，而这是上传，不应该提示
+                            childUser = null;
                         }
                         data = dataManager.getInstance().loadData(fName);//必须重新加载，可能会更新
                         Netinteractutils.getInstance(this).uploadEvaluation(uid, data.toString());
@@ -476,33 +478,30 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             return;
         }
 
+        JSONObject evaluations = latestData.optJSONObject("evaluations");
+        JSONArray evaluationsA = evaluations == null ? null : evaluations.optJSONArray("A");
+
         setLoading(true, "正在生成干预方案...");
-        String systemPrompt =
-                "你是儿童言语语言治疗临床助理（SLP）。\n" +
-                        "受众是家长/照护者，输出可在家实施的分阶段训练方案。\n" +
-                        "重点是居家可操作、可执行的步骤与活动，而非治疗师临床报告。\n" +
-                        "必须覆盖声调异常与构音/音韵异常两类场景，并提供家长可执行的方法。\n" +
-                        "声调异常示例应包含最小对立、找不同、听辨与模仿对比，如“妈/马”“1声/3声”。\n" +
-                        "构音/音韵异常要包含口型/气流/舌位提示，并从单音-音节-词-短语-句子-会话逐级泛化。\n" +
-                        "在 speech_sound.stages 内按阶段1~4输出，每阶段包含 name、focus、activities、home_practice、metrics（数组）。\n" +
-                        "不做确定诊断；如风险高或家长担忧明显，建议复评或就医。\n" +
-                        "频率与时长建议应在合理范围内，并给出复评周期（例如每周2-5次、每次15-30分钟、4-12周复评）。\n" +
-                        "硬约束：只输出严格合法 JSON；key 保持英文不变；value 为简体中文临床表述；允许缩写 PST/PN/NWR/SLP/ASD/ADHD/SSD/DLD；不得出现英文完整句子；不含个人可识别信息。\n" +
-                        "若年龄缺失，age_months=0，并在 notes_for_therapist 提示需人工确认。\n";
+        String systemPrompt = getString(R.string.treatment_plan_system_prompt);
 
         String userPrompt;
         try {
             userPrompt = TreatmentPromptBuilder.buildUserPrompt(latestData);
         } catch (JSONException e) {
             setLoading(false, null);
-            Toast.makeText(this, "生成提示词失败", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "生成提示词失败，请重试", Toast.LENGTH_SHORT).show();
             return;
         }
 
         LlmPlanService service = new LlmPlanService();
+        JSONArray finalEvaluationsA = evaluationsA;
+        JSONObject finalEvaluations = evaluations;
         service.generateTreatmentPlan(systemPrompt, userPrompt, new LlmPlanService.PlanCallback() {
             @Override
             public void onSuccess(JSONObject plan) {
+                ArticulationPlanHelper.ensureArticulation(plan, finalEvaluationsA);
+                ArticulationPlanHelper.applyArticulationReport(plan, latestData, finalEvaluationsA);
+                ModuleReportHelper.applyModuleFindings(plan, finalEvaluations);
                 String pretty;
                 try {
                     pretty = plan.toString(2);
@@ -625,7 +624,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         Netinteractutils.getInstance(this).setUploadEvaluationCallback(uploadEvaluationCallback);
         Netinteractutils.getInstance(this).setAudioCallback(audioCallback);
 
-        //获取信息并展示
+        // Load data and render
         fName = getIntent().getStringExtra("fName");
         uid = getIntent().getStringExtra("Uid");
         childUser = getIntent().getStringExtra("childID");
@@ -634,7 +633,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         completeDetails(evaluations);
 
 
-        if (childUser != null) {//是从网络下载的，需要继续获取录音
+        if (childUser != null) {// Downloaded from network; continue fetching audio
             audioPaths = new HashMap<String, Map<String, String>>();
             Iterator<String> items = evaluations.keys();
             while (items.hasNext()) {
@@ -651,7 +650,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                 }
                 audioPaths.put(title, temp);
             }
-            //开一个子线程去完成语音下载
+            // Spawn a worker thread to download audio
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -697,7 +696,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
 
 
     private void uploadAudioInParallel(String Uid, String childUser, JSONObject evaluations) throws JSONException {
-        ExecutorService executorService = Executors.newFixedThreadPool(4); // 创建一个线程池，指定线程数量
+        ExecutorService executorService = Executors.newFixedThreadPool(4); // Create a thread pool with fixed size
 
         Iterator<String> it = evaluations.keys();
         while (it.hasNext()) {
@@ -721,7 +720,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             }
         }
 
-        executorService.shutdown(); // 关闭线程池
+        executorService.shutdown(); // 关闭线程?
     }
 
     public static void copyFile(String sourcePath, String destPath) throws IOException {
@@ -739,7 +738,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             destDir.mkdirs();
         }
 
-        // 使用文件输入输出流进行文件复制
+        // Copy file with streams
         try (FileInputStream fis = new FileInputStream(sourceFile);
              FileOutputStream fos = new FileOutputStream(destFile)) {
 

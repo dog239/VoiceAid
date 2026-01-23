@@ -31,12 +31,8 @@ public class showprivatechildinformation extends AppCompatActivity {
     private Button buttonDelete;
     private Button buttonAddMember;
     private EditText textName;
-    private EditText textClass;
-    private EditText textNumber;
     private EditText textBirth;
     private EditText textTestTime;
-    private EditText textTestPlace;
-    private EditText textTester;
     private EditText textAddress;
     private EditText textPhone;
     private RadioButton genderMale;
@@ -54,12 +50,8 @@ public class showprivatechildinformation extends AppCompatActivity {
         buttonDelete = findViewById(R.id.btn_delete);
         buttonAddMember = findViewById(R.id.btn_add_member);
         textName = findViewById(R.id.et_name);
-        textClass = findViewById(R.id.et_class);
-        textNumber = findViewById(R.id.et_number);
         textBirth = findViewById(R.id.et_birth);
         textTestTime = findViewById(R.id.et_test_time);
-        textTestPlace = findViewById(R.id.et_place);
-        textTester = findViewById(R.id.et_tester);
         textAddress = findViewById(R.id.et_address);
         textPhone = findViewById(R.id.et_phone);
         genderMale = findViewById(R.id.rb_gender_male);
@@ -76,12 +68,8 @@ public class showprivatechildinformation extends AppCompatActivity {
                 object = new JSONObject();
             }
             textName.setText(object.optString("name", ""));
-            textClass.setText(object.optString("class", ""));
-            textNumber.setText(object.optString("serialNumber", ""));
             textBirth.setText(object.optString("birthDate", ""));
             textTestTime.setText(object.optString("testDate", ""));
-            textTestPlace.setText(object.optString("testLocation", ""));
-            textTester.setText(object.optString("examiner", ""));
             textAddress.setText(object.optString("address", ""));
             textPhone.setText(object.optString("phone", ""));
             String gender = object.optString("gender", "");
@@ -100,12 +88,8 @@ public class showprivatechildinformation extends AppCompatActivity {
             familyRecyclerView.setAdapter(familyMemberAdapter);
 
             setReadOnly(textName);
-            setReadOnly(textClass);
-            setReadOnly(textNumber);
             setReadOnly(textBirth);
             setReadOnly(textTestTime);
-            setReadOnly(textTestPlace);
-            setReadOnly(textTester);
             setReadOnly(textAddress);
             setReadOnly(textPhone);
             genderMale.setEnabled(false);

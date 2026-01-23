@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.api.tasks.compile.JavaCompile
 
 plugins {
     id("com.android.application")
@@ -80,4 +81,8 @@ dependencies {
     implementation("com.android.support:multidex:1.0.3")
     implementation ("com.itextpdf:itextpdf:5.5.13.2")
     implementation ("com.itextpdf:itext-asian:5.2.0")
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
 }
