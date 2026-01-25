@@ -10,11 +10,17 @@ import java.util.List;
 public final class ModuleReportHelper {
     private static final String DEFAULT_NO_DATA = "\u672a\u4f5c\u7b54";
     private static final String PRELINGUISTIC_KEY = "PL";
+    private static final String PRELINGUISTIC_OPTION_TEXT_1 = "\u7531\u4e8e\u5b69\u5b50\u7684\u751f\u7406\u5e74\u9f84\u548c\u5b9e\u9645\u7684\u6c9f\u901a\u80fd\u529b\u6c34\u5e73\u4e4b\u95f4\u5dee\u8ddd\u8f83\u5927\uff0c\u5b69\u5b50\u5728\u6c9f\u901a\u4e2d\u9891\u7e41\u5730\u53d7\u632b\u5207\u51fa\u73b0\u6cad\u4e27\uff0c\u751f\u6d3b\u8d28\u91cf\u53d7\u5230\u663e\u8457\u5f71\u54cd\uff0c\u5efa\u8bae\u7acb\u523b\u54a8\u8be2\u4e13\u4e1a\u7684\u8bed\u8a00\u6cbb\u7597\u5e08\u56e2\u961f\uff0c\u8fdb\u884c\u79d1\u5b66\u7cbe\u51c6\u5bc6\u96c6\u7684\u5e72\u9884\u8bad\u7ec3\u3002\u5efa\u8bae\u8bad\u7ec3\u9891\u6b21\u4e0d\u4f4e\u4e8e3/4/5\u6b21\u6bcf\u5468\uff0c\u6bcf\u5929\u4e0d\u5c11\u4e8e30/45/60\u5206\u949f\u3002";
+    private static final String PRELINGUISTIC_OPTION_TEXT_2 = "\u7531\u4e8e\u5b69\u5b50\u5f53\u524d\u751f\u7406\u5e74\u9f84\u548c\u9884\u671f\u80fd\u529b\u6c34\u5e73\u4e4b\u95f4\u5dee\u8ddd\u4e0d\u663e\u8457\uff0c\u5efa\u8bae\u5bb6\u957f\u6839\u636e\u4ee5\u4e0b\u8981\u70b9\uff0c\u6bcf\u5929\u5f00\u5c55\u4e0d\u4f4e\u4e8e30/45\u5206\u949f\u7684\u9ad8\u8d28\u91cf\u5bb6\u5ead\u4eb2\u5b50\u4e92\u52a8\u3002\u68c0\u6d4b\u8fdb\u5c55\u0031/2/3\u4e2a\u6708\u540e\uff0c\u82e5\u65e0\u663e\u8457\u6539\u5584\uff0c\u7acb\u5373\u8054\u7cfb\u4e13\u4e1a\u7684\u8bed\u8a00\u6cbb\u7597\u5e08\u56e2\u961f\u8fdb\u884c\u79d1\u5b66\u5e72\u9884\u3002";
 
     private ModuleReportHelper() {
     }
 
     public static void applyModuleFindings(JSONObject plan, JSONObject evaluations) {
+        applyModuleFindings(plan, evaluations, null);
+    }
+
+    public static void applyModuleFindings(JSONObject plan, JSONObject evaluations, JSONObject childData) {
         if (plan == null || evaluations == null) {
             return;
         }
@@ -25,7 +31,8 @@ public final class ModuleReportHelper {
                 plan.put("module_plan", modulePlan);
             }
             applyFindings(modulePlan, "speech_sound", buildSpeechSoundFindings(evaluations, evaluations.optJSONArray("A")));
-            applyFindings(modulePlan, "prelinguistic", buildPrelinguisticFindings(evaluations));
+            JSONObject prelinguisticReport = childData == null ? null : loadPrelinguisticReport(childData);
+            applyFindings(modulePlan, "prelinguistic", buildPrelinguisticFindings(evaluations, prelinguisticReport));
             applyFindings(modulePlan, "vocabulary", buildVocabularyFindings(evaluations));
             applyFindings(modulePlan, "syntax", buildSyntaxFindings(evaluations));
             applyFindings(modulePlan, "social_pragmatics", buildSocialFindings(evaluations));
@@ -88,9 +95,10 @@ public final class ModuleReportHelper {
         return list;
     }
 
-    private static List<String> buildPrelinguisticFindings(JSONObject evaluations) {
+    private static List<String> buildPrelinguisticFindings(JSONObject evaluations, JSONObject report) {
         PreLinguisticDataParser.PreLinguisticHeader header = PreLinguisticDataParser.parseHeader(evaluations);
-        String text = formatPrelinguisticHeader(header);
+        String suggestionOverride = resolvePrelinguisticSuggestionText(report);
+        String text = formatPrelinguisticHeader(header, suggestionOverride);
         if (safeText(text).isEmpty()) {
             return toList(DEFAULT_NO_DATA);
         }
@@ -112,7 +120,8 @@ public final class ModuleReportHelper {
         return toList(summary);
     }
 
-    private static String formatPrelinguisticHeader(PreLinguisticDataParser.PreLinguisticHeader header) {
+    private static String formatPrelinguisticHeader(PreLinguisticDataParser.PreLinguisticHeader header,
+                                                    String suggestionOverride) {
         if (header == null || header.dimensions.isEmpty()) {
             return "";
         }
@@ -136,7 +145,10 @@ public final class ModuleReportHelper {
             }
             builder.append("\u8bca\u65ad/\u7ed3\u8bba\uff1a").append(diagnosis);
         }
-        String suggestions = normalizeRequiredValue(header.suggestions);
+        String suggestions = safeText(suggestionOverride);
+        if (suggestions.isEmpty()) {
+            suggestions = normalizeRequiredValue(header.suggestions);
+        }
         if (builder.length() > 0) {
             builder.append("\n");
         }
@@ -399,14 +411,19 @@ public final class ModuleReportHelper {
                 strengthsText, weaknessesText, weakOne);
     }
 
-    public static String buildPrelinguisticSuggestionText(int option, int freqPerWeek, int minutesPerDay,
-                                                          int parentMinutesPerDay, int followupMonths) {
-        if (option == 2) {
-            return String.format("\u9009\u98792.\u7531\u4e8e\u5b69\u5b50\u5f53\u524d\u751f\u7406\u5e74\u9f84\u548c\u9884\u671f\u80fd\u529b\u6c34\u5e73\u4e4b\u95f4\u5dee\u8ddd\u4e0d\u663e\u8457\uff0c\u5efa\u8bae\u5bb6\u957f\u6839\u636e\u4ee5\u4e0b\u8981\u70b9\uff0c\u6bcf\u5929\u5f00\u5c55\u4e0d\u4f4e\u4e8e%d\u5206\u949f\u7684\u9ad8\u8d28\u91cf\u5bb6\u5ead\u4eb2\u5b50\u4e92\u52a8\u3002\u68c0\u6d4b\u8fdb\u5c55%d\u4e2a\u6708\u540e\uff0c\u82e5\u65e0\u663e\u8457\u6539\u5584\uff0c\u7acb\u5373\u8054\u7cfb\u4e13\u4e1a\u7684\u8bed\u8a00\u6cbb\u7597\u5e08\u56e2\u961f\u8fdb\u884c\u79d1\u5b66\u5e72\u9884\u3002",
-                    parentMinutesPerDay, followupMonths);
-        }
-        return String.format("\u9009\u98791.\u7531\u4e8e\u5b69\u5b50\u7684\u751f\u7406\u5e74\u9f84\u548c\u5b9e\u9645\u7684\u6c9f\u901a\u80fd\u529b\u6c34\u5e73\u4e4b\u95f4\u5dee\u8ddd\u8f83\u5927\uff0c\u5b69\u5b50\u5728\u6c9f\u901a\u4e2d\u9891\u7e41\u5730\u53d7\u632b\u5207\u51fa\u73b0\u6cad\u4e27\uff0c\u751f\u6d3b\u8d28\u91cf\u53d7\u5230\u663e\u8457\u5f71\u54cd\uff0c\u5efa\u8bae\u7acb\u523b\u54a8\u8be2\u4e13\u4e1a\u7684\u8bed\u8a00\u6cbb\u7597\u5e08\u56e2\u961f\uff0c\u8fdb\u884c\u79d1\u5b66\u7cbe\u51c6\u5bc6\u96c6\u7684\u5e72\u9884\u8bad\u7ec3\u3002\u5efa\u8bae\u8bad\u7ec3\u9891\u6b21\u4e0d\u4f4e\u4e8e%d\u6b21\u6bcf\u5468\uff0c\u6bcf\u5929\u4e0d\u5c11\u4e8e%d\u5206\u949f\u3002",
-                freqPerWeek, minutesPerDay);
+    public static String buildPrelinguisticSuggestionText(int option) {
+        return getPrelinguisticSuggestionOptionText(option);
+    }
+
+    public static String getPrelinguisticSuggestionOptionText(int option) {
+        return option == 2 ? PRELINGUISTIC_OPTION_TEXT_2 : PRELINGUISTIC_OPTION_TEXT_1;
+    }
+
+    public static JSONArray buildPrelinguisticSuggestionOptionsArray() {
+        JSONArray options = new JSONArray();
+        options.put(PRELINGUISTIC_OPTION_TEXT_1);
+        options.put(PRELINGUISTIC_OPTION_TEXT_2);
+        return options;
     }
 
     public static JSONObject buildPrelinguisticSuggestionParams(int freqPerWeek, int minutesPerDay,
@@ -420,6 +437,25 @@ public final class ModuleReportHelper {
         } catch (JSONException ignored) {
         }
         return params;
+    }
+
+    private static String resolvePrelinguisticSuggestionText(JSONObject report) {
+        if (report == null) {
+            return "";
+        }
+        int option = report.optInt("suggestionOption", 1);
+        JSONArray options = report.optJSONArray("suggestionOptions");
+        if (options != null && options.length() >= 2) {
+            String text = safeText(options.optString(option == 2 ? 1 : 0, ""));
+            if (!text.isEmpty()) {
+                return text;
+            }
+        }
+        String text = safeText(report.optString("suggestionText", ""));
+        if (!text.isEmpty()) {
+            return text;
+        }
+        return getPrelinguisticSuggestionOptionText(option);
     }
 
     private static JSONObject optJSONObjectFlexible(JSONObject source, String key) {

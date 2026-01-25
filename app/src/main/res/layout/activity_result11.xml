@@ -328,154 +328,26 @@
             android:visibility="gone"
             android:background="@drawable/table">
 
-            <TextView
-                android:id="@+id/pl_suggestion_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/black"
-                android:textSize="16sp"
-                android:lineSpacingExtra="6dp" />
-
             <RadioGroup
                 android:id="@+id/pl_option_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical">
                 <RadioButton
                     android:id="@+id/pl_option1"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:lineSpacingExtra="6dp"
+                    android:paddingBottom="8dp"
                     android:text="选项1" />
                 <RadioButton
                     android:id="@+id/pl_option2"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingExtra="6dp"
                     android:text="选项2" />
             </RadioGroup>
-
-            <LinearLayout
-                android:id="@+id/pl_option1_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="8dp">
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="每周训练次数"
-                    android:textColor="@color/black" />
-                <RadioGroup
-                    android:id="@+id/pl_freq_group"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <RadioButton
-                        android:id="@+id/pl_freq_3"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="3" />
-                    <RadioButton
-                        android:id="@+id/pl_freq_4"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="4" />
-                    <RadioButton
-                        android:id="@+id/pl_freq_5"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="5" />
-                </RadioGroup>
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="每天训练分钟"
-                    android:textColor="@color/black" />
-                <RadioGroup
-                    android:id="@+id/pl_minutes_group"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <RadioButton
-                        android:id="@+id/pl_minutes_30"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="30" />
-                    <RadioButton
-                        android:id="@+id/pl_minutes_45"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="45" />
-                    <RadioButton
-                        android:id="@+id/pl_minutes_60"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="60" />
-                </RadioGroup>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/pl_option2_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="8dp"
-                android:visibility="gone">
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="每天亲子互动分钟"
-                    android:textColor="@color/black" />
-                <RadioGroup
-                    android:id="@+id/pl_parent_minutes_group"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <RadioButton
-                        android:id="@+id/pl_parent_minutes_30"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="30" />
-                    <RadioButton
-                        android:id="@+id/pl_parent_minutes_45"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="45" />
-                </RadioGroup>
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="复测月份"
-                    android:textColor="@color/black" />
-                <RadioGroup
-                    android:id="@+id/pl_followup_group"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <RadioButton
-                        android:id="@+id/pl_followup_1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="1" />
-                    <RadioButton
-                        android:id="@+id/pl_followup_2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="2" />
-                    <RadioButton
-                        android:id="@+id/pl_followup_3"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="3" />
-                </RadioGroup>
-            </LinearLayout>
 
             <Button
                 android:id="@+id/pl_save_button"

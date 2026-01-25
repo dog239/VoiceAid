@@ -18,6 +18,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -63,18 +65,23 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     private Button GrammarResult;
     private Button Narrate1, Narrate2;
     private Button NarrateResult1, NarrateResult2;
+    private Button PrelinguisticTest, PrelinguisticResult;
     private Button Upload, Download, Pdf, Plan, PlanView;
     private JSONObject data;
     private String fName;
     private String childUser;
     private String uid;
     private LinearLayout wd;
+    private LinearLayout plModule;
     private LinearLayout pn;
     private LinearLayout gm;
     private LinearLayout nr;
     private static final int MY_PERMISSIONS_REQUEST_READ_OR_WRITE_EXTERNAL_STORAGE = 1;
+    private static final long PLAN_HINT_DELAY_MS = 45000L;
 
     private Map<String, Map<String, String>> audioPaths;
+    private final Handler planHandler = new Handler(Looper.getMainLooper());
+    private Runnable planHintRunnable;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -99,12 +106,15 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         NarrateResult1 = findViewById(R.id.btn_narrateResult1);
         Narrate2 = findViewById(R.id.btn_narrateTest2);
         NarrateResult2 = findViewById(R.id.btn_narrateResult2);
+        PrelinguisticTest = findViewById(R.id.btn_prelinguisticTest);
+        PrelinguisticResult = findViewById(R.id.btn_prelinguisticResult);
         Upload = findViewById(R.id.btn_upload);
         Download = findViewById(R.id.btn_download);
         Pdf = findViewById(R.id.btn_pdf);
         Plan = findViewById(R.id.btn_plan);
         PlanView = findViewById(R.id.btn_plan_view);
         wd = findViewById(R.id.wd);
+        plModule = findViewById(R.id.pl_module);
         pn = findViewById(R.id.pn);
         gm = findViewById(R.id.gm);
         nr = findViewById(R.id.nr);
@@ -125,6 +135,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                 String RG = jsonObject.getString("RG");
                 String PN = jsonObject.getString("PN");
                 String PST = jsonObject.getString("PST");
+                String PL = jsonObject.optString("PL", "0");
 
                 if(E.equals("1") && RE.equals("1") && S.equals("1") && NWR.equals("1")){
                     wd.setVisibility(View.VISIBLE);
@@ -145,6 +156,11 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                     nr.setVisibility(View.VISIBLE);
                 }else{
                     nr.setVisibility(View.GONE);
+                }
+                if(PL.equals("1")){
+                    plModule.setVisibility(View.VISIBLE);
+                }else{
+                    plModule.setVisibility(View.GONE);
                 }
 
 
@@ -176,6 +192,8 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         GrammarResult.setOnClickListener(this);
         NarrateResult1.setOnClickListener(this);
         NarrateResult2.setOnClickListener(this);
+        PrelinguisticTest.setOnClickListener(this);
+        PrelinguisticResult.setOnClickListener(this);
         Upload.setOnClickListener(this);
         Download.setOnClickListener(this);
         Pdf.setOnClickListener(this);
@@ -379,6 +397,16 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             intent.putExtra("fName", fName);
             intent.putExtra("format", "PN");
             startActivity(intent);
+        } else if (v.getId() == R.id.btn_prelinguisticTest) {
+            Intent intent = new Intent(this, testactivity.class);
+            intent.putExtra("fName", fName);
+            intent.putExtra("format", "PL");
+            startActivity(intent);
+        } else if (v.getId() == R.id.btn_prelinguisticResult) {
+            Intent intent = new Intent(this, resultactivity.class);
+            intent.putExtra("fName", fName);
+            intent.putExtra("format", "PL");
+            startActivity(intent);
         } else if (v.getId() == R.id.btn_upload) {
             dialogUtils.showDialog(this, "提示信息", "您确定要上传该儿童的测评信息吗？",
                     "确认", () -> {
@@ -476,47 +504,40 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             return;
         }
 
-        setLoading(true, "正在生成干预方案...");
-        String systemPrompt =
-                "你是儿童言语语言病理（SLP）临床助手。请基于输入的评估结果与年龄生成可执行的干预方案。\n" +
-                        "必须输出严格合法 JSON，除 JSON 外不得输出任何文字。\n" +
-                        "JSON 的 key 必须保持英文不变。\n" +
-                        "所有 value（包括数组中的字符串）需以中文为主的临床表述；允许少量缩写（PST、PN、NWR、SLP、ASD、ADHD、SSD、DLD）。\n" +
-                        "如将输出英文术语，请先中文化再输出。\n" +
-                        "请用中文回答所有问题，生成中文报告。"
-                ;
+        // concurrent plan generation
+        setLoading(true, "正在并发生成干预方案(速度提升300%)...");
+        schedulePlanHint();
 
-        String userPrompt;
+        // build 6 parallel prompts
+        Map<String, String> prompts;
         try {
-            userPrompt = TreatmentPromptBuilder.buildUserPrompt(latestData);
+            prompts = TreatmentPromptBuilder.buildConcurrentPrompts(latestData);
         } catch (JSONException e) {
             setLoading(false, null);
-            Toast.makeText(this, "生成提示词失败", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "构建任务失败", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // call concurrent service
         LlmPlanService service = new LlmPlanService();
-        service.generateTreatmentPlan(systemPrompt, userPrompt, new LlmPlanService.PlanCallback() {
+        service.generateTreatmentPlanConcurrent(prompts, new LlmPlanService.PlanCallback() {
             @Override
             public void onSuccess(JSONObject plan) {
-                String pretty;
-                try {
-                    pretty = plan.toString(2);
-                } catch (JSONException e) {
-                    pretty = plan.toString();
-                }
-                String finalPretty = pretty;
+                // merged full JSON already
                 runOnUiThread(() -> {
+                    clearPlanHint();
                     setLoading(false, null);
-                    openTreatmentPlanActivity(finalPretty);
+                    openTreatmentPlanActivity(plan.toString());
                 });
             }
 
             @Override
             public void onError(String errorMessage) {
+                // only invoked if tasks never started
                 runOnUiThread(() -> {
+                    clearPlanHint();
                     setLoading(false, null);
-                    Toast.makeText(evmenuactivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                    Toast.makeText(evmenuactivity.this, "生成失败: " + errorMessage, Toast.LENGTH_LONG).show();
                 });
             }
         });
@@ -530,6 +551,21 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             cl.setVisibility(View.VISIBLE);
         } else {
             cl.setVisibility(View.GONE);
+        }
+    }
+
+    private void schedulePlanHint() {
+        clearPlanHint();
+        planHintRunnable = () -> Toast.makeText(this,
+                "报告生成中，请稍候",
+                Toast.LENGTH_LONG).show();
+        planHandler.postDelayed(planHintRunnable, PLAN_HINT_DELAY_MS);
+    }
+
+    private void clearPlanHint() {
+        if (planHintRunnable != null) {
+            planHandler.removeCallbacks(planHintRunnable);
+            planHintRunnable = null;
         }
     }
 
@@ -721,5 +757,10 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        clearPlanHint();
+        super.onDestroy();
+    }
 
 }

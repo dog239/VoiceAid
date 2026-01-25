@@ -69,19 +69,11 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
     private EditText tradFreq;
     private EditText phonoFreq;
     private LinearLayout plSuggestions;
-    private LinearLayout plOption1Container;
-    private LinearLayout plOption2Container;
     private RadioGroup plOptionGroup;
-    private RadioGroup plFreqGroup;
-    private RadioGroup plMinutesGroup;
-    private RadioGroup plParentMinutesGroup;
-    private RadioGroup plFollowupGroup;
-    private TextView plSuggestionText;
     private Button plSaveButton;
     private static final String FORMAT_PL = "11";
     private static final String MODULE_PL = "PL";
     private String plSummaryTextValue;
-    private String plSuggestionTextValue;
     private boolean isPrelinguisticResult;
     private boolean isArticulationResult;
     private final int[] initialIds = new int[]{
@@ -125,13 +117,6 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         phonoFreq = findViewById(R.id.extra_a_phono_freq);
         plSuggestions = findViewById(R.id.pl_suggestions);
         plOptionGroup = findViewById(R.id.pl_option_group);
-        plOption1Container = findViewById(R.id.pl_option1_container);
-        plOption2Container = findViewById(R.id.pl_option2_container);
-        plFreqGroup = findViewById(R.id.pl_freq_group);
-        plMinutesGroup = findViewById(R.id.pl_minutes_group);
-        plParentMinutesGroup = findViewById(R.id.pl_parent_minutes_group);
-        plFollowupGroup = findViewById(R.id.pl_followup_group);
-        plSuggestionText = findViewById(R.id.pl_suggestion_text);
         plSaveButton = findViewById(R.id.pl_save_button);
         try {
             initData();
@@ -459,30 +444,31 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             evaluations.add(new pl(-1, "总分", null, totalScore, null, null, null));
 
             int option = report != null ? report.optInt("suggestionOption", 1) : 1;
-            JSONObject params = report != null ? report.optJSONObject("suggestionParams") : null;
-            int freq = params != null ? params.optInt("freqPerWeek", 3) : 3;
-            int minutes = params != null ? params.optInt("minutesPerDay", 30) : 30;
-            int parentMinutes = params != null ? params.optInt("parentMinutesPerDay", 30) : 30;
-            int followupMonths = params != null ? params.optInt("followupMonths", 1) : 1;
+            String option1Text = ModuleReportHelper.getPrelinguisticSuggestionOptionText(1);
+            String option2Text = ModuleReportHelper.getPrelinguisticSuggestionOptionText(2);
+            JSONArray savedOptions = report != null ? report.optJSONArray("suggestionOptions") : null;
+            if (savedOptions != null && savedOptions.length() >= 2) {
+                String savedOption1 = safeText(savedOptions.optString(0, ""));
+                String savedOption2 = safeText(savedOptions.optString(1, ""));
+                if (!savedOption1.isEmpty()) {
+                    option1Text = savedOption1;
+                }
+                if (!savedOption2.isEmpty()) {
+                    option2Text = savedOption2;
+                }
+            }
+            RadioButton option1Button = findViewById(R.id.pl_option1);
+            RadioButton option2Button = findViewById(R.id.pl_option2);
+            if (option1Button != null) {
+                option1Button.setText(option1Text);
+            }
+            if (option2Button != null) {
+                option2Button.setText(option2Text);
+            }
             if (plOptionGroup != null) {
                 plOptionGroup.setVisibility(View.VISIBLE);
                 plOptionGroup.check(option == 2 ? R.id.pl_option2 : R.id.pl_option1);
-                plOptionGroup.setOnCheckedChangeListener((group, checkedId) -> {
-                    int selected = checkedId == R.id.pl_option2 ? 2 : 1;
-                    updatePlOptionVisibility(selected);
-                    updatePrelinguisticSuggestionText();
-                });
             }
-            updatePlOptionVisibility(option);
-            setSelectedValue(plFreqGroup, freq);
-            setSelectedValue(plMinutesGroup, minutes);
-            setSelectedValue(plParentMinutesGroup, parentMinutes);
-            setSelectedValue(plFollowupGroup, followupMonths);
-            attachSuggestionListeners(plFreqGroup);
-            attachSuggestionListeners(plMinutesGroup);
-            attachSuggestionListeners(plParentMinutesGroup);
-            attachSuggestionListeners(plFollowupGroup);
-            updatePrelinguisticSuggestionText();
 
             if (plSaveButton != null) {
                 plSaveButton.setVisibility(View.GONE);
@@ -527,84 +513,6 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         } else if (v.getId() == R.id.pl_save_button) {
             savePrelinguisticReport();
             finish();
-        }
-    }
-
-    private void updatePlOptionVisibility(int option) {
-        if (plOption1Container != null) {
-            plOption1Container.setVisibility(option == 2 ? View.GONE : View.VISIBLE);
-        }
-        if (plOption2Container != null) {
-            plOption2Container.setVisibility(option == 2 ? View.VISIBLE : View.GONE);
-        }
-    }
-
-    private void attachSuggestionListeners(RadioGroup group) {
-        if (group == null) {
-            return;
-        }
-        group.setOnCheckedChangeListener((g, checkedId) -> updatePrelinguisticSuggestionText());
-    }
-
-    private void updatePrelinguisticSuggestionText() {
-        if (!isPrelinguisticResult) {
-            return;
-        }
-        int option = plOptionGroup != null && plOptionGroup.getCheckedRadioButtonId() == R.id.pl_option2 ? 2 : 1;
-        int freq = getSelectedValue(plFreqGroup, 3);
-        int minutes = getSelectedValue(plMinutesGroup, 30);
-        int parentMinutes = getSelectedValue(plParentMinutesGroup, 30);
-        int followupMonths = getSelectedValue(plFollowupGroup, 1);
-        plSuggestionTextValue = ModuleReportHelper.buildPrelinguisticSuggestionText(option, freq, minutes, parentMinutes, followupMonths);
-        if (plSuggestionText != null) {
-            plSuggestionText.setText(plSuggestionTextValue);
-        }
-    }
-
-    private void setSelectedValue(RadioGroup group, int value) {
-        if (group == null) {
-            return;
-        }
-        for (int i = 0; i < group.getChildCount(); i++) {
-            View child = group.getChildAt(i);
-            if (child instanceof RadioButton) {
-                RadioButton button = (RadioButton) child;
-                int parsed = parseInt(button.getText().toString(), -1);
-                if (parsed == value) {
-                    group.check(button.getId());
-                    return;
-                }
-            }
-        }
-    }
-
-    private int getSelectedValue(RadioGroup group, int defaultValue) {
-        if (group == null) {
-            return defaultValue;
-        }
-        int id = group.getCheckedRadioButtonId();
-        if (id == -1) {
-            return defaultValue;
-        }
-        RadioButton button = group.findViewById(id);
-        if (button == null) {
-            return defaultValue;
-        }
-        return parseInt(button.getText().toString(), defaultValue);
-    }
-
-    private int parseInt(String raw, int defaultValue) {
-        if (raw == null) {
-            return defaultValue;
-        }
-        String digits = raw.replaceAll("\\D+", "");
-        if (digits.isEmpty()) {
-            return defaultValue;
-        }
-        try {
-            return Integer.parseInt(digits);
-        } catch (NumberFormatException e) {
-            return defaultValue;
         }
     }
 
@@ -653,15 +561,16 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         }
 
         int option = plOptionGroup != null && plOptionGroup.getCheckedRadioButtonId() == R.id.pl_option2 ? 2 : 1;
-        int freq = getSelectedValue(plFreqGroup, 3);
-        int minutes = getSelectedValue(plMinutesGroup, 30);
-        int parentMinutes = getSelectedValue(plParentMinutesGroup, 30);
-        int followupMonths = getSelectedValue(plFollowupGroup, 1);
+        String option1Text = resolvePlOptionText(R.id.pl_option1,
+                ModuleReportHelper.getPrelinguisticSuggestionOptionText(1));
+        String option2Text = resolvePlOptionText(R.id.pl_option2,
+                ModuleReportHelper.getPrelinguisticSuggestionOptionText(2));
         String summaryText = plSummaryTextValue != null ? plSummaryTextValue
                 : ModuleReportHelper.buildPrelinguisticSummaryText(strengths, weaknesses);
-        String suggestionText = plSuggestionTextValue != null ? plSuggestionTextValue
-                : ModuleReportHelper.buildPrelinguisticSuggestionText(option, freq, minutes, parentMinutes, followupMonths);
-        JSONObject params = ModuleReportHelper.buildPrelinguisticSuggestionParams(freq, minutes, parentMinutes, followupMonths);
+        String suggestionText = option == 2 ? option2Text : option1Text;
+        JSONArray suggestionOptions = new JSONArray();
+        suggestionOptions.put(option1Text);
+        suggestionOptions.put(option2Text);
 
         try {
             report.put("scene", scene);
@@ -670,7 +579,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             report.put("weaknesses", new JSONArray(weaknesses));
             report.put("summaryText", summaryText);
             report.put("suggestionOption", option);
-            report.put("suggestionParams", params);
+            report.put("suggestionOptions", suggestionOptions);
             report.put("suggestionText", suggestionText);
             ModuleReportHelper.savePrelinguisticReport(data, report);
             dataManager.getInstance().saveChildJson(fName, data);
@@ -833,6 +742,15 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             builder.append(text);
         }
         return builder.toString();
+    }
+
+    private String resolvePlOptionText(int buttonId, String fallback) {
+        RadioButton button = findViewById(buttonId);
+        if (button == null) {
+            return fallback;
+        }
+        String text = safeText(button.getText() == null ? "" : button.getText().toString());
+        return text.isEmpty() ? fallback : text;
     }
 
     private String getEditTextValue(EditText editText) {

@@ -506,7 +506,20 @@ public class PdfGenerator extends evmenuactivity{
             String plScene = plReport != null ? plReport.optString("scene", "") : "";
             int plTotalScore = plReport != null ? plReport.optInt("totalScore", -1) : -1;
             String plSummaryText = plReport != null ? plReport.optString("summaryText", "") : "";
-            String plSuggestionText = plReport != null ? plReport.optString("suggestionText", "") : "";
+            int plSuggestionOption = plReport != null ? plReport.optInt("suggestionOption", 1) : 1;
+            JSONArray plSuggestionOptions = plReport != null ? plReport.optJSONArray("suggestionOptions") : null;
+            String plOption1Text = ModuleReportHelper.getPrelinguisticSuggestionOptionText(1);
+            String plOption2Text = ModuleReportHelper.getPrelinguisticSuggestionOptionText(2);
+            if (plSuggestionOptions != null && plSuggestionOptions.length() >= 2) {
+                String savedOption1 = plSuggestionOptions.optString(0, "").trim();
+                String savedOption2 = plSuggestionOptions.optString(1, "").trim();
+                if (!savedOption1.isEmpty()) {
+                    plOption1Text = savedOption1;
+                }
+                if (!savedOption2.isEmpty()) {
+                    plOption2Text = savedOption2;
+                }
+            }
             List<String> plStrengths = new ArrayList<>();
             List<String> plWeaknesses = new ArrayList<>();
             int computedScore = 0;
@@ -532,9 +545,6 @@ public class PdfGenerator extends evmenuactivity{
             if (plSummaryText == null || plSummaryText.trim().isEmpty()) {
                 plSummaryText = ModuleReportHelper.buildPrelinguisticSummaryText(plStrengths, plWeaknesses);
             }
-            if (plSuggestionText == null || plSuggestionText.trim().isEmpty()) {
-                plSuggestionText = "（请在结果页生成评估建议）";
-            }
             if (plScene == null || plScene.trim().isEmpty()) {
                 plScene = "未选择";
             }
@@ -552,7 +562,10 @@ public class PdfGenerator extends evmenuactivity{
             document.add(new Paragraph("（一）前语言能力评估结果", simsunBold));
             document.add(new Paragraph(plSummaryText, simsun));
             document.add(new Paragraph("（二）评估建议", simsunBold));
-            document.add(new Paragraph(plSuggestionText, simsun));
+            String option1Line = (plSuggestionOption == 1 ? "● " : "○ ") + plOption1Text;
+            String option2Line = (plSuggestionOption == 2 ? "● " : "○ ") + plOption2Text;
+            document.add(new Paragraph(option1Line, simsun));
+            document.add(new Paragraph(option2Line, simsun));
             document.add(new Paragraph(" ", simsun));
 
             PdfPTable table31 = new PdfPTable(1);
@@ -812,6 +825,11 @@ public class PdfGenerator extends evmenuactivity{
         if (plan == null) {
             throw new IllegalStateException(context.getString(R.string.pdf_error_missing_plan));
         }
+        JSONObject evaluations = childJson == null ? null : childJson.optJSONObject("evaluations");
+        JSONArray evaluationsA = evaluations == null ? null : evaluations.optJSONArray("A");
+        ArticulationPlanHelper.ensureArticulation(plan, evaluationsA);
+        ArticulationPlanHelper.applyArticulationReport(plan, childJson, evaluationsA);
+        ModuleReportHelper.applyModuleFindings(plan, evaluations, childJson);
         OutputStream outputStream = null;
         android.graphics.pdf.PdfDocument document = new android.graphics.pdf.PdfDocument();
         try {
@@ -892,6 +910,37 @@ public class PdfGenerator extends evmenuactivity{
         }
     }
 
+    private static String sanitizeBulletText(String text) {
+        if (text == null) {
+            return "";
+        }
+        String value = text.trim();
+        boolean stripped;
+        do {
+            stripped = false;
+            if (value.isEmpty()) {
+                return value;
+            }
+            char first = value.charAt(0);
+            if (isBulletChar(first)) {
+                value = value.substring(1).trim();
+                stripped = true;
+                continue;
+            }
+            if (first == '-' || first == '–' || first == '—' || first == '*') {
+                if (value.length() > 1 && Character.isWhitespace(value.charAt(1))) {
+                    value = value.substring(1).trim();
+                    stripped = true;
+                }
+            }
+        } while (stripped);
+        return value;
+    }
+
+    private static boolean isBulletChar(char c) {
+        return c == '•' || c == '·' || c == '●';
+    }
+
     private static void addList(Document document, String title, JSONArray items, Font bodyFont) throws Exception {
         if (!hasItems(items)) {
             return;
@@ -900,7 +949,7 @@ public class PdfGenerator extends evmenuactivity{
         String bulletPrefix = getStringRes(R.string.pdf_bullet_prefix);
         document.add(new Paragraph(title + labelSeparator, bodyFont));
         for (int i = 0; i < items.length(); i++) {
-            String item = items.optString(i, "").trim();
+            String item = sanitizeBulletText(items.optString(i, ""));
             if (!item.isEmpty()) {
                 document.add(new Paragraph(bulletPrefix + item, bodyFont));
             }
@@ -1239,10 +1288,10 @@ public class PdfGenerator extends evmenuactivity{
         private static final String MODULE_TITLE_SOCIAL = "社会交往";
         private static final String SECTION_INTERVENTION_GUIDE = "干预指导";
         private static final String SECTION_ARTICULATION_OVERALL = "评估结果（整体）";
-        private static final String SECTION_ARTICULATION_MASTERED = "本次评估中已掌握的能力";
-        private static final String SECTION_ARTICULATION_NOT_MASTERED = "未掌握能力的整体说明";
-        private static final String SECTION_ARTICULATION_FOCUS = "需要重点关注的能力";
-        private static final String SECTION_ARTICULATION_UNSTABLE = "不稳定的能力";
+        private static final String SECTION_ARTICULATION_MASTERED = "已掌握的能力";
+        private static final String SECTION_ARTICULATION_NOT_MASTERED = "未掌握能力整体说明";
+        private static final String SECTION_ARTICULATION_FOCUS = "【需要重点关注的能力】";
+        private static final String SECTION_ARTICULATION_UNSTABLE = "【不稳定的能力】";
         private static final String SECTION_ARTICULATION_SMART = "干预目标（SMART）";
         private static final String SECTION_ARTICULATION_HOME = "家庭干预指导建议";
         private static final String LABEL_AGE = "年龄";
@@ -1511,13 +1560,9 @@ public class PdfGenerator extends evmenuactivity{
 
         private void drawModuleBlock(String title, JSONObject moduleData, JSONObject summaryData, boolean drawLine) {
             drawModuleHeader(title, drawLine);
-            drawFindingsCard(MODULE_TITLE_SPEECH_SOUND.equals(title), moduleData, summaryData);
-            if (MODULE_TITLE_SPEECH_SOUND.equals(title) && hasArticulation(moduleData)) {
-                drawArticulationPlan(moduleData);
-            } else {
-                drawPlanList(moduleData);
-                drawStageCards(moduleData);
-            }
+            boolean isSpeechSound = MODULE_TITLE_SPEECH_SOUND.equals(title);
+            drawFindingsCard(isSpeechSound, moduleData, summaryData);
+            drawInterventionGuide(moduleData, isSpeechSound);
             y += SECTION_GAP;
         }
 
@@ -1543,7 +1588,7 @@ public class PdfGenerator extends evmenuactivity{
                 keyFindings.add(placeholderText());
             }
 
-            String label = isSpeechSound ? strings.labelTestResults : strings.labelKeyFindings;
+            String label = strings.labelTestResults;
             float contentWidth = getContentWidth() - FINDINGS_PADDING * 2f;
             float height = FINDINGS_PADDING;
             height += measureBulletSectionHeight(label, keyFindings, contentWidth);
@@ -1648,6 +1693,74 @@ public class PdfGenerator extends evmenuactivity{
             drawBulletSection(strings.labelTargets, targets, true);
             drawBulletSection(strings.labelMethods, methods, true);
             drawBulletSection(strings.labelHomePractice, homePractice, true);
+        }
+
+        private void drawInterventionGuide(JSONObject moduleData, boolean isSpeechSound) {
+            JSONObject guide = resolveInterventionGuide(moduleData, isSpeechSound);
+
+            drawSubHeader(SECTION_ARTICULATION_OVERALL);
+            drawParagraph(ensureParagraphText(readGuideText(guide, "overall_summary", "text")));
+
+            drawSubHeader(SECTION_ARTICULATION_MASTERED);
+            String masteredIntro = readGuideText(guide, "mastered", "intro");
+            if (!masteredIntro.isEmpty()) {
+                drawParagraph(masteredIntro);
+            }
+            drawBulletSection(null, readGuideList(guide, "mastered", "items"), true);
+
+            drawSubHeader(SECTION_ARTICULATION_NOT_MASTERED);
+            drawParagraph(ensureParagraphText(readGuideText(guide, "not_mastered_overview", "text")));
+
+            drawSubHeader(SECTION_ARTICULATION_FOCUS);
+            drawBulletSection(null, readGuideList(guide, "focus", "items"), true);
+
+            drawSubHeader(SECTION_ARTICULATION_UNSTABLE);
+            drawBulletSection(null, readGuideList(guide, "unstable", "items"), true);
+
+            drawSubHeader(SECTION_ARTICULATION_SMART);
+            String smartText = readGuideText(guide, "smart_goal", "text");
+            if (smartText.isEmpty() && isSpeechSound && guide != null) {
+                JSONObject smartGoal = guide.optJSONObject("smart_goal");
+                if (smartGoal != null) {
+                    smartText = ArticulationPlanHelper.buildSmartGoalText(smartGoal);
+                }
+            }
+            drawParagraph(ensureParagraphText(smartText));
+
+            drawSubHeader(SECTION_ARTICULATION_HOME);
+            drawBulletSection(null, readGuideList(guide, "home_guidance", "items"), true);
+        }
+
+        private JSONObject resolveInterventionGuide(JSONObject moduleData, boolean isSpeechSound) {
+            if (moduleData == null) {
+                return null;
+            }
+            JSONObject guide = moduleData.optJSONObject("intervention_guide");
+            if (guide == null && isSpeechSound) {
+                guide = moduleData.optJSONObject("articulation");
+            }
+            return guide;
+        }
+
+        private String readGuideText(JSONObject guide, String sectionKey, String textKey) {
+            if (guide == null || sectionKey == null || textKey == null) {
+                return "";
+            }
+            JSONObject section = guide.optJSONObject(sectionKey);
+            return section == null ? "" : safeText(section.optString(textKey, ""));
+        }
+
+        private List<String> readGuideList(JSONObject guide, String sectionKey, String listKey) {
+            if (guide == null || sectionKey == null || listKey == null) {
+                return new ArrayList<>();
+            }
+            JSONObject section = guide.optJSONObject(sectionKey);
+            return getList(section, listKey);
+        }
+
+        private String ensureParagraphText(String text) {
+            String value = safeText(text);
+            return value.isEmpty() ? placeholderText() : value;
         }
 
         private boolean hasArticulation(JSONObject moduleData) {
@@ -1953,9 +2066,13 @@ public class PdfGenerator extends evmenuactivity{
         private void drawBulletLine(String line) {
             float indentX = MARGIN + BULLET_INDENT;
             float width = getContentWidth() - BULLET_INDENT;
-            float height = measureBulletItemHeight(line, width);
+            String value = sanitizeBulletText(line);
+            if (value.isEmpty()) {
+                return;
+            }
+            float height = measureBulletItemHeight(value, width);
             ensureSpace(height + LINE_GAP);
-            drawBulletItem(line, indentX, y, width);
+            drawBulletItem(value, indentX, y, width);
             y += height + LINE_GAP;
         }
 
@@ -1977,7 +2094,10 @@ public class PdfGenerator extends evmenuactivity{
                 items.add(placeholderText());
             }
             for (String item : items) {
-                String value = safeText(item).isEmpty() ? placeholderText() : item.trim();
+                String value = sanitizeBulletText(safeText(item));
+                if (value.isEmpty()) {
+                    value = placeholderText();
+                }
                 float indentX = MARGIN + BULLET_INDENT;
                 float width = getContentWidth() - BULLET_INDENT;
                 float height = measureBulletItemHeight(value, width);
@@ -2003,7 +2123,10 @@ public class PdfGenerator extends evmenuactivity{
             float listX = x + BULLET_INDENT;
             float listWidth = width - BULLET_INDENT;
             for (String item : items) {
-                String value = safeText(item).isEmpty() ? placeholderText() : item.trim();
+                String value = sanitizeBulletText(safeText(item));
+                if (value.isEmpty()) {
+                    value = placeholderText();
+                }
                 float itemHeight = measureBulletItemHeight(value, listWidth);
                 if (!measureOnly) {
                     drawBulletItem(value, listX, startY + used, listWidth);
@@ -2024,7 +2147,10 @@ public class PdfGenerator extends evmenuactivity{
             }
             float listWidth = width - BULLET_INDENT;
             for (String item : items) {
-                String value = safeText(item).isEmpty() ? placeholderText() : item.trim();
+                String value = sanitizeBulletText(safeText(item));
+                if (value.isEmpty()) {
+                    value = placeholderText();
+                }
                 height += measureBulletItemHeight(value, listWidth) + LINE_GAP;
             }
             return height;

@@ -9,6 +9,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TreatmentPromptBuilder {
     private static final String DATE_PATTERN = "yyyy-MM-dd";
@@ -271,5 +273,31 @@ public class TreatmentPromptBuilder {
     private static class AvgScore {
         int count;
         int sum;
+    }
+
+    /**
+     * 并发版提示构建：当前简化为仅返回全局 prompt，保证调用方可用。
+     */
+    public static Map<String, String> buildConcurrentPrompts(JSONObject childData) throws JSONException {
+        Map<String, String> map = new HashMap<>();
+        map.put("GLOBAL", buildUserPrompt(childData));
+        return map;
+    }
+
+    // 以下辅助摘要方法供其它模块复用
+    public static String buildSpeechSoundSummary(JSONArray evaluationsA) {
+        return formatSpeechSound(evaluationsA);
+    }
+
+    public static String buildVocabularySummary(JSONObject evaluations) {
+        return formatVocabulary(evaluations);
+    }
+
+    public static String buildSyntaxSummary(JSONObject evaluations) {
+        return formatBooleanAccuracy(evaluations != null ? evaluations.optJSONArray("RG") : null, "result");
+    }
+
+    public static String buildNarrativeSummary(JSONObject evaluations) {
+        return formatNarrative(evaluations);
     }
 }

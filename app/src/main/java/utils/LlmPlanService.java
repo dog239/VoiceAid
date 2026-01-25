@@ -7,18 +7,28 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.net.InetAddress;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.EventListener;
+import okhttp3.Handshake;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -30,14 +40,17 @@ public class LlmPlanService {
     private static final double REWRITE_TEMPERATURE = 0.0;
     private static final int MAX_REWRITE_ATTEMPTS = 2;
     private static final int LOG_CONTENT_LIMIT = 800;
-    private static final double ENGLISH_RATIO_THRESHOLD = 0.08;
-    private static final int ENGLISH_COUNT_THRESHOLD = 20;
-    private static final int ENGLISH_VALUE_THRESHOLD = 12;
+    private static final double ENGLISH_RATIO_THRESHOLD = 0.30;
+    private static final int MIN_ENGLISH_SENTENCES = 2;
     private static final String[] ENGLISH_ABBREVIATION_WHITELIST = {
-            "PST", "PN", "NWR", "SLP", "ASD", "ADHD", "SSD", "DLD"
+            "PST", "PN", "NWR", "SLP", "ASD", "ADHD", "SSD", "DLD",
+            "SMART", "AI", "PDF", "API", "JSON", "OKR", "IPA"
     };
     private static final String ENGLISH_WARNING =
             "\u7cfb\u7edf\u63d0\u793a\uff1a\u5185\u5bb9\u5305\u542b\u8f83\u591a\u82f1\u6587\u672f\u8bed\uff0c\u5df2\u4fdd\u7559\u539f\u59cb\u8f93\u51fa\uff0c\u8bf7\u4eba\u5de5\u786e\u8ba4\u4e2d\u6587\u5316\u3002";
+    private static final AtomicInteger REQUEST_COUNTER = new AtomicInteger(0);
+    private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
+    private static final Map<Integer, Runnable> PENDING_WATCHDOGS = new ConcurrentHashMap<>();
     private final OkHttpClient client;
 
     public interface PlanCallback {
@@ -51,7 +64,8 @@ public class LlmPlanService {
                 .connectTimeout(60, TimeUnit.SECONDS)
                 .readTimeout(60, TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS)
-                .callTimeout(60, TimeUnit.SECONDS)
+                .callTimeout(180, TimeUnit.SECONDS)
+                .eventListenerFactory(call -> new LoggingEventListener())
                 .build();
     }
 
@@ -59,10 +73,64 @@ public class LlmPlanService {
         generateTreatmentPlanInternal(systemPrompt, userPrompt, callback, 0, DEFAULT_TEMPERATURE);
     }
 
+    /**
+     * Concurrently generate the 6 prompts that align with TreatmentPromptBuilder#buildConcurrentPrompts.
+     */
+    public void generateTreatmentPlanConcurrent(Map<String, String> promptMap, PlanCallback callback) {
+        if (promptMap == null || promptMap.isEmpty()) {
+            if (callback != null) {
+                callback.onError("Prompt\u751f\u6210\u5931\u8d25\uff1a\u65e0\u4efb\u52a1");
+            }
+            return;
+        }
+
+        final JSONObject finalResult = new JSONObject();
+        try {
+            finalResult.put("module_plan", new JSONObject());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        final int totalTasks = promptMap.size();
+        final AtomicInteger completedCount = new AtomicInteger(0);
+        final long startTime = System.currentTimeMillis();
+        Log.i(TAG, "\u5f00\u59cb\u5e76\u53d1\u751f\u6210\uff0c\u603b\u4efb\u52a1\u6570: " + totalTasks);
+
+        for (Map.Entry<String, String> entry : promptMap.entrySet()) {
+            String taskName = entry.getKey();
+            String userPrompt = entry.getValue();
+            String systemPrompt = "\u4f60\u662f\u4e13\u4e1a\u7684\u8a00\u8bed\u6cbb\u7597\u5e08\u52a9\u624b\u3002\u8bf7\u4e25\u683c\u8f93\u51fa\u5408\u6cd5JSON\uff0c\u4e0d\u8981Markdown\u3002";
+
+            generateTreatmentPlanInternal(systemPrompt, userPrompt, new PlanCallback() {
+                @Override
+                public void onSuccess(JSONObject partialPlan) {
+                    Log.i(TAG, "\u4efb\u52a1\u5b8c\u6210: " + taskName);
+                    synchronized (finalResult) {
+                        mergeJson(finalResult, partialPlan);
+                    }
+                    checkAndCallback(totalTasks, completedCount, finalResult, callback, startTime);
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    Log.e(TAG, "\u4efb\u52a1\u5931\u8d25: " + taskName + " | " + errorMessage);
+                    // even if failed, still increment to avoid hanging
+                    checkAndCallback(totalTasks, completedCount, finalResult, callback, startTime);
+                }
+            }, 0, DEFAULT_TEMPERATURE);
+        }
+    }
+
     private void generateTreatmentPlanInternal(String systemPrompt, String userPrompt, PlanCallback callback, int retryCount, double temperature) {
         if (callback == null) {
             return;
         }
+        int requestId = REQUEST_COUNTER.incrementAndGet();
+        long startMs = SystemClock.elapsedRealtime();
+        Log.i(TAG, "request#" + requestId + " start retry=" + retryCount
+                + " temp=" + temperature
+                + " sysLen=" + safeLength(systemPrompt)
+                + " userLen=" + safeLength(userPrompt));
         String apiKey = BuildConfig.DEEPSEEK_API_KEY;
         if (apiKey == null || apiKey.trim().isEmpty()) {
             callback.onError("DEEPSEEK_API_KEY is empty. Configure in local.properties.");
@@ -70,38 +138,66 @@ public class LlmPlanService {
         }
         try {
             JSONObject payload = new JSONObject();
-            payload.put("model", "deepseek-reasoner");
+            payload.put("model", "deepseek-chat");
             payload.put("temperature", temperature);
             payload.put("stream", false);
             payload.put("response_format", new JSONObject().put("type", "json_object"));
             JSONArray messages = new JSONArray();
             messages.put(new JSONObject().put("role", "system").put("content", systemPrompt));
-            String enhancedUserPrompt = userPrompt
-                    + "\n\n重要提示："
-                    + "\n1) 请务必用简体中文输出所有 value（值），JSON 的 key 仍保持英文不变"
-                    + "\n2) 所有内容都必须使用中文临床表述（允许少量缩写：PST、PN、NWR、SLP、ASD、ADHD、SSD、DLD）"
-                    + "\n3) 输出必须是严格合法 JSON（不要输出任何 JSON 以外的文字）"
-                    + "\n4) 如需使用英文术语，请先中文化再输出，不要输出英文句子";
+            String enhancedUserPrompt = userPrompt;
             messages.put(new JSONObject().put("role", "user").put("content", enhancedUserPrompt));
             payload.put("messages", messages);
 
-            RequestBody body = RequestBody.create(payload.toString(), JSON);
+            String payloadText = payload.toString();
+            Log.i(TAG, "request#" + requestId + " payloadLen=" + payloadText.length());
+            RequestBody body = RequestBody.create(payloadText, JSON);
             Request request = new Request.Builder()
                     .url("https://api.deepseek.com/chat/completions")
                     .addHeader("Authorization", "Bearer " + apiKey)
                     .addHeader("Content-Type", "application/json")
+                    .tag(Integer.class, requestId)
                     .post(body)
                     .build();
 
-            client.newCall(request).enqueue(new Callback() {
+            Call call = client.newCall(request);
+            scheduleWatchdog(requestId, call);
+            call.enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
+                    cancelWatchdog(requestId);
+                    long elapsedMs = SystemClock.elapsedRealtime() - startMs;
+                    Log.w(TAG, "request#" + requestId + " failure after " + elapsedMs + "ms: "
+                            + e.getClass().getSimpleName() + " " + e.getMessage());
+                    if (retryCount < 1) {
+                        Log.w(TAG, "request#" + requestId + " retrying network error, attempt " + (retryCount + 1));
+                        generateTreatmentPlanInternal(systemPrompt, userPrompt, callback, retryCount + 1, temperature);
+                        return;
+                    }
                     callback.onError("Network error: " + e.getMessage());
                 }
 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
-                    String bodyString = response.body() != null ? response.body().string() : "";
+                    cancelWatchdog(requestId);
+                    String bodyString;
+                    try {
+                        bodyString = response.body() != null ? response.body().string() : "";
+                    } catch (IOException ioException) {
+                        long elapsedMs = SystemClock.elapsedRealtime() - startMs;
+                        Log.w(TAG, "request#" + requestId + " read body failed after " + elapsedMs + "ms: "
+                                + ioException.getClass().getSimpleName() + " " + ioException.getMessage());
+                        if (retryCount < 1) {
+                            Log.w(TAG, "request#" + requestId + " retrying read failure, attempt " + (retryCount + 1));
+                            generateTreatmentPlanInternal(systemPrompt, userPrompt, callback, retryCount + 1, temperature);
+                            return;
+                        }
+                        callback.onError("Read error: " + ioException.getMessage());
+                        return;
+                    }
+                    long elapsedMs = SystemClock.elapsedRealtime() - startMs;
+                    Log.i(TAG, "request#" + requestId + " http=" + response.code()
+                            + " in " + elapsedMs + "ms"
+                            + " bodyLen=" + bodyString.length());
                     if (!response.isSuccessful()) {
                         callback.onError("HTTP " + response.code() + ": " + bodyString);
                         return;
@@ -120,11 +216,13 @@ public class LlmPlanService {
                         }
                         String content = message.optString("content", "").trim();
                         if (content.isEmpty()) {
+                            Log.w(TAG, "request#" + requestId + " empty content after " + elapsedMs + "ms");
                             callback.onError("Empty content in response.");
                             return;
                         }
                         JSONObject plan = new JSONObject(content);
-                        boolean shouldRewrite = shouldRewriteToChinese(plan);
+                        boolean allowRewrite = shouldAttemptRewrite(systemPrompt, userPrompt);
+                        boolean shouldRewrite = allowRewrite && shouldRewriteToChinese(plan);
                         if (retryCount == 0) {
                             logContent(content, shouldRewrite, retryCount, false);
                         }
@@ -154,8 +252,10 @@ public class LlmPlanService {
                             logContent(content, shouldRewrite, retryCount, true);
                         }
                         attachOptionalWarningIfNeeded(plan);
+                        ensureModuleGuides(plan);
                         callback.onSuccess(plan);
                     } catch (JSONException e) {
+                        Log.w(TAG, "request#" + requestId + " parse error after " + elapsedMs + "ms: " + e.getMessage());
                         callback.onError("Parse error: " + e.getMessage());
                     }
                 }
@@ -199,21 +299,12 @@ public class LlmPlanService {
         }
         List<String> values = new ArrayList<>();
         collectAllStringValues(plan, values);
-        for (String value : values) {
-            if (value == null || value.trim().isEmpty()) {
-                continue;
-            }
-            String normalized = stripWhitelistedAbbreviations(value);
-            if (normalized.isEmpty()) {
-                continue;
-            }
-            if (!containsChinese(normalized) && countEnglishLetters(normalized) >= ENGLISH_VALUE_THRESHOLD) {
-                return true;
-            }
-        }
         EnglishStats stats = countEnglishStats(values);
         double ratio = stats.totalChars == 0 ? 0.0 : (double) stats.englishLetters / stats.totalChars;
-        return stats.englishLetters >= ENGLISH_COUNT_THRESHOLD && ratio >= ENGLISH_RATIO_THRESHOLD;
+        if (ratio <= ENGLISH_RATIO_THRESHOLD) {
+            return false;
+        }
+        return countEnglishSentences(values) >= MIN_ENGLISH_SENTENCES;
     }
 
     private void attachOptionalWarningIfNeeded(JSONObject plan) {
@@ -264,9 +355,108 @@ public class LlmPlanService {
         return stats;
     }
 
+    private int countEnglishSentences(List<String> values) {
+        int count = 0;
+        if (values == null) {
+            return count;
+        }
+        for (String value : values) {
+            if (value == null || value.trim().isEmpty()) {
+                continue;
+            }
+            String normalized = stripWhitelistedAbbreviations(value);
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            String[] sentences = normalized.split("(?<=[.!?])");
+            for (String sentence : sentences) {
+                if (isEnglishSentence(sentence)) {
+                    count++;
+                    if (count >= MIN_ENGLISH_SENTENCES) {
+                        return count;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    private boolean isEnglishSentence(String text) {
+        if (text == null) {
+            return false;
+        }
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+        if (containsChinese(trimmed)) {
+            return false;
+        }
+        char last = trimmed.charAt(trimmed.length() - 1);
+        if (last != '.' && last != '!' && last != '?') {
+            return false;
+        }
+        return countEnglishWords(trimmed) >= 3;
+    }
+
+    private int countEnglishWords(String text) {
+        int count = 0;
+        boolean inWord = false;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (isEnglishLetter(c)) {
+                if (!inWord) {
+                    count++;
+                    inWord = true;
+                }
+            } else {
+                inWord = false;
+            }
+        }
+        return count;
+    }
+
+    private int safeLength(String value) {
+        return value == null ? 0 : value.length();
+    }
+
+    private void scheduleWatchdog(final int requestId, final Call call) {
+        Runnable task = () -> {
+            Log.w(TAG, "request#" + requestId + " no response after 185s, canceling call");
+            try {
+                call.cancel();
+            } catch (Exception ignored) {
+            }
+        };
+        PENDING_WATCHDOGS.put(requestId, task);
+        MAIN_HANDLER.postDelayed(task, 185_000);
+    }
+
+    private void cancelWatchdog(int requestId) {
+        Runnable task = PENDING_WATCHDOGS.remove(requestId);
+        if (task != null) {
+            MAIN_HANDLER.removeCallbacks(task);
+        }
+    }
+
     private String buildRewriteUserPrompt(JSONObject plan) {
         return "\u8bf7\u4e0d\u6539\u53d8\u4efb\u4f55 key/\u7ed3\u6784/\u6570\u7ec4\u957f\u5ea6/\u7c7b\u578b\uff0c\u5c06\u4ee5\u4e0b JSON \u7684\u6240\u6709 value \u6539\u5199\u4e3a\u7b80\u4f53\u4e2d\u6587\u4e34\u5e8a\u8868\u8ff0\uff0c\u53ea\u8f93\u51fa\u4e25\u683c\u5408\u6cd5 JSON\uff0c\u4e0d\u8981\u8f93\u51fa\u5176\u4ed6\u6587\u5b57\uff1a\n"
                 + plan.toString();
+    }
+
+    private boolean shouldAttemptRewrite(String systemPrompt, String userPrompt) {
+        return !expectsChineseOutput(systemPrompt, userPrompt);
+    }
+
+    private boolean expectsChineseOutput(String systemPrompt, String userPrompt) {
+        return containsChineseHint(systemPrompt) || containsChineseHint(userPrompt);
+    }
+
+    private boolean containsChineseHint(String text) {
+        if (text == null) {
+            return false;
+        }
+        return text.contains("\u7b80\u4f53\u4e2d\u6587") || text.contains("\u4e2d\u6587");
     }
 
     private String stripWhitelistedAbbreviations(String text) {
@@ -317,8 +507,155 @@ public class LlmPlanService {
         return content.substring(0, maxChars);
     }
 
+    private void checkAndCallback(int total, AtomicInteger current, JSONObject result, PlanCallback callback, long startMs) {
+        if (current.incrementAndGet() == total) {
+            long duration = System.currentTimeMillis() - startMs;
+            Log.i(TAG, "\u6240\u6709\u5e76\u53d1\u4efb\u52a1\u7ed3\u675f\uff0c\u603b\u8017\u65f6: " + duration + "ms");
+            ensureModuleGuides(result);
+            if (callback != null) {
+                callback.onSuccess(result);
+            }
+        }
+    }
+
+    private void mergeJson(JSONObject target, JSONObject source) {
+        if (target == null || source == null) {
+            return;
+        }
+        Iterator<String> keys = source.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            try {
+                Object value = source.get(key);
+                if ("module_plan".equals(key) && value instanceof JSONObject) {
+                    JSONObject targetModules = target.optJSONObject("module_plan");
+                    if (targetModules == null) {
+                        targetModules = new JSONObject();
+                        target.put("module_plan", targetModules);
+                    }
+                    JSONObject sourceModules = (JSONObject) value;
+                    Iterator<String> modKeys = sourceModules.keys();
+                    while (modKeys.hasNext()) {
+                        String modKey = modKeys.next();
+                        targetModules.put(modKey, sourceModules.get(modKey));
+                    }
+                } else {
+                    target.put(key, value);
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private static class EnglishStats {
         int englishLetters;
         int totalChars;
+    }
+
+    private void ensureModuleGuides(JSONObject plan) {
+        if (plan == null) {
+            return;
+        }
+        try {
+            JSONObject modulePlan = plan.optJSONObject("module_plan");
+            if (modulePlan == null) {
+                modulePlan = new JSONObject();
+                plan.put("module_plan", modulePlan);
+            }
+            String[] modules = new String[]{"speech_sound", "prelinguistic", "vocabulary", "syntax", "social_pragmatics"};
+            for (String key : modules) {
+                JSONObject module = modulePlan.optJSONObject(key);
+                if (module == null) {
+                    module = new JSONObject();
+                    modulePlan.put(key, module);
+                }
+                JSONObject guide = module.optJSONObject("intervention_guide");
+                if (guide == null) {
+                    guide = new JSONObject();
+                    module.put("intervention_guide", guide);
+                }
+                ensureGuideSection(guide, "overall_summary", "text", "\u4fe1\u606f\u4e0d\u8db3\uff0c\u9700\u4eba\u5de5\u8865\u5145\u3002");
+                ensureGuideSection(guide, "mastered", "items", new JSONArray());
+                ensureGuideSection(guide, "not_mastered_overview", "text", "\u4fe1\u606f\u4e0d\u8db3\uff0c\u9700\u4eba\u5de5\u8865\u5145\u3002");
+                ensureGuideSection(guide, "focus", "items", new JSONArray());
+                ensureGuideSection(guide, "unstable", "items", new JSONArray());
+                ensureGuideSection(guide, "smart_goal", "text", "\u4fe1\u606f\u4e0d\u8db3\uff0c\u9700\u4eba\u5de5\u8865\u5145\u3002");
+                ensureGuideSection(guide, "home_guidance", "items", new JSONArray());
+            }
+        } catch (JSONException ignored) {
+        }
+    }
+
+    private void ensureGuideSection(JSONObject guide, String sectionKey, String valueKey, Object defaultValue) {
+        if (guide == null || sectionKey == null || valueKey == null) {
+            return;
+        }
+        try {
+            JSONObject section = guide.optJSONObject(sectionKey);
+            if (section == null) {
+                section = new JSONObject();
+                guide.put(sectionKey, section);
+            }
+            if (!section.has(valueKey)) {
+                section.put(valueKey, defaultValue);
+            }
+        } catch (JSONException ignored) {
+        }
+    }
+
+    private static final class LoggingEventListener extends EventListener {
+        private int resolveId(Call call) {
+            if (call == null || call.request() == null) {
+                return -1;
+            }
+            Integer id = call.request().tag(Integer.class);
+            return id == null ? -1 : id;
+        }
+
+        @Override
+        public void callStart(Call call) {
+            Log.i(TAG, "request#" + resolveId(call) + " callStart");
+        }
+
+        @Override
+        public void dnsStart(Call call, String domainName) {
+            Log.i(TAG, "request#" + resolveId(call) + " dnsStart " + domainName);
+        }
+
+        @Override
+        public void dnsEnd(Call call, String domainName, List<InetAddress> inetAddressList) {
+            Log.i(TAG, "request#" + resolveId(call) + " dnsEnd addrs=" + (inetAddressList == null ? 0 : inetAddressList.size()));
+        }
+
+        @Override
+        public void connectStart(Call call, java.net.InetSocketAddress inetSocketAddress, java.net.Proxy proxy) {
+            Log.i(TAG, "request#" + resolveId(call) + " connectStart " + inetSocketAddress);
+        }
+
+        @Override
+        public void secureConnectStart(Call call) {
+            Log.i(TAG, "request#" + resolveId(call) + " tlsStart");
+        }
+
+        @Override
+        public void secureConnectEnd(Call call, Handshake handshake) {
+            Log.i(TAG, "request#" + resolveId(call) + " tlsEnd");
+        }
+
+        @Override
+        public void connectEnd(Call call, java.net.InetSocketAddress inetSocketAddress, java.net.Proxy proxy, okhttp3.Protocol protocol) {
+            Log.i(TAG, "request#" + resolveId(call) + " connectEnd " + protocol);
+        }
+
+        @Override
+        public void callFailed(Call call, IOException ioe) {
+            Log.w(TAG, "request#" + resolveId(call) + " callFailed " + ioe.getClass().getSimpleName() + " " + ioe.getMessage());
+        }
+
+        @Override
+        public void callEnd(Call call) {
+            Log.i(TAG, "request#" + resolveId(call) + " callEnd");
+        }
     }
 }
