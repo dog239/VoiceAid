@@ -290,7 +290,7 @@ public interface ImageUrls {
         setAWord("土豆", cp("土", "t", "", "u", "", false), cp("豆", "d", "", "o", "u", false));
         setAWord("向日葵", cp("向", "x", "i", "a", "ng", false), cp("日", "r", "", "i", "", false), cp("葵", "k", "u", "e", "i", false));
         setAWord("鱼", cp("鱼", "", "", "ü", "", false));
-        setAWord("泡泡", cp("泡", "p", "", "a", "o", false), cp("泡", "p", "", "a", "o", false));
+        setAWord("泡泡", cp("泡", "p", "", "a", "o", false));
         setAWord("乌龟", cp("乌", "", "", "u", "", false), cp("龟", "g", "u", "e", "i", false));
         setAWord("药", cp("药", "", "", "a", "o", false));
         setAWord("紫色", cp("紫", "z", "", "i", "", false), cp("色", "s", "", "e", "", false));

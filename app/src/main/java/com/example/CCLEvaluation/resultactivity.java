@@ -63,6 +63,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
     private EditText vowelAccuracy;
     private EditText initialAccuracy;
     private EditText speechClarity;
+    private EditText vowelErrorList;
     private CheckBox diagNormal;
     private CheckBox diagPhonology;
     private CheckBox diagTone;
@@ -97,6 +98,28 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             "q", "x", "zh", "ch",
             "sh", "r", "z", "c"
     };
+    private final int[] vowelIds = new int[]{
+            R.id.vowel_a, R.id.vowel_o, R.id.vowel_e, R.id.vowel_i,
+            R.id.vowel_u, R.id.vowel_v, R.id.vowel_er, R.id.vowel_ai,
+            R.id.vowel_ei, R.id.vowel_ao, R.id.vowel_ou, R.id.vowel_ia,
+            R.id.vowel_ie, R.id.vowel_iao, R.id.vowel_iou, R.id.vowel_ua,
+            R.id.vowel_uo, R.id.vowel_uai, R.id.vowel_uei, R.id.vowel_ue,
+            R.id.vowel_an, R.id.vowel_en, R.id.vowel_ang, R.id.vowel_eng,
+            R.id.vowel_ian, R.id.vowel_in, R.id.vowel_iang, R.id.vowel_ing,
+            R.id.vowel_uan, R.id.vowel_uen, R.id.vowel_uang, R.id.vowel_ong,
+            R.id.vowel_uan_umlaut, R.id.vowel_un, R.id.vowel_iong
+    };
+    private final String[] vowelLabels = new String[]{
+            "a", "o", "e", "i",
+            "u", "ü", "er", "ai",
+            "ei", "ao", "ou", "ia",
+            "ie", "iao", "iou", "ua",
+            "uo", "uai", "uei", "üe",
+            "an", "en", "ang", "eng",
+            "ian", "in", "iang", "ing",
+            "uan", "uen", "uang", "ong",
+            "üan", "ün", "iong"
+    };
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -108,9 +131,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         tv2 = findViewById(R.id.tv_2);
         extraAResults = findViewById(R.id.extra_a_results);
         extraASuggestions = findViewById(R.id.extra_a_suggestions);
-        vowelAccuracy = findViewById(R.id.extra_a_vowel_accuracy);
         initialAccuracy = findViewById(R.id.extra_a_initial_accuracy);
         speechClarity = findViewById(R.id.extra_a_speech_clarity);
+        vowelErrorList = findViewById(R.id.vowel_error_list);
         diagNormal = findViewById(R.id.extra_a_diag_normal);
         diagPhonology = findViewById(R.id.extra_a_diag_phonology);
         diagTone = findViewById(R.id.extra_a_diag_tone);
@@ -210,8 +233,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             // 统计声母正确率：每个声母独立 “正确/总”
             int[] correctInitial = new int[initialLabels.length];
             int[] totalInitial = new int[initialLabels.length];
-            int vowelCorrect = 0;
-            int vowelTotal = 0;
+            int[] correctVowel = new int[vowelLabels.length];
+            int[] totalVowel = new int[vowelLabels.length];
+            int[] errorVowel = new int[vowelLabels.length];
             for (a item : aItems) {
                 List<a.CharacterPhonology> targets = item.getTargetWord();
                 List<a.CharacterPhonology> answers = item.getAnswerPhonology();
@@ -228,10 +252,18 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                             if (tgtInitial.equals(ansInitial)) correctInitial[pos]++;
                         }
                     }
-                    String tgtVowel = vowelString(tgt);
+                    String tgtVowel = normalizeVowel(vowelString(tgt));
                     if (!tgtVowel.isEmpty()) {
-                        vowelTotal++;
-                        if (tgtVowel.equals(vowelString(ans))) vowelCorrect++;
+                        int pos = vowelIndexOf(tgtVowel);
+                        if (pos >= 0) {
+                            totalVowel[pos]++;
+                            String ansVowel = normalizeVowel(vowelString(ans));
+                            if (tgtVowel.equals(ansVowel)) {
+                                correctVowel[pos]++;
+                            } else {
+                                errorVowel[pos]++;
+                            }
+                        }
                     }
                 }
             }
@@ -244,6 +276,25 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     et.setText(total > 0 ? (correct + "/" + total) : "0/0");
                 }
             }
+            // 填充韵母表格
+            for (int i = 0; i < vowelIds.length && i < vowelLabels.length; i++) {
+                EditText et = findViewById(vowelIds[i]);
+                if (et != null) {
+                    int total = totalVowel[i];
+                    int correct = correctVowel[i];
+                    et.setText(total > 0 ? (correct + "/" + total) : "0/0");
+                }
+            }
+            // 填充错误韵母列表（仅展示出现错误的韵母）
+            if (vowelErrorList != null) {
+                List<String> errorItems = new ArrayList<>();
+                for (int i = 0; i < vowelLabels.length; i++) {
+                    if (errorVowel[i] > 0) {
+                        errorItems.add(vowelLabels[i]);
+                    }
+                }
+                vowelErrorList.setText(joinText(errorItems, "、"));
+            }
             // 填充总体声母正确率
             double initialRate = 0d;
             if (initialAccuracy != null) {
@@ -252,11 +303,6 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 initialRate = sumTotal > 0 ? (sumCorrect * 1.0d / sumTotal) : 0d;
                 String rateStr = sumTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (initialRate * 100.0d)) : "0%";
                 initialAccuracy.setText(rateStr);
-            }
-            // 填充韵母正确率
-            if (vowelAccuracy != null) {
-                String rate = vowelTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (vowelCorrect * 100.0f / vowelTotal)) : "0%";
-                vowelAccuracy.setText(rate);
             }
             // 根据声母总正确率填写语音清晰度等级
             if (speechClarity != null) {
@@ -906,12 +952,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (initialText.isEmpty()) {
                 initialText = safeText(evaluations.optString("initial_accuracy", ""));
             }
-            String vowelText = safeText(getEditTextValue(vowelAccuracy));
-            if (vowelText.isEmpty()) {
-                vowelText = safeText(evaluations.optString("vowel_accuracy", ""));
-            }
             evaluations.put("initial_accuracy", initialText);
-            evaluations.put("vowel_accuracy", vowelText);
             dataManager.getInstance().saveChildJson(fName, data);
             Toast.makeText(this, "已保存评估报告", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
@@ -1121,6 +1162,21 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (initialLabels[i].equalsIgnoreCase(ini)) return i;
         }
         return -1;
+    }
+
+    private int vowelIndexOf(String vowel) {
+        for (int i = 0; i < vowelLabels.length; i++) {
+            if (vowelLabels[i].equalsIgnoreCase(vowel)) return i;
+        }
+        return -1;
+    }
+
+    private String normalizeVowel(String vowel) {
+        String value = safeLower(vowel);
+        if (value.isEmpty()) {
+            return value;
+        }
+        return value.replace("v", "ü");
     }
 
     /**
