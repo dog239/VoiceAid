@@ -153,37 +153,67 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingVertical="@dimen/articulation_row_padding_v">
+                        android:orientation="horizontal">
+
                         <TextView
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="@dimen/articulation_cell_size"
                             android:layout_weight="1"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:padding="0dp"
+                            android:background="@drawable/table"
                             android:text="汉字"
                             android:textStyle="bold" />
+
                         <TextView
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="@dimen/articulation_cell_size"
                             android:layout_weight="1"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:padding="0dp"
+                            android:background="@drawable/table"
                             android:text="声母" />
+
                         <TextView
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="@dimen/articulation_cell_size"
                             android:layout_weight="1"
-                            android:text="介音" />
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:padding="0dp"
+                            android:background="@drawable/table"
+                            android:text="韵头" />
+
                         <TextView
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="@dimen/articulation_cell_size"
                             android:layout_weight="1"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:padding="0dp"
+                            android:background="@drawable/table"
                             android:text="韵腹" />
+
                         <TextView
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="@dimen/articulation_cell_size"
                             android:layout_weight="1"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:padding="0dp"
+                            android:background="@drawable/table"
                             android:text="韵尾" />
+
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_width="0dp"
+                            android:layout_height="@dimen/articulation_cell_size"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:padding="0dp"
+                            android:background="@drawable/table"
                             android:text="可诱发" />
                     </LinearLayout>
 

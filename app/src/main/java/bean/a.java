@@ -579,15 +579,21 @@ public class a extends evaluation {
     private void renderPhonologyTable(LinearLayout container) {
         container.removeViews(1, Math.max(0, container.getChildCount() - 1));
         if (targetWord == null) return;
+        int cellSize = container.getResources().getDimensionPixelSize(R.dimen.articulation_cell_size);
         for (int i = 0; i < targetWord.size(); i++) {
             CharacterPhonology targetCp = targetWord.get(i);
             CharacterPhonology ansCp = (answerPhonology != null && i < answerPhonology.size()) ? answerPhonology.get(i) : null;
             LinearLayout row = new LinearLayout(container.getContext());
             row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setPadding(0, 4, 0, 4);
+            row.setBaselineAligned(false);
 
             TextView tvHan = new TextView(container.getContext());
-            tvHan.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+            LinearLayout.LayoutParams hanParams = new LinearLayout.LayoutParams(0, cellSize, 1);
+            tvHan.setLayoutParams(hanParams);
+            tvHan.setGravity(android.view.Gravity.CENTER);
+            tvHan.setIncludeFontPadding(false);
+            tvHan.setPadding(0, 0, 0, 0);
+            tvHan.setBackgroundResource(R.drawable.table);
             tvHan.setText(targetCp != null ? targetCp.hanzi : "");
             row.addView(tvHan);
 
@@ -596,7 +602,18 @@ public class a extends evaluation {
             EditText etNucleus = createPartEdit(container, ansCp != null && ansCp.phonology != null ? ansCp.phonology.nucleus : "");
             EditText etCoda = createPartEdit(container, ansCp != null && ansCp.phonology != null ? ansCp.phonology.coda : "");
             CheckBox cbInd = new CheckBox(container.getContext());
-            cbInd.setChecked(ansCp != null && ansCp.phonology != null && ansCp.phonology.isInducible);
+            LinearLayout.LayoutParams cbParams = new LinearLayout.LayoutParams(0, cellSize, 1);
+            cbInd.setLayoutParams(cbParams);
+            cbInd.setGravity(android.view.Gravity.CENTER);
+            cbInd.setIncludeFontPadding(false);
+            cbInd.setPadding(0, 0, 0, 0);
+            cbInd.setMinWidth(0);
+            cbInd.setMinHeight(0);
+            cbInd.setButtonDrawable(null);
+            cbInd.setBackgroundResource(R.drawable.table);
+            boolean isChecked = ansCp != null && ansCp.phonology != null && ansCp.phonology.isInducible;
+            cbInd.setChecked(isChecked);
+            cbInd.setText(isChecked ? "✔" : "");
 
             row.addView(etInitial);
             row.addView(etMedial);
@@ -605,11 +622,12 @@ public class a extends evaluation {
             row.addView(cbInd);
 
             final int idx = i;
-            cbInd.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            cbInd.setOnCheckedChangeListener((buttonView, checked) -> {
                 ensureAnswerSizeFromTarget();
                 CharacterPhonology cpAns = answerPhonology.get(idx);
                 if (cpAns.phonology == null) cpAns.phonology = new PhonologyPart();
-                cpAns.phonology.isInducible = isChecked;
+                cpAns.phonology.isInducible = checked;
+                cbInd.setText(checked ? "✔" : "");
             });
 
             etInitial.addTextChangedListener(simpleWatcher(text -> setAns(idx, part -> part.initial = text)));
@@ -623,7 +641,15 @@ public class a extends evaluation {
 
     private EditText createPartEdit(LinearLayout container, String val) {
         EditText et = new EditText(container.getContext());
-        et.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        int cellSize = container.getResources().getDimensionPixelSize(R.dimen.articulation_cell_size);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, cellSize, 1);
+        et.setLayoutParams(params);
+        et.setGravity(android.view.Gravity.CENTER);
+        et.setIncludeFontPadding(false);
+        et.setPadding(0, 0, 0, 0);
+        et.setMinWidth(0);
+        et.setMinHeight(0);
+        et.setBackgroundResource(R.drawable.table);
         et.setSingleLine(true);
         if (val != null) et.setText(val);
         return et;

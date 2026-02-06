@@ -13,5 +13,6 @@
     <dimen name="articulation_row_padding_v">6dp</dimen>
     <dimen name="articulation_field_gap">8dp</dimen>
     <dimen name="articulation_button_gap">16dp</dimen>
+    <dimen name="articulation_cell_size">56dp</dimen>
+    <dimen name="articulation_cell_border">0dp</dimen>
 </resources>
-
