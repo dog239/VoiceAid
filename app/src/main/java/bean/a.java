@@ -653,13 +653,13 @@ public class a extends evaluation {
         });
 
         imageView.setImageResource(ImageIdList.get(position));
-        numberTextView.setText("第" + TabString[position] + "题：图片画的是什么？");
+        numberTextView.setText("第" + TabString[position] + "题：" + Hint[position]);
         counter.setText(testcontext.getInstance().getCount() + "/" + testcontext.getInstance().getLengths());
         ansTextView.setText(Hint[position]);
 
 
         if (time != null) {
-            ansTextView.setVisibility(View.VISIBLE);
+            ansTextView.setVisibility(View.GONE);
             imageView.setVisibility(View.VISIBLE);
             startButton.setEnabled(false);
         }
@@ -673,7 +673,7 @@ public class a extends evaluation {
 
         startButton.setOnClickListener(v -> {
             try {
-                ansTextView.setVisibility(View.VISIBLE);
+                ansTextView.setVisibility(View.GONE);
                 imageView.setVisibility(View.VISIBLE);
                 testcontext.getInstance().getViewPager().setPagingEnabled(false);
                 startButton.setEnabled(false);
