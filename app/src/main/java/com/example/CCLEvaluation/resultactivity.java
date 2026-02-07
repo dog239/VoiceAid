@@ -121,6 +121,104 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             "üan", "ün", "iong"
     };
 
+    // --- Begin: Articulation stat helpers and recompute logic ---
+    private List<a> collectArticulationItems() {
+        List<a> items = new ArrayList<>();
+        if (evaluations == null) return items;
+        for (evaluation eval : evaluations) {
+            if (eval instanceof a) {
+                a item = (a) eval;
+                if (item.getNum() > 0) {
+                    items.add(item);
+                }
+            }
+        }
+        return items;
+    }
+
+    private void recomputeArticulationStats() {
+        if (!isArticulationResult) return;
+        List<a> aItems = collectArticulationItems();
+        int[] correctInitial = new int[initialLabels.length];
+        int[] totalInitial = new int[initialLabels.length];
+        int[] correctVowel = new int[vowelLabels.length];
+        int[] totalVowel = new int[vowelLabels.length];
+        int[] errorVowel = new int[vowelLabels.length];
+        for (a item : aItems) {
+            List<a.CharacterPhonology> targets = item.getTargetWord();
+            List<a.CharacterPhonology> answers = item.getAnswerPhonology();
+            if (targets == null) continue;
+            for (int idx = 0; idx < targets.size(); idx++) {
+                a.CharacterPhonology tgt = targets.get(idx);
+                a.CharacterPhonology ans = (answers != null && idx < answers.size()) ? answers.get(idx) : null;
+                String tgtInitial = safeLower(initialOf(tgt));
+                String ansInitial = safeLower(initialOf(ans));
+                if (!tgtInitial.isEmpty()) {
+                    int pos = initialIndexOf(tgtInitial);
+                    if (pos >= 0) {
+                        totalInitial[pos]++;
+                        if (tgtInitial.equals(ansInitial)) correctInitial[pos]++;
+                    }
+                }
+                String tgtVowel = normalizeVowel(vowelString(tgt));
+                if (!tgtVowel.isEmpty()) {
+                    int pos = vowelIndexOf(tgtVowel);
+                    if (pos >= 0) {
+                        totalVowel[pos]++;
+                        String ansVowel = normalizeVowel(vowelString(ans));
+                        if (tgtVowel.equals(ansVowel)) {
+                            correctVowel[pos]++;
+                        } else {
+                            errorVowel[pos]++;
+                        }
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < initialIds.length && i < initialLabels.length; i++) {
+            EditText et = findViewById(initialIds[i]);
+            if (et != null) {
+                int total = totalInitial[i];
+                int correct = correctInitial[i];
+                et.setText(total > 0 ? (correct + "/" + total) : "0/0");
+            }
+        }
+        for (int i = 0; i < vowelIds.length && i < vowelLabels.length; i++) {
+            EditText et = findViewById(vowelIds[i]);
+            if (et != null) {
+                int total = totalVowel[i];
+                int correct = correctVowel[i];
+                et.setText(total > 0 ? (correct + "/" + total) : "0/0");
+            }
+        }
+        if (vowelErrorList != null) {
+            List<String> errorItems = new ArrayList<>();
+            for (int i = 0; i < vowelLabels.length; i++) {
+                if (errorVowel[i] > 0) {
+                    errorItems.add(vowelLabels[i]);
+                }
+            }
+            vowelErrorList.setText(joinText(errorItems, "、"));
+        }
+        double initialRate = 0d;
+        if (initialAccuracy != null) {
+            int sumTotal = 0, sumCorrect = 0;
+            for (int i = 0; i < totalInitial.length; i++) { sumTotal += totalInitial[i]; sumCorrect += correctInitial[i]; }
+            initialRate = sumTotal > 0 ? (sumCorrect * 1.0d / sumTotal) : 0d;
+            String rateStr = sumTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (initialRate * 100.0d)) : "0%";
+            initialAccuracy.setText(rateStr);
+        }
+        if (speechClarity != null) {
+            String level;
+            if (initialRate >= 0.85d) level = "轻度";
+            else if (initialRate >= 0.65d) level = "轻中度";
+            else if (initialRate >= 0.50d) level = "中重度";
+            else level = "重度";
+            speechClarity.setText(level);
+        }
+    }
+    // --- End: Articulation stat helpers and recompute logic ---
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -230,89 +328,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 aItems.add(item);
                 evaluations.add(item);
             }
-            // 统计声母正确率：每个声母独立 “正确/总”
-            int[] correctInitial = new int[initialLabels.length];
-            int[] totalInitial = new int[initialLabels.length];
-            int[] correctVowel = new int[vowelLabels.length];
-            int[] totalVowel = new int[vowelLabels.length];
-            int[] errorVowel = new int[vowelLabels.length];
-            for (a item : aItems) {
-                List<a.CharacterPhonology> targets = item.getTargetWord();
-                List<a.CharacterPhonology> answers = item.getAnswerPhonology();
-                if (targets == null) continue;
-                for (int idx = 0; idx < targets.size(); idx++) {
-                    a.CharacterPhonology tgt = targets.get(idx);
-                    a.CharacterPhonology ans = (answers != null && idx < answers.size()) ? answers.get(idx) : null;
-                    String tgtInitial = safeLower(initialOf(tgt));
-                    String ansInitial = safeLower(initialOf(ans));
-                    if (!tgtInitial.isEmpty()) {
-                        int pos = initialIndexOf(tgtInitial);
-                        if (pos >= 0) {
-                            totalInitial[pos]++;
-                            if (tgtInitial.equals(ansInitial)) correctInitial[pos]++;
-                        }
-                    }
-                    String tgtVowel = normalizeVowel(vowelString(tgt));
-                    if (!tgtVowel.isEmpty()) {
-                        int pos = vowelIndexOf(tgtVowel);
-                        if (pos >= 0) {
-                            totalVowel[pos]++;
-                            String ansVowel = normalizeVowel(vowelString(ans));
-                            if (tgtVowel.equals(ansVowel)) {
-                                correctVowel[pos]++;
-                            } else {
-                                errorVowel[pos]++;
-                            }
-                        }
-                    }
-                }
-            }
-            // 填充声母表格
-            for (int i = 0; i < initialIds.length && i < initialLabels.length; i++) {
-                EditText et = findViewById(initialIds[i]);
-                if (et != null) {
-                    int total = totalInitial[i];
-                    int correct = correctInitial[i];
-                    et.setText(total > 0 ? (correct + "/" + total) : "0/0");
-                }
-            }
-            // 填充韵母表格
-            for (int i = 0; i < vowelIds.length && i < vowelLabels.length; i++) {
-                EditText et = findViewById(vowelIds[i]);
-                if (et != null) {
-                    int total = totalVowel[i];
-                    int correct = correctVowel[i];
-                    et.setText(total > 0 ? (correct + "/" + total) : "0/0");
-                }
-            }
-            // 填充错误韵母列表（仅展示出现错误的韵母）
-            if (vowelErrorList != null) {
-                List<String> errorItems = new ArrayList<>();
-                for (int i = 0; i < vowelLabels.length; i++) {
-                    if (errorVowel[i] > 0) {
-                        errorItems.add(vowelLabels[i]);
-                    }
-                }
-                vowelErrorList.setText(joinText(errorItems, "、"));
-            }
-            // 填充总体声母正确率
-            double initialRate = 0d;
-            if (initialAccuracy != null) {
-                int sumTotal = 0, sumCorrect = 0;
-                for (int i = 0; i < totalInitial.length; i++) { sumTotal += totalInitial[i]; sumCorrect += correctInitial[i]; }
-                initialRate = sumTotal > 0 ? (sumCorrect * 1.0d / sumTotal) : 0d;
-                String rateStr = sumTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (initialRate * 100.0d)) : "0%";
-                initialAccuracy.setText(rateStr);
-            }
-            // 根据声母总正确率填写语音清晰度等级
-            if (speechClarity != null) {
-                String level;
-                if (initialRate >= 0.85d) level = "轻度";
-                else if (initialRate >= 0.65d) level = "轻中度";
-                else if (initialRate >= 0.50d) level = "中重度";
-                else level = "重度";
-                speechClarity.setText(level);
-            }
+            recomputeArticulationStats();
             JSONObject evaluations = data.optJSONObject("evaluations");
             if (evaluations != null) {
                 String savedClarity = safeText(evaluations.optString("speech_intelligibility", ""));
@@ -796,7 +812,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (extraAResults != null) extraAResults.setVisibility(View.GONE);
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
         }
-        adapter = new resultadapter(this, evaluations);
+        adapter = new resultadapter(this, evaluations, this::recomputeArticulationStats);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 

@@ -806,7 +806,9 @@ public class a extends evaluation {
 
             @Override
             public void afterTextChanged(Editable s) {
-                consumer.accept(s.toString());
+                if (consumer != null) {
+                    consumer.accept(s == null ? "" : s.toString());
+                }
             }
         };
     }
@@ -819,7 +821,6 @@ public class a extends evaluation {
     }
 
     private void nextPage(int position, int count, int lengths) {
-
         int nP = position + 1;
         if (count >= lengths) {
             Toast.makeText(testcontext.getInstance().getContext(), "已完成测评题目！", Toast.LENGTH_SHORT).show();
@@ -859,5 +860,195 @@ public class a extends evaluation {
         if (target != null && !target.isEmpty()) return target;
         String built = buildTargetHanzi();
         return built == null ? "" : built;
+    }
+
+    private static class SimpleTextWatcher implements TextWatcher {
+        private final StringConsumer consumer;
+
+        SimpleTextWatcher(StringConsumer consumer) {
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            if (consumer != null) {
+                consumer.accept(s == null ? "" : s.toString());
+            }
+        }
+    }
+
+    private static void setEditable(EditText editText, boolean enabled) {
+        if (editText == null) return;
+        editText.setEnabled(enabled);
+        editText.setFocusable(enabled);
+        editText.setFocusableInTouchMode(enabled);
+    }
+
+    private static void attachWatcher(EditText editText, TextWatcher watcher) {
+        if (editText == null) return;
+        Object old = editText.getTag(R.id.tag_text_watcher);
+        if (old instanceof TextWatcher) {
+            editText.removeTextChangedListener((TextWatcher) old);
+        }
+        editText.addTextChangedListener(watcher);
+        editText.setTag(R.id.tag_text_watcher, watcher);
+    }
+
+    public void bindEditable(View[] views, int position, adapter.resultadapter.ResultUpdateListener updateListener) {
+        if (views == null || views.length < 11) return;
+        if (position == 0) {
+            for (int i = 0; i < views.length; i++) {
+                if (views[i] instanceof EditText) {
+                    setEditable((EditText) views[i], false);
+                }
+            }
+            return;
+        }
+        if (!(views[3] instanceof EditText)
+                || !(views[4] instanceof EditText)
+                || !(views[5] instanceof EditText)
+                || !(views[6] instanceof EditText)
+                || !(views[7] instanceof EditText)
+                || !(views[8] instanceof EditText)
+                || !(views[9] instanceof EditText)) {
+            return;
+        }
+
+        EditText etInitial = (EditText) views[3];
+        EditText etMedial = (EditText) views[4];
+        EditText etNucleus = (EditText) views[5];
+        EditText etCoda = (EditText) views[6];
+        EditText etError = (EditText) views[7];
+        EditText etProcess = (EditText) views[8];
+        EditText etInducible = (EditText) views[9];
+
+        setEditable(etInitial, true);
+        setEditable(etMedial, true);
+        setEditable(etNucleus, true);
+        setEditable(etCoda, true);
+        setEditable(etError, true);
+        setEditable(etProcess, true);
+        setEditable(etInducible, true);
+
+        etInitial.setTag(this);
+        etMedial.setTag(this);
+        etNucleus.setTag(this);
+        etCoda.setTag(this);
+        etError.setTag(this);
+        etProcess.setTag(this);
+        etInducible.setTag(this);
+
+        etInitial.setText(joinParts(answerPhonology, PartType.INITIAL));
+        etMedial.setText(joinParts(answerPhonology, PartType.MEDIAL));
+        etNucleus.setText(joinParts(answerPhonology, PartType.NUCLEUS));
+        etCoda.setText(joinParts(answerPhonology, PartType.CODA));
+        etError.setText(errorType == null ? "" : errorType);
+        etProcess.setText(phonologyProcess == null ? "" : phonologyProcess);
+        etInducible.setText(joinInducible(answerPhonology));
+
+        attachWatcher(etInitial, new SimpleTextWatcher(text -> {
+            updateAnswerPartsFromLines(text, PartType.INITIAL);
+            notifyArticulationChanged(updateListener);
+        }));
+        attachWatcher(etMedial, new SimpleTextWatcher(text -> {
+            updateAnswerPartsFromLines(text, PartType.MEDIAL);
+            notifyArticulationChanged(updateListener);
+        }));
+        attachWatcher(etNucleus, new SimpleTextWatcher(text -> {
+            updateAnswerPartsFromLines(text, PartType.NUCLEUS);
+            notifyArticulationChanged(updateListener);
+        }));
+        attachWatcher(etCoda, new SimpleTextWatcher(text -> {
+            updateAnswerPartsFromLines(text, PartType.CODA);
+            notifyArticulationChanged(updateListener);
+        }));
+        attachWatcher(etError, new SimpleTextWatcher(text -> {
+            errorType = emptyToNull(text);
+            notifyArticulationChanged(updateListener);
+        }));
+        attachWatcher(etProcess, new SimpleTextWatcher(text -> {
+            phonologyProcess = emptyToNull(text);
+            notifyArticulationChanged(updateListener);
+        }));
+        attachWatcher(etInducible, new SimpleTextWatcher(text -> {
+            updateInducibleFromLines(text);
+            notifyArticulationChanged(updateListener);
+        }));
+    }
+
+    private void updateAnswerPartsFromLines(String text, PartType type) {
+        ensureAnswerSizeFromTarget();
+        String[] lines = splitLines(text, answerPhonology == null ? 0 : answerPhonology.size());
+        for (int i = 0; i < lines.length; i++) {
+            CharacterPhonology cp = answerPhonology.get(i);
+            if (cp.phonology == null) cp.phonology = new PhonologyPart();
+            switch (type) {
+                case INITIAL:
+                    cp.phonology.initial = emptyToNull(lines[i]);
+                    break;
+                case MEDIAL:
+                    cp.phonology.medial = emptyToNull(lines[i]);
+                    break;
+                case NUCLEUS:
+                    cp.phonology.nucleus = emptyToNull(lines[i]);
+                    break;
+                case CODA:
+                    cp.phonology.coda = emptyToNull(lines[i]);
+                    break;
+            }
+        }
+    }
+
+    private void updateInducibleFromLines(String text) {
+        ensureAnswerSizeFromTarget();
+        String[] lines = splitLines(text, answerPhonology == null ? 0 : answerPhonology.size());
+        for (int i = 0; i < lines.length; i++) {
+            CharacterPhonology cp = answerPhonology.get(i);
+            if (cp.phonology == null) cp.phonology = new PhonologyPart();
+            cp.phonology.isInducible = parseInducible(lines[i]);
+        }
+    }
+
+    private boolean parseInducible(String value) {
+        if (value == null) return false;
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) return false;
+        String normalized = trimmed.toLowerCase();
+        return "1".equals(normalized)
+                || "y".equals(normalized)
+                || "yes".equals(normalized)
+                || "true".equals(normalized)
+                || "t".equals(normalized)
+                || "√".equals(trimmed)
+                || "✔".equals(trimmed);
+    }
+
+    private String[] splitLines(String text, int size) {
+        String[] lines = text == null ? new String[0] : text.split("\\n", -1);
+        if (size <= 0) return lines;
+        String[] result = new String[size];
+        for (int i = 0; i < size; i++) {
+            result[i] = i < lines.length ? lines[i] : "";
+        }
+        return result;
+    }
+
+    private String emptyToNull(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private void notifyArticulationChanged(adapter.resultadapter.ResultUpdateListener updateListener) {
+        if (updateListener != null) {
+            updateListener.onArticulationDataChanged();
+        }
     }
 }

@@ -47,7 +47,7 @@
         android:fontFamily="@font/iconfont"
         android:singleLine="false"
         android:maxLines="3" />
-    <TextView
+    <EditText
         android:id="@+id/i4"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -60,8 +60,11 @@
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont"/>
-    <TextView
+        android:fontFamily="@font/iconfont"
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <EditText
         android:id="@+id/i5"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -74,8 +77,11 @@
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont"/>
-    <TextView
+        android:fontFamily="@font/iconfont"
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <EditText
         android:id="@+id/i6"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -89,8 +95,10 @@
         android:padding="2dp"
         android:visibility="gone"
         android:fontFamily="@font/iconfont"
-       />
-    <TextView
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <EditText
         android:id="@+id/i7"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -104,8 +112,10 @@
         android:padding="2dp"
         android:visibility="gone"
         android:fontFamily="@font/iconfont"
-        />
-    <TextView
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <EditText
         android:id="@+id/i8"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -118,8 +128,11 @@
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont" />
-    <TextView
+        android:fontFamily="@font/iconfont"
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <EditText
         android:id="@+id/i9"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -132,8 +145,11 @@
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont" />
-    <TextView
+        android:fontFamily="@font/iconfont"
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <EditText
         android:id="@+id/i10"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -146,7 +162,10 @@
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont" />
+        android:fontFamily="@font/iconfont"
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
     <TextView
         android:id="@+id/i11"
         android:layout_width="0dp"

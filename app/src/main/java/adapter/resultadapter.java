@@ -19,10 +19,20 @@ public class resultadapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     private ArrayList<evaluation> evaluations;
     private Context context;
+    private final ResultUpdateListener updateListener;
 
-    public resultadapter(Context context, ArrayList<evaluation> evaluations) {
+    public resultadapter(Context context, ArrayList<evaluation> evaluations, ResultUpdateListener updateListener) {
         this.context = context;
         this.evaluations = evaluations;
+        this.updateListener = updateListener;
+    }
+
+    public resultadapter(Context context, ArrayList<evaluation> evaluations) {
+        this(context, evaluations, null);
+    }
+
+    public interface ResultUpdateListener {
+        void onArticulationDataChanged();
     }
 
     class ItemViewHolder extends RecyclerView.ViewHolder {
@@ -49,7 +59,9 @@ public class resultadapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             evaluation evaluation = evaluations.get(position);
 
             for (View view : itemViewHolder.item) {
-                ((TextView) view).setText(null);
+                if (view instanceof TextView) {
+                    ((TextView) view).setText(null);
+                }
                 view.setBackgroundResource(R.drawable.btn);
             }
 
@@ -63,6 +75,10 @@ public class resultadapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 itemViewHolder.item[0].setBackgroundResource(R.drawable.table_bottomleft);
                 if (pos < itemViewHolder.item.length)
                     itemViewHolder.item[pos].setBackgroundResource(R.drawable.table_bottomright);
+            }
+
+            if (evaluation instanceof bean.a) {
+                ((bean.a) evaluation).bindEditable(itemViewHolder.item, position, updateListener);
             }
         }
     }
