@@ -1,6 +1,7 @@
 package bean;
 
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
@@ -83,6 +84,15 @@ public class a extends evaluation {
     private String errorType; // 错误类型，默认空
     private String phonologyProcess; // 音系历程，默认空
     private String pinyin; // 拼音，可选
+
+    private String cachedTargetHanzi;
+    private String cachedPinyinLines;
+    private String cachedJoinedInitial;
+    private String cachedJoinedMedial;
+    private String cachedJoinedNucleus;
+    private String cachedJoinedCoda;
+    private String cachedJoinedInducible;
+
     private static final String[] ERROR_TYPE_OPTIONS = new String[]{
             "",
             "替代",
@@ -134,6 +144,8 @@ public class a extends evaluation {
 
     public void setTargetWord(List<CharacterPhonology> targetWord) {
         this.targetWord = targetWord;
+        invalidateTargetCache();
+        invalidateAnswerCache();
     }
 
     public List<CharacterPhonology> getAnswerPhonology() {
@@ -142,6 +154,7 @@ public class a extends evaluation {
 
     public void setAnswerPhonology(List<CharacterPhonology> answerPhonology) {
         this.answerPhonology = answerPhonology;
+        invalidateAnswerCache();
     }
 
     public String getErrorType() {
@@ -166,6 +179,7 @@ public class a extends evaluation {
 
     public void setPinyin(String pinyin) {
         this.pinyin = pinyin;
+        invalidateTargetCache();
     }
 
     public void ensureAnswerSizeFromTarget() {
@@ -190,6 +204,7 @@ public class a extends evaluation {
             }
             answerPhonology.add(cp);
         }
+        invalidateAnswerCache();
     }
 
     private utils.allquestionlistener listener;
@@ -212,6 +227,7 @@ public class a extends evaluation {
 
     public void setTarget(String target) {
         this.target = target;
+        invalidateTargetCache();
     }
 
     public bean.audio getAudio() {
@@ -255,19 +271,19 @@ public class a extends evaluation {
             if (views.length > 10) ((TextView) views[10]).setText("录音");
         } else {
             ((TextView) views[0]).setText(String.valueOf(num));
-            ((TextView) views[1]).setText(buildTargetHanzi());
-            String pinyinValue = buildPinyinLines();
+            ((TextView) views[1]).setText(getCachedTargetHanzi());
+            String pinyinValue = getCachedPinyinLines();
             ((TextView) views[2]).setText(pinyinValue == null ? "" : pinyinValue);
-            ((TextView) views[3]).setText(joinParts(answerPhonology, PartType.INITIAL));
-            ((TextView) views[4]).setText(joinParts(answerPhonology, PartType.MEDIAL));
-            ((TextView) views[5]).setText(joinParts(answerPhonology, PartType.NUCLEUS));
-            ((TextView) views[6]).setText(joinParts(answerPhonology, PartType.CODA));
+            ((TextView) views[3]).setText(getCachedJoinedParts(PartType.INITIAL));
+            ((TextView) views[4]).setText(getCachedJoinedParts(PartType.MEDIAL));
+            ((TextView) views[5]).setText(getCachedJoinedParts(PartType.NUCLEUS));
+            ((TextView) views[6]).setText(getCachedJoinedParts(PartType.CODA));
             ((TextView) views[7]).setText(errorType == null ? "" : errorType);
             if (views.length > 8) {
                 ((TextView) views[8]).setText(phonologyProcess == null ? "" : phonologyProcess);
             }
             if (views.length > 9) {
-                ((TextView) views[9]).setText(joinInducible(answerPhonology));
+                ((TextView) views[9]).setText(getCachedInducible());
             }
             if (views.length > 10) {
                 if (audio != null && time != null) {
@@ -285,13 +301,68 @@ public class a extends evaluation {
 
     private enum PartType {INITIAL, MEDIAL, NUCLEUS, CODA}
 
+    private void invalidateTargetCache() {
+        cachedTargetHanzi = null;
+        cachedPinyinLines = null;
+    }
+
+    private void invalidateAnswerCache() {
+        cachedJoinedInitial = null;
+        cachedJoinedMedial = null;
+        cachedJoinedNucleus = null;
+        cachedJoinedCoda = null;
+        cachedJoinedInducible = null;
+    }
+
+    private String getCachedTargetHanzi() {
+        if (cachedTargetHanzi == null) {
+            cachedTargetHanzi = buildTargetHanzi();
+        }
+        return cachedTargetHanzi;
+    }
+
+    private String getCachedPinyinLines() {
+        if (cachedPinyinLines == null) {
+            cachedPinyinLines = buildPinyinLines();
+        }
+        return cachedPinyinLines;
+    }
+
+    private String getCachedJoinedParts(PartType type) {
+        switch (type) {
+            case INITIAL:
+                if (cachedJoinedInitial == null) cachedJoinedInitial = joinParts(answerPhonology, PartType.INITIAL);
+                return cachedJoinedInitial;
+            case MEDIAL:
+                if (cachedJoinedMedial == null) cachedJoinedMedial = joinParts(answerPhonology, PartType.MEDIAL);
+                return cachedJoinedMedial;
+            case NUCLEUS:
+                if (cachedJoinedNucleus == null) cachedJoinedNucleus = joinParts(answerPhonology, PartType.NUCLEUS);
+                return cachedJoinedNucleus;
+            case CODA:
+                if (cachedJoinedCoda == null) cachedJoinedCoda = joinParts(answerPhonology, PartType.CODA);
+                return cachedJoinedCoda;
+            default:
+                return "";
+        }
+    }
+
+    private String getCachedInducible() {
+        if (cachedJoinedInducible == null) {
+            cachedJoinedInducible = joinInducible(answerPhonology);
+        }
+        return cachedJoinedInducible;
+    }
+
     private String buildTargetHanzi() {
-        if (targetWord == null || targetWord.isEmpty()) return target == null ? "" : target;
+        if (cachedTargetHanzi != null) return cachedTargetHanzi;
+        if (targetWord == null || targetWord.isEmpty()) return cachedTargetHanzi = (target == null ? "" : target);
         StringBuilder sb = new StringBuilder();
         for (CharacterPhonology cp : targetWord) {
             if (cp != null && cp.hanzi != null) sb.append(cp.hanzi);
         }
-        return sb.toString();
+        cachedTargetHanzi = sb.toString();
+        return cachedTargetHanzi;
     }
 
     private String joinParts(List<CharacterPhonology> ans, PartType type) {
@@ -390,8 +461,10 @@ public class a extends evaluation {
     }
 
     private String buildPinyinLines() {
+        if (cachedPinyinLines != null) return cachedPinyinLines;
         String targetText = buildTargetHanzi();
         if (targetText == null || targetText.isEmpty()) targetText = target;
+        String result = "";
         if ((targetWord == null || targetWord.isEmpty()) && targetText != null && !targetText.isEmpty()) {
             List<CharacterPhonology> lexiconWord = ImageUrls.getATargetWord(targetText);
             if (lexiconWord != null && !lexiconWord.isEmpty()) {
@@ -401,31 +474,35 @@ public class a extends evaluation {
                     if (sb.length() > 0) sb.append("\n");
                     sb.append(syllable);
                 }
-                if (sb.length() > 0) return sb.toString();
+                if (sb.length() > 0) result = sb.toString();
             }
         }
-        if (pinyin != null && !pinyin.isEmpty()) {
+        if (result.isEmpty() && pinyin != null && !pinyin.isEmpty()) {
             int hanziCount = (targetWord != null && !targetWord.isEmpty())
                     ? targetWord.size()
                     : (targetText == null ? 1 : Math.max(1, targetText.length()));
-            return splitPinyinByHanzi(pinyin, hanziCount);
+            result = splitPinyinByHanzi(pinyin, hanziCount);
         }
-        if (targetWord != null && !targetWord.isEmpty()) {
+        if (result.isEmpty() && targetWord != null && !targetWord.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (CharacterPhonology cp : targetWord) {
                 String syllable = cp == null ? "" : buildSyllable(cp.phonology);
                 if (sb.length() > 0) sb.append("\n");
                 sb.append(syllable);
             }
-            if (sb.length() > 0) return sb.toString();
+            if (sb.length() > 0) result = sb.toString();
         }
-        if (targetText != null && !targetText.isEmpty()) {
+        if (result.isEmpty() && targetText != null && !targetText.isEmpty()) {
             String mapped = ImageUrls.getAPinyin(targetText);
-            if (mapped != null && !mapped.isEmpty()) return splitPinyinByHanzi(mapped, targetText.length());
+            if (mapped != null && !mapped.isEmpty()) result = splitPinyinByHanzi(mapped, targetText.length());
         }
-        if (target != null && !target.isEmpty()) return target;
-        String built = buildTargetHanzi();
-        return built == null ? "" : built;
+        if (result.isEmpty() && target != null && !target.isEmpty()) result = target;
+        if (result.isEmpty()) {
+            String built = buildTargetHanzi();
+            result = built == null ? "" : built;
+        }
+        cachedPinyinLines = result;
+        return cachedPinyinLines;
     }
 
     private String splitPinyinByHanzi(String pinyinText, int hanziCount) {
@@ -462,7 +539,7 @@ public class a extends evaluation {
             }
             if (sb.length() > 0) sb.append("\n");
             sb.append(part);
-            offset = Math.min(continuous.length(), offset + len);
+            offset += len;
         }
         return sb.toString();
     }
@@ -892,6 +969,12 @@ public class a extends evaluation {
         editText.setFocusableInTouchMode(enabled);
     }
 
+    private static void setFocusableOnly(EditText editText, boolean focusable) {
+        if (editText == null) return;
+        editText.setFocusable(focusable);
+        editText.setFocusableInTouchMode(focusable);
+    }
+
     private static void attachWatcher(EditText editText, TextWatcher watcher) {
         if (editText == null) return;
         Object old = editText.getTag(R.id.tag_text_watcher);
@@ -902,7 +985,32 @@ public class a extends evaluation {
         editText.setTag(R.id.tag_text_watcher, watcher);
     }
 
+    private static void detachWatcher(EditText editText) {
+        if (editText == null) return;
+        Object old = editText.getTag(R.id.tag_text_watcher);
+        if (old instanceof TextWatcher) {
+            editText.removeTextChangedListener((TextWatcher) old);
+        }
+        editText.setTag(R.id.tag_text_watcher, null);
+    }
+
+    private static void setTextIfChanged(EditText editText, String value) {
+        if (editText == null) return;
+        CharSequence current = editText.getText();
+        if (!TextUtils.equals(current, value)) {
+            editText.setText(value);
+        }
+    }
+
     public void bindEditable(View[] views, int position, adapter.resultadapter.ResultUpdateListener updateListener) {
+        bindEditable(views, position, updateListener, true, -1);
+    }
+
+    public void bindEditable(View[] views, int position, adapter.resultadapter.ResultUpdateListener updateListener, boolean editable) {
+        bindEditable(views, position, updateListener, editable, -1);
+    }
+
+    public void bindEditable(View[] views, int position, adapter.resultadapter.ResultUpdateListener updateListener, boolean editable, int cellIndex) {
         if (views == null || views.length < 11) return;
         if (position == 0) {
             for (int i = 0; i < views.length; i++) {
@@ -930,58 +1038,69 @@ public class a extends evaluation {
         EditText etProcess = (EditText) views[8];
         EditText etInducible = (EditText) views[9];
 
-        setEditable(etInitial, true);
-        setEditable(etMedial, true);
-        setEditable(etNucleus, true);
-        setEditable(etCoda, true);
-        setEditable(etError, true);
-        setEditable(etProcess, true);
-        setEditable(etInducible, true);
+        EditText[] cells = new EditText[]{etInitial, etMedial, etNucleus, etCoda, etError, etProcess, etInducible};
+        PartType[] partMap = new PartType[]{PartType.INITIAL, PartType.MEDIAL, PartType.NUCLEUS, PartType.CODA, null, null, null};
 
-        etInitial.setTag(this);
-        etMedial.setTag(this);
-        etNucleus.setTag(this);
-        etCoda.setTag(this);
-        etError.setTag(this);
-        etProcess.setTag(this);
-        etInducible.setTag(this);
+        for (EditText cell : cells) {
+            setEditable(cell, false);
+            detachWatcher(cell);
+        }
 
-        etInitial.setText(joinParts(answerPhonology, PartType.INITIAL));
-        etMedial.setText(joinParts(answerPhonology, PartType.MEDIAL));
-        etNucleus.setText(joinParts(answerPhonology, PartType.NUCLEUS));
-        etCoda.setText(joinParts(answerPhonology, PartType.CODA));
-        etError.setText(errorType == null ? "" : errorType);
-        etProcess.setText(phonologyProcess == null ? "" : phonologyProcess);
-        etInducible.setText(joinInducible(answerPhonology));
+        setTextIfChanged(etInitial, getCachedJoinedParts(PartType.INITIAL));
+        setTextIfChanged(etMedial, getCachedJoinedParts(PartType.MEDIAL));
+        setTextIfChanged(etNucleus, getCachedJoinedParts(PartType.NUCLEUS));
+        setTextIfChanged(etCoda, getCachedJoinedParts(PartType.CODA));
+        setTextIfChanged(etError, errorType == null ? "" : errorType);
+        setTextIfChanged(etProcess, phonologyProcess == null ? "" : phonologyProcess);
+        setTextIfChanged(etInducible, getCachedInducible());
 
-        attachWatcher(etInitial, new SimpleTextWatcher(text -> {
-            updateAnswerPartsFromLines(text, PartType.INITIAL);
-            notifyArticulationChanged(updateListener);
-        }));
-        attachWatcher(etMedial, new SimpleTextWatcher(text -> {
-            updateAnswerPartsFromLines(text, PartType.MEDIAL);
-            notifyArticulationChanged(updateListener);
-        }));
-        attachWatcher(etNucleus, new SimpleTextWatcher(text -> {
-            updateAnswerPartsFromLines(text, PartType.NUCLEUS);
-            notifyArticulationChanged(updateListener);
-        }));
-        attachWatcher(etCoda, new SimpleTextWatcher(text -> {
-            updateAnswerPartsFromLines(text, PartType.CODA);
-            notifyArticulationChanged(updateListener);
-        }));
-        attachWatcher(etError, new SimpleTextWatcher(text -> {
-            errorType = emptyToNull(text);
-            notifyArticulationChanged(updateListener);
-        }));
-        attachWatcher(etProcess, new SimpleTextWatcher(text -> {
-            phonologyProcess = emptyToNull(text);
-            notifyArticulationChanged(updateListener);
-        }));
-        attachWatcher(etInducible, new SimpleTextWatcher(text -> {
-            updateInducibleFromLines(text);
-            notifyArticulationChanged(updateListener);
-        }));
+        if (!editable) {
+            return;
+        }
+
+        for (EditText cell : cells) {
+            if (cell != null) {
+                cell.setEnabled(true);
+                setFocusableOnly(cell, false);
+            }
+        }
+
+        int localIndex = cellIndex - 3;
+        if (localIndex < 0 || localIndex >= cells.length) {
+            return;
+        }
+
+        EditText active = cells[localIndex];
+        setFocusableOnly(active, true);
+
+        PartType type = partMap[localIndex];
+        if (type != null) {
+            attachWatcher(active, new SimpleTextWatcher(text -> {
+                updateAnswerPartsFromLines(text, type);
+                notifyArticulationChanged(updateListener);
+            }));
+            return;
+        }
+        if (active == etError) {
+            attachWatcher(active, new SimpleTextWatcher(text -> {
+                errorType = emptyToNull(text);
+                notifyArticulationChanged(updateListener);
+            }));
+            return;
+        }
+        if (active == etProcess) {
+            attachWatcher(active, new SimpleTextWatcher(text -> {
+                phonologyProcess = emptyToNull(text);
+                notifyArticulationChanged(updateListener);
+            }));
+            return;
+        }
+        if (active == etInducible) {
+            attachWatcher(active, new SimpleTextWatcher(text -> {
+                updateInducibleFromLines(text);
+                notifyArticulationChanged(updateListener);
+            }));
+        }
     }
 
     private void updateAnswerPartsFromLines(String text, PartType type) {
@@ -1005,6 +1124,7 @@ public class a extends evaluation {
                     break;
             }
         }
+        invalidateAnswerCache();
     }
 
     private void updateInducibleFromLines(String text) {
@@ -1015,6 +1135,7 @@ public class a extends evaluation {
             if (cp.phonology == null) cp.phonology = new PhonologyPart();
             cp.phonology.isInducible = parseInducible(lines[i]);
         }
+        invalidateAnswerCache();
     }
 
     private boolean parseInducible(String value) {

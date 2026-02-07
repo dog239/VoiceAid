@@ -813,7 +813,13 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
         }
         adapter = new resultadapter(this, evaluations, this::recomputeArticulationStats);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setItemPrefetchEnabled(true);
+        layoutManager.setInitialPrefetchItemCount(6);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setItemAnimator(null);
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.getRecycledViewPool().setMaxRecycledViews(0, 20);
         recyclerView.setAdapter(adapter);
 
 
