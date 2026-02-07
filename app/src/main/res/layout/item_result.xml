@@ -44,7 +44,9 @@
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont"/>
+        android:fontFamily="@font/iconfont"
+        android:singleLine="false"
+        android:maxLines="3" />
     <TextView
         android:id="@+id/i4"
         android:layout_width="0dp"

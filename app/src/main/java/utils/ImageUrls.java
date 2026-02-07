@@ -233,6 +233,16 @@ public interface ImageUrls {
         return -1;
     }
 
+    static List<a.CharacterPhonology> getATargetWord(String word) {
+        int idx = indexOfAWord(word);
+        if (idx >= 0 && idx < A_targetWord.length) {
+            if (A_targetWord[idx] == null) initAPhonologyLexicon();
+            a.CharacterPhonology[] cps = A_targetWord[idx];
+            if (cps != null) return Arrays.asList(cps);
+        }
+        return null;
+    }
+
     static void setAWord(String word, a.CharacterPhonology... cps) {
         int idx = indexOfAWord(word);
         if (idx >= 0) {

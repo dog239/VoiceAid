@@ -25,6 +25,7 @@ import java.util.List;
 
 import utils.AudioPlayer;
 import utils.AudioRecorder;
+import utils.ImageUrls;
 import utils.ResultContext;
 import utils.testcontext;
 
@@ -255,7 +256,7 @@ public class a extends evaluation {
         } else {
             ((TextView) views[0]).setText(String.valueOf(num));
             ((TextView) views[1]).setText(buildTargetHanzi());
-            String pinyinValue = computePinyinFallback();
+            String pinyinValue = buildPinyinLines();
             ((TextView) views[2]).setText(pinyinValue == null ? "" : pinyinValue);
             ((TextView) views[3]).setText(joinParts(answerPhonology, PartType.INITIAL));
             ((TextView) views[4]).setText(joinParts(answerPhonology, PartType.MEDIAL));
@@ -335,6 +336,135 @@ public class a extends evaluation {
 
     private String nullToEmpty(String s) {
         return s == null ? "" : s;
+    }
+
+    private String splitToLines(String text) {
+        if (text == null) return "";
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) return "";
+        String[] parts = trimmed.split("\\s+");
+        if (parts.length <= 1) return trimmed;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            if (parts[i].isEmpty()) continue;
+            if (sb.length() > 0) sb.append("\n");
+            sb.append(parts[i]);
+        }
+        return sb.toString();
+    }
+
+    private String buildZeroInitialPinyin(String vowel) {
+        if (vowel == null || vowel.isEmpty()) return "";
+        if ("er".equals(vowel)) return "er";
+        if ("i".equals(vowel)) return "yi";
+        if ("u".equals(vowel)) return "wu";
+        if ("ü".equals(vowel)) return "yu";
+        if (vowel.startsWith("i")) return "y" + vowel.substring(1);
+        if (vowel.startsWith("u")) return "w" + vowel.substring(1);
+        if (vowel.startsWith("ü")) return "yu" + vowel.substring(1);
+        return vowel;
+    }
+
+    private String applyContractions(String vowel) {
+        if ("iou".equals(vowel)) return "iu";
+        if ("uei".equals(vowel)) return "ui";
+        if ("uen".equals(vowel)) return "un";
+        return vowel;
+    }
+
+    private String buildSyllable(PhonologyPart part) {
+        if (part == null) return "";
+        String initial = nullToEmpty(part.initial);
+        String medial = nullToEmpty(part.medial);
+        String nucleus = nullToEmpty(part.nucleus);
+        String coda = nullToEmpty(part.coda);
+        String vowel = medial + nucleus + coda;
+        if (initial.isEmpty()) {
+            return buildZeroInitialPinyin(vowel);
+        }
+        String adjustedVowel = applyContractions(vowel);
+        if (("j".equals(initial) || "q".equals(initial) || "x".equals(initial)) && adjustedVowel.startsWith("ü")) {
+            adjustedVowel = "u" + adjustedVowel.substring(1);
+        }
+        return initial + adjustedVowel;
+    }
+
+    private String buildPinyinLines() {
+        String targetText = buildTargetHanzi();
+        if (targetText == null || targetText.isEmpty()) targetText = target;
+        if ((targetWord == null || targetWord.isEmpty()) && targetText != null && !targetText.isEmpty()) {
+            List<CharacterPhonology> lexiconWord = ImageUrls.getATargetWord(targetText);
+            if (lexiconWord != null && !lexiconWord.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                for (CharacterPhonology cp : lexiconWord) {
+                    String syllable = cp == null ? "" : buildSyllable(cp.phonology);
+                    if (sb.length() > 0) sb.append("\n");
+                    sb.append(syllable);
+                }
+                if (sb.length() > 0) return sb.toString();
+            }
+        }
+        if (pinyin != null && !pinyin.isEmpty()) {
+            int hanziCount = (targetWord != null && !targetWord.isEmpty())
+                    ? targetWord.size()
+                    : (targetText == null ? 1 : Math.max(1, targetText.length()));
+            return splitPinyinByHanzi(pinyin, hanziCount);
+        }
+        if (targetWord != null && !targetWord.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (CharacterPhonology cp : targetWord) {
+                String syllable = cp == null ? "" : buildSyllable(cp.phonology);
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(syllable);
+            }
+            if (sb.length() > 0) return sb.toString();
+        }
+        if (targetText != null && !targetText.isEmpty()) {
+            String mapped = ImageUrls.getAPinyin(targetText);
+            if (mapped != null && !mapped.isEmpty()) return splitPinyinByHanzi(mapped, targetText.length());
+        }
+        if (target != null && !target.isEmpty()) return target;
+        String built = buildTargetHanzi();
+        return built == null ? "" : built;
+    }
+
+    private String splitPinyinByHanzi(String pinyinText, int hanziCount) {
+        if (pinyinText == null) return "";
+        if (hanziCount <= 1) return pinyinText;
+        String[] tokens = pinyinText.trim().split("\\s+");
+        if (tokens.length == hanziCount) return splitToLines(pinyinText);
+        if (tokens.length > 1) return splitToLines(pinyinText);
+        return guessSplitFromPhonology(pinyinText, hanziCount);
+    }
+
+    private String guessSplitFromPhonology(String pinyinText, int hanziCount) {
+        if (targetWord == null || targetWord.isEmpty() || hanziCount <= 1) return pinyinText;
+        String continuous = pinyinText.trim();
+        if (continuous.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        int offset = 0;
+        for (int i = 0; i < targetWord.size(); i++) {
+            CharacterPhonology cp = targetWord.get(i);
+            String syllable = cp == null ? "" : buildSyllable(cp.phonology);
+            if (syllable.isEmpty()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append("");
+                continue;
+            }
+            int len = syllable.length();
+            String part;
+            if (offset + len <= continuous.length()) {
+                part = continuous.substring(offset, offset + len);
+            } else if (offset < continuous.length()) {
+                part = continuous.substring(offset);
+            } else {
+                part = "";
+            }
+            if (sb.length() > 0) sb.append("\n");
+            sb.append(part);
+            offset = Math.min(continuous.length(), offset + len);
+        }
+        return sb.toString();
     }
 
     @Override
@@ -707,6 +837,12 @@ public class a extends evaluation {
 
     private String computePinyinFallback() {
         if (pinyin != null && !pinyin.isEmpty()) return pinyin;
+        String targetText = buildTargetHanzi();
+        if (targetText == null || targetText.isEmpty()) targetText = target;
+        if (targetText != null && !targetText.isEmpty()) {
+            String mapped = ImageUrls.getAPinyin(targetText);
+            if (mapped != null && !mapped.isEmpty()) return mapped;
+        }
         if (targetWord != null && !targetWord.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (CharacterPhonology cp : targetWord) {
