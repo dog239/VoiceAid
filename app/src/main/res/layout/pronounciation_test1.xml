@@ -146,77 +146,100 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/ll_phonology_container"
+                    android:id="@+id/ll_phonology_row"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
+                    android:orientation="horizontal"
                     android:layout_marginTop="@dimen/articulation_table_top_gap">
 
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:id="@+id/ll_phonology_container"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
+                        android:layout_weight="5"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/articulation_cell_size"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:padding="0dp"
+                                android:background="@drawable/table"
+                                android:text="汉字"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/articulation_cell_size"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:padding="0dp"
+                                android:background="@drawable/table"
+                                android:text="声母" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/articulation_cell_size"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:padding="0dp"
+                                android:background="@drawable/table"
+                                android:text="韵头" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/articulation_cell_size"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:padding="0dp"
+                                android:background="@drawable/table"
+                                android:text="韵腹" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/articulation_cell_size"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:padding="0dp"
+                                android:background="@drawable/table"
+                                android:text="韵尾" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/ll_inducible_panel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="6dp">
 
                         <TextView
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="@dimen/articulation_cell_size"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:includeFontPadding="false"
-                            android:padding="0dp"
-                            android:background="@drawable/table"
-                            android:text="汉字"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="@dimen/articulation_cell_size"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:includeFontPadding="false"
-                            android:padding="0dp"
-                            android:background="@drawable/table"
-                            android:text="声母" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="@dimen/articulation_cell_size"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:includeFontPadding="false"
-                            android:padding="0dp"
-                            android:background="@drawable/table"
-                            android:text="韵头" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="@dimen/articulation_cell_size"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:includeFontPadding="false"
-                            android:padding="0dp"
-                            android:background="@drawable/table"
-                            android:text="韵腹" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="@dimen/articulation_cell_size"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:includeFontPadding="false"
-                            android:padding="0dp"
-                            android:background="@drawable/table"
-                            android:text="韵尾" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="@dimen/articulation_cell_size"
-                            android:layout_weight="1"
                             android:gravity="center"
                             android:includeFontPadding="false"
                             android:padding="0dp"
                             android:background="@drawable/table"
                             android:text="可诱发" />
+
+                        <LinearLayout
+                            android:id="@+id/ll_inducible_container"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
                     </LinearLayout>
 
                 </LinearLayout>
@@ -232,7 +255,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="回答情况："
+                        android:text="错误类型："
                         android:textColor="@color/black"
                         android:textSize="16sp" />
 

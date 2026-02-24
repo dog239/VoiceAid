@@ -779,12 +779,17 @@ public class a extends evaluation {
         });
 
         LinearLayout phonologyContainer = view.findViewById(R.id.ll_phonology_container);
+        LinearLayout inducibleContainer = view.findViewById(R.id.ll_inducible_container);
         ensureAnswerSizeFromTarget();
-        renderPhonologyTable(phonologyContainer);
+        // 可诱发从表格中移出，右侧单独一列，保持每行高度一致
+        renderPhonologyTable(phonologyContainer, inducibleContainer);
     }
 
-    private void renderPhonologyTable(LinearLayout container) {
+    private void renderPhonologyTable(LinearLayout container, LinearLayout inducibleContainer) {
         container.removeViews(1, Math.max(0, container.getChildCount() - 1));
+        if (inducibleContainer != null) {
+            inducibleContainer.removeAllViews();
+        }
         if (targetWord == null) return;
         int cellSize = container.getResources().getDimensionPixelSize(R.dimen.articulation_cell_size);
         for (int i = 0; i < targetWord.size(); i++) {
@@ -808,41 +813,47 @@ public class a extends evaluation {
             EditText etMedial = createPartEdit(container, ansCp != null && ansCp.phonology != null ? ansCp.phonology.medial : "");
             EditText etNucleus = createPartEdit(container, ansCp != null && ansCp.phonology != null ? ansCp.phonology.nucleus : "");
             EditText etCoda = createPartEdit(container, ansCp != null && ansCp.phonology != null ? ansCp.phonology.coda : "");
-            CheckBox cbInd = new CheckBox(container.getContext());
-            LinearLayout.LayoutParams cbParams = new LinearLayout.LayoutParams(0, cellSize, 1);
-            cbInd.setLayoutParams(cbParams);
-            cbInd.setGravity(android.view.Gravity.CENTER);
-            cbInd.setIncludeFontPadding(false);
-            cbInd.setPadding(0, 0, 0, 0);
-            cbInd.setMinWidth(0);
-            cbInd.setMinHeight(0);
-            cbInd.setButtonDrawable(null);
-            cbInd.setBackgroundResource(R.drawable.table);
-            boolean isChecked = ansCp != null && ansCp.phonology != null && ansCp.phonology.isInducible;
-            cbInd.setChecked(isChecked);
-            cbInd.setText(isChecked ? "✔" : "");
 
             row.addView(etInitial);
             row.addView(etMedial);
             row.addView(etNucleus);
             row.addView(etCoda);
-            row.addView(cbInd);
 
             final int idx = i;
-            cbInd.setOnCheckedChangeListener((buttonView, checked) -> {
-                ensureAnswerSizeFromTarget();
-                CharacterPhonology cpAns = answerPhonology.get(idx);
-                if (cpAns.phonology == null) cpAns.phonology = new PhonologyPart();
-                cpAns.phonology.isInducible = checked;
-                cbInd.setText(checked ? "✔" : "");
-            });
-
             etInitial.addTextChangedListener(simpleWatcher(text -> setAns(idx, part -> part.initial = text)));
             etMedial.addTextChangedListener(simpleWatcher(text -> setAns(idx, part -> part.medial = text)));
             etNucleus.addTextChangedListener(simpleWatcher(text -> setAns(idx, part -> part.nucleus = text)));
             etCoda.addTextChangedListener(simpleWatcher(text -> setAns(idx, part -> part.coda = text)));
 
             container.addView(row);
+
+            // 右侧“可诱发”列：每个汉字一格，用勾选表示是否可诱发
+            if (inducibleContainer != null) {
+                CheckBox cbInd = new CheckBox(container.getContext());
+                LinearLayout.LayoutParams cbParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, cellSize);
+                cbInd.setLayoutParams(cbParams);
+                cbInd.setGravity(android.view.Gravity.CENTER);
+                cbInd.setIncludeFontPadding(false);
+                cbInd.setPadding(0, 0, 0, 0);
+                cbInd.setMinWidth(0);
+                cbInd.setMinHeight(0);
+                cbInd.setButtonDrawable(null);
+                cbInd.setBackgroundResource(R.drawable.table);
+                boolean isChecked = ansCp != null && ansCp.phonology != null && ansCp.phonology.isInducible;
+                cbInd.setChecked(isChecked);
+                cbInd.setText(isChecked ? "✔" : "");
+
+                cbInd.setOnCheckedChangeListener((buttonView, checked) -> {
+                    ensureAnswerSizeFromTarget();
+                    CharacterPhonology cpAns = answerPhonology.get(idx);
+                    if (cpAns.phonology == null) cpAns.phonology = new PhonologyPart();
+                    cpAns.phonology.isInducible = checked;
+                    cbInd.setText(checked ? "✔" : "");
+                });
+
+                inducibleContainer.addView(cbInd);
+            }
         }
     }
 
