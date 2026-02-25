@@ -1058,9 +1058,9 @@ public class a extends evaluation {
                 || !(views[4] instanceof EditText)
                 || !(views[5] instanceof EditText)
                 || !(views[6] instanceof EditText)
-                || !(views[7] instanceof EditText)
+                || !(views[7] instanceof Spinner)
                 || !(views[8] instanceof Spinner)
-                || !(views[9] instanceof Spinner)) {
+                || !(views[9] instanceof EditText)) {
             return;
         }
 
@@ -1068,9 +1068,9 @@ public class a extends evaluation {
         EditText etMedial = (EditText) views[4];
         EditText etNucleus = (EditText) views[5];
         EditText etCoda = (EditText) views[6];
-        EditText etInducible = (EditText) views[9];
         Spinner spError = (Spinner) views[7];
         Spinner spProcess = (Spinner) views[8];
+        EditText etInducible = (EditText) views[9];
 
         EditText[] cells = new EditText[]{etInitial, etMedial, etNucleus, etCoda, null, null, etInducible};
         PartType[] partMap = new PartType[]{PartType.INITIAL, PartType.MEDIAL, PartType.NUCLEUS, PartType.CODA, null, null, null};
@@ -1185,6 +1185,15 @@ public class a extends evaluation {
                 notifyArticulationChanged(updateListener);
             }));
         }
+    }
+
+    private static int findOptionIndex(String value, String[] options) {
+        if (options == null) return 0;
+        if (value == null) return 0;
+        for (int i = 0; i < options.length; i++) {
+            if (value.equals(options[i])) return i;
+        }
+        return 0;
     }
 
     private void updateAnswerPartsFromLines(String text, PartType type) {
