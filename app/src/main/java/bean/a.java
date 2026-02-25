@@ -117,6 +117,10 @@ public class a extends evaluation {
             "卷舌化"
     };
 
+    // 结果表音系历程下拉的复用标记
+    private static final int TAG_PHONOLOGY_PROCESS_LISTENER = R.id.tag_phonology_process_listener;
+    private static final int TAG_ERROR_TYPE_LISTENER = R.id.tag_error_type_listener;
+
     public a(int num, String target, String progress, String target_tone1, String target_tone2, bean.audio audio, String time) {
         super(num);
         this.target = target;
@@ -252,47 +256,54 @@ public class a extends evaluation {
         this.time = time;
     }
 
+    private static void setTextIfTextView(View view, String text) {
+        if (view instanceof TextView) {
+            ((TextView) view).setText(text);
+        }
+    }
+
     @Override
     public int handle(View[] views, int position) {
         // 词条序号 | 词条 | 拼音 | 声母 | 韵头 | 韵腹 | 韵尾 | 错误类型 | 音系历程 | 是否可诱发 | 录音
         for (int i = 0; i < views.length; i++) views[i].setVisibility(View.GONE);
         for (int i = 0; i < 11 && i < views.length; i++) views[i].setVisibility(View.VISIBLE);
         if (position == 0) {
-            ((TextView) views[0]).setText("词条序号");
-            ((TextView) views[1]).setText("词条");
-            ((TextView) views[2]).setText("拼音");
-            ((TextView) views[3]).setText("声母");
-            ((TextView) views[4]).setText("韵头");
-            ((TextView) views[5]).setText("韵腹");
-            ((TextView) views[6]).setText("韵尾");
-            ((TextView) views[7]).setText("错误类型");
-            ((TextView) views[8]).setText("音系历程");
-            ((TextView) views[9]).setText("是否可诱发");
-            if (views.length > 10) ((TextView) views[10]).setText("录音");
+            setTextIfTextView(views[0], "词条序号");
+            setTextIfTextView(views[1], "词条");
+            setTextIfTextView(views[2], "拼音");
+            setTextIfTextView(views[3], "声母");
+            setTextIfTextView(views[4], "韵头");
+            setTextIfTextView(views[5], "韵腹");
+            setTextIfTextView(views[6], "韵尾");
+            setTextIfTextView(views[7], "错误类型");
+            setTextIfTextView(views[8], "音系历程");
+            setTextIfTextView(views[9], "是否可诱发");
+            if (views.length > 10) setTextIfTextView(views[10], "录音");
         } else {
-            ((TextView) views[0]).setText(String.valueOf(num));
-            ((TextView) views[1]).setText(getCachedTargetHanzi());
+            setTextIfTextView(views[0], String.valueOf(num));
+            setTextIfTextView(views[1], getCachedTargetHanzi());
             String pinyinValue = getCachedPinyinLines();
-            ((TextView) views[2]).setText(pinyinValue == null ? "" : pinyinValue);
-            ((TextView) views[3]).setText(getCachedJoinedParts(PartType.INITIAL));
-            ((TextView) views[4]).setText(getCachedJoinedParts(PartType.MEDIAL));
-            ((TextView) views[5]).setText(getCachedJoinedParts(PartType.NUCLEUS));
-            ((TextView) views[6]).setText(getCachedJoinedParts(PartType.CODA));
-            ((TextView) views[7]).setText(errorType == null ? "" : errorType);
+            setTextIfTextView(views[2], pinyinValue == null ? "" : pinyinValue);
+            setTextIfTextView(views[3], getCachedJoinedParts(PartType.INITIAL));
+            setTextIfTextView(views[4], getCachedJoinedParts(PartType.MEDIAL));
+            setTextIfTextView(views[5], getCachedJoinedParts(PartType.NUCLEUS));
+            setTextIfTextView(views[6], getCachedJoinedParts(PartType.CODA));
+            setTextIfTextView(views[7], errorType == null ? "" : errorType);
             if (views.length > 8) {
-                ((TextView) views[8]).setText(phonologyProcess == null ? "" : phonologyProcess);
+                setTextIfTextView(views[8], phonologyProcess == null ? "" : phonologyProcess);
             }
             if (views.length > 9) {
-                ((TextView) views[9]).setText(getCachedInducible());
+                setTextIfTextView(views[9], getCachedInducible());
             }
-            if (views.length > 10) {
+            if (views.length > 10 && views[10] instanceof TextView) {
+                TextView audioView = (TextView) views[10];
                 if (audio != null && time != null) {
-                    ((TextView) views[10]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
-                    ((TextView) views[10]).setText(ResultContext.getInstance().getContext().getString(R.string.audio));
-                    AudioPlayer.getInstance().addIcon((TextView) views[10]);
+                    audioView.setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
+                    audioView.setText(ResultContext.getInstance().getContext().getString(R.string.audio));
+                    AudioPlayer.getInstance().addIcon(audioView);
                     views[10].setOnClickListener(v -> AudioPlayer.getInstance().play(audio.getPath(), position - 1));
                 } else {
-                    ((TextView) views[10]).setText("");
+                    audioView.setText("");
                 }
             }
         }
@@ -1013,12 +1024,24 @@ public class a extends evaluation {
         }
     }
 
-    public void bindEditable(View[] views, int position, adapter.resultadapter.ResultUpdateListener updateListener) {
-        bindEditable(views, position, updateListener, true, -1);
+    private static void attachSpinnerListener(Spinner spinner, AdapterView.OnItemSelectedListener listener) {
+        if (spinner == null) return;
+        Object old = spinner.getTag(TAG_PHONOLOGY_PROCESS_LISTENER);
+        if (old instanceof AdapterView.OnItemSelectedListener) {
+            spinner.setOnItemSelectedListener(null);
+        }
+        spinner.setOnItemSelectedListener(listener);
+        spinner.setTag(TAG_PHONOLOGY_PROCESS_LISTENER, listener);
     }
 
-    public void bindEditable(View[] views, int position, adapter.resultadapter.ResultUpdateListener updateListener, boolean editable) {
-        bindEditable(views, position, updateListener, editable, -1);
+    private static void attachErrorSpinnerListener(Spinner spinner, AdapterView.OnItemSelectedListener listener) {
+        if (spinner == null) return;
+        Object old = spinner.getTag(TAG_ERROR_TYPE_LISTENER);
+        if (old instanceof AdapterView.OnItemSelectedListener) {
+            spinner.setOnItemSelectedListener(null);
+        }
+        spinner.setOnItemSelectedListener(listener);
+        spinner.setTag(TAG_ERROR_TYPE_LISTENER, listener);
     }
 
     public void bindEditable(View[] views, int position, adapter.resultadapter.ResultUpdateListener updateListener, boolean editable, int cellIndex) {
@@ -1036,8 +1059,8 @@ public class a extends evaluation {
                 || !(views[5] instanceof EditText)
                 || !(views[6] instanceof EditText)
                 || !(views[7] instanceof EditText)
-                || !(views[8] instanceof EditText)
-                || !(views[9] instanceof EditText)) {
+                || !(views[8] instanceof Spinner)
+                || !(views[9] instanceof Spinner)) {
             return;
         }
 
@@ -1045,25 +1068,47 @@ public class a extends evaluation {
         EditText etMedial = (EditText) views[4];
         EditText etNucleus = (EditText) views[5];
         EditText etCoda = (EditText) views[6];
-        EditText etError = (EditText) views[7];
-        EditText etProcess = (EditText) views[8];
         EditText etInducible = (EditText) views[9];
+        Spinner spError = (Spinner) views[7];
+        Spinner spProcess = (Spinner) views[8];
 
-        EditText[] cells = new EditText[]{etInitial, etMedial, etNucleus, etCoda, etError, etProcess, etInducible};
+        EditText[] cells = new EditText[]{etInitial, etMedial, etNucleus, etCoda, null, null, etInducible};
         PartType[] partMap = new PartType[]{PartType.INITIAL, PartType.MEDIAL, PartType.NUCLEUS, PartType.CODA, null, null, null};
 
         for (EditText cell : cells) {
             setEditable(cell, false);
             detachWatcher(cell);
         }
+        spError.setEnabled(false);
+        spError.setOnItemSelectedListener(null);
+        spProcess.setEnabled(false);
+        spProcess.setOnItemSelectedListener(null);
 
         setTextIfChanged(etInitial, getCachedJoinedParts(PartType.INITIAL));
         setTextIfChanged(etMedial, getCachedJoinedParts(PartType.MEDIAL));
         setTextIfChanged(etNucleus, getCachedJoinedParts(PartType.NUCLEUS));
         setTextIfChanged(etCoda, getCachedJoinedParts(PartType.CODA));
-        setTextIfChanged(etError, errorType == null ? "" : errorType);
-        setTextIfChanged(etProcess, phonologyProcess == null ? "" : phonologyProcess);
         setTextIfChanged(etInducible, getCachedInducible());
+
+        ArrayAdapter<String> errorAdapter = (ArrayAdapter<String>) spError.getAdapter();
+        if (errorAdapter == null) {
+            errorAdapter = new ArrayAdapter<>(spError.getContext(), android.R.layout.simple_spinner_dropdown_item, ERROR_TYPE_OPTIONS);
+            spError.setAdapter(errorAdapter);
+        }
+        int errorIndex = findOptionIndex(errorType, ERROR_TYPE_OPTIONS);
+        if (spError.getSelectedItemPosition() != errorIndex) {
+            spError.setSelection(errorIndex, false);
+        }
+
+        ArrayAdapter<String> processAdapter = (ArrayAdapter<String>) spProcess.getAdapter();
+        if (processAdapter == null) {
+            processAdapter = new ArrayAdapter<>(spProcess.getContext(), android.R.layout.simple_spinner_dropdown_item, PHONOLOGY_PROCESS_OPTIONS);
+            spProcess.setAdapter(processAdapter);
+        }
+        int processIndex = findOptionIndex(phonologyProcess, PHONOLOGY_PROCESS_OPTIONS);
+        if (spProcess.getSelectedItemPosition() != processIndex) {
+            spProcess.setSelection(processIndex, false);
+        }
 
         if (!editable) {
             return;
@@ -1075,33 +1120,61 @@ public class a extends evaluation {
                 setFocusableOnly(cell, false);
             }
         }
+        spError.setEnabled(true);
+        spProcess.setEnabled(true);
 
         int localIndex = cellIndex - 3;
         if (localIndex < 0 || localIndex >= cells.length) {
             return;
         }
 
+        if (cellIndex == 7) {
+            // 中文注释：错误类型使用下拉单选，编辑态只允许当前单元格交互
+            attachErrorSpinnerListener(spError, new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                    errorType = ERROR_TYPE_OPTIONS[pos];
+                    if (errorType != null && errorType.isEmpty()) errorType = null;
+                    notifyArticulationChanged(updateListener);
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
+            });
+            // 中文注释：切换到该单元格时自动展开下拉选项
+            spError.post(spError::performClick);
+            return;
+        }
+
+        if (cellIndex == 8) {
+            // 中文注释：音系历程使用下拉单选，编辑态只允许当前单元格交互
+            attachSpinnerListener(spProcess, new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                    phonologyProcess = PHONOLOGY_PROCESS_OPTIONS[pos];
+                    if (phonologyProcess != null && phonologyProcess.isEmpty()) phonologyProcess = null;
+                    notifyArticulationChanged(updateListener);
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
+            });
+            // 中文注释：切换到该单元格时自动展开下拉选项
+            spProcess.post(spProcess::performClick);
+            return;
+        }
+
         EditText active = cells[localIndex];
+        // 中文注释：明确激活当前单元格，保证可输入
+        setEditable(active, true);
         setFocusableOnly(active, true);
 
         PartType type = partMap[localIndex];
         if (type != null) {
             attachWatcher(active, new SimpleTextWatcher(text -> {
                 updateAnswerPartsFromLines(text, type);
-                notifyArticulationChanged(updateListener);
-            }));
-            return;
-        }
-        if (active == etError) {
-            attachWatcher(active, new SimpleTextWatcher(text -> {
-                errorType = emptyToNull(text);
-                notifyArticulationChanged(updateListener);
-            }));
-            return;
-        }
-        if (active == etProcess) {
-            attachWatcher(active, new SimpleTextWatcher(text -> {
-                phonologyProcess = emptyToNull(text);
                 notifyArticulationChanged(updateListener);
             }));
             return;

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="tag_text_watcher" type="id" />
+    <item name="tag_phonology_process_listener" type="id" />
+    <item name="tag_error_type_listener" type="id" />
 </resources>
-

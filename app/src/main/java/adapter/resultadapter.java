@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.AdapterView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -155,6 +156,16 @@ public class resultadapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         }
     }
 
+    private static void setOnClickListenerSafe(View view, View.OnClickListener listener) {
+        if (view instanceof AdapterView) return;
+        view.setOnClickListener(listener);
+    }
+
+    private static void clearClickSafe(View view) {
+        if (view instanceof AdapterView) return;
+        view.setOnClickListener(null);
+    }
+
     private void configureCellClick(ItemViewHolder holder, int position, boolean editable) {
         View itemView = holder.itemView;
         if (!editable && position > 0) {
@@ -168,8 +179,15 @@ public class resultadapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 if (view == null) continue;
                 final int cellIndex = i;
                 // 点击单元格进入编辑态（切换为 EditText 行）。
-                view.setOnClickListener(v -> setEditingPosition(position, cellIndex));
-                view.setOnTouchListener(null);
+                if (view instanceof AdapterView) {
+                    view.setOnTouchListener((v, event) -> {
+                        setEditingPosition(position, cellIndex);
+                        return true;
+                    });
+                } else {
+                    setOnClickListenerSafe(view, v -> setEditingPosition(position, cellIndex));
+                    view.setOnTouchListener(null);
+                }
             }
         } else {
             // 编辑态下由 EditText 自身处理焦点/触摸，但允许切换编辑目标。
@@ -183,18 +201,18 @@ public class resultadapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 if (i >= EDITABLE_START_INDEX && i <= EDITABLE_END_INDEX) {
                     final int cellIndex = i;
                     if (cellIndex == editingCellIndex) {
-                        view.setOnClickListener(null);
+                        clearClickSafe(view);
                         view.setOnTouchListener(null);
                     } else {
                         // 非当前单元格拦截触摸并切换编辑目标。
-                        view.setOnClickListener(null);
+                        clearClickSafe(view);
                         view.setOnTouchListener((v, event) -> {
                             setEditingPosition(position, cellIndex);
                             return true;
                         });
                     }
                 } else {
-                    view.setOnClickListener(null);
+                    clearClickSafe(view);
                     view.setOnTouchListener(null);
                 }
             }
@@ -219,7 +237,7 @@ public class resultadapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         itemView.setOnClickListener(null);
         for (View view : holder.item) {
             if (view != null) {
-                view.setOnClickListener(null);
+                clearClickSafe(view);
             }
         }
     }
