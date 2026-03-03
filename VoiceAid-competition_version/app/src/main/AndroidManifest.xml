@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"
+        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"
+        tools:ignore="ScopedStorage" />
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"
+        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@drawable/head"
+        android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
+        android:roundIcon="@drawable/head"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplicationOhYeahEmptyViewsActivity"
+        android:networkSecurityConfig="@xml/network">
+        <activity
+            android:name=".testactivity"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.file_provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name="login.RegisterActivity"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name=".evmenuactivity"
+            android:screenOrientation="portrait"
+            android:configChanges="keyboardHidden|orientation"
+            android:exported="true" />
+        <activity
+            android:name=".childinfoactivity"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name=".wordtest4result"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name="history.privatehistorylist"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name="history.allhistorylist"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name="history.showprivatechildinformation"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name="login.LoginActivity"
+            android:screenOrientation="portrait"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".resultactivity"
+            android:screenOrientation="portrait"
+            android:configChanges="keyboardHidden|orientation"
+            android:exported="true">
+        </activity>
+        <activity android:name="history.showchildinformation"
+            android:screenOrientation="portrait"
+            android:exported="true"/>
+        <activity android:name="history.historylist"
+            android:screenOrientation="portrait"
+            android:exported="true"/>
+        <activity android:name="audiotest.Audiocheck"
+            android:screenOrientation="portrait"
+            android:exported="true"/>
+        <activity android:name="audiotest.Audiocheckresult"
+            android:screenOrientation="portrait"
+            android:exported="true"/>
+        <activity android:name=".startActivity"
+            android:screenOrientation="portrait"
+            android:exported="true"/>
+        <activity android:name=".deleteactivity"
+            android:screenOrientation="portrait"
+            android:exported="true"/>
+        <activity android:name=".choosemoduleactivity"
+            android:screenOrientation="portrait"
+            android:exported="true"/>
+        <activity
+            android:name=".TreatmentPlanActivity"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+        <activity
+            android:name=".SocialGroupSelectActivity"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name=".SyntaxAbilityEvaluationActivity"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name=".SyntaxComprehensionGroupSelectActivity"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name=".SyntaxExpressionGroupSelectActivity"
+            android:screenOrientation="portrait"
+            android:exported="true" />
+        <activity
+            android:name=".SyntaxResultActivity"
+            android:screenOrientation="portrait"
+            android:configChanges="keyboardHidden|orientation"
+            android:exported="true" />
+    </application>
+
+</manifest>
