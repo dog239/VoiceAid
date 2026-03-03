@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background"
+    android:orientation="vertical"
+    tools:context=".SyntaxAbilityEvaluationActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:text="句法能力评估"
+        android:textColor="@color/black"
+        android:textSize="27sp" />
+
+    <LinearLayout
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="30dp"
+        android:layout_marginTop="30dp"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btn_syntax_comprehension"
+            android:layout_width="match_parent"
+            android:layout_height="170dp"
+            android:layout_marginBottom="15dp"
+            android:background="@drawable/blue_button"
+            android:text="句法理解"
+            android:textSize="30sp"
+            app:backgroundTint="#A4E2A0" />
+
+        <Button
+            android:id="@+id/btn_syntax_expression"
+            android:layout_width="match_parent"
+            android:layout_height="170dp"
+            android:background="@drawable/blue_button"
+            android:text="句法表达"
+            android:textSize="30sp"
+            app:backgroundTint="#98E6F6" />
+
+    </LinearLayout>
+
+</LinearLayout>
