@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="articulation_screen_padding_top">12dp</dimen>
+    <dimen name="articulation_image_max">420dp</dimen>
+    <dimen name="articulation_image_min">280dp</dimen>
+    <dimen name="articulation_question_text">22sp</dimen>
+    <dimen name="articulation_question_padding_v">12dp</dimen>
+    <dimen name="articulation_question_padding_h">20dp</dimen>
+    <dimen name="articulation_panel_padding">16dp</dimen>
+    <dimen name="articulation_panel_padding_top">4dp</dimen>
+    <dimen name="articulation_answer_text">22sp</dimen>
+    <dimen name="articulation_answer_padding_v">6dp</dimen>
+    <dimen name="articulation_section_gap">10dp</dimen>
+    <dimen name="articulation_row_padding_v">6dp</dimen>
+    <dimen name="articulation_field_gap">8dp</dimen>
+    <dimen name="articulation_button_gap">16dp</dimen>
+    <dimen name="articulation_cell_size">56dp</dimen>
+    <dimen name="articulation_cell_border">0dp</dimen>
+    <dimen name="articulation_table_top_gap">6dp</dimen>
+</resources>
