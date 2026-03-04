@@ -632,17 +632,21 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             if (plSuggestions != null) plSuggestions.setVisibility(View.VISIBLE);
 
-            JSONArray jsonArray = data.getJSONObject("evaluations").optJSONArray(MODULE_PL);
-            if (jsonArray == null) {
-                jsonArray = new JSONArray();
-            }
-            evaluations.add(new pl(0, null, null, null, null, null, null));//首行
-            List<pl> plItems = new ArrayList<>();
+            // 先获取场景信息
             JSONObject report = ModuleReportHelper.loadPrelinguisticReport(data);
             String scene = report != null ? report.optString("scene", "") : "";
             if (scene == null || scene.trim().isEmpty()) {
                 scene = "A";
             }
+            
+            // 根据场景获取对应的JSONArray
+            String plKey = "PL_" + scene;
+            JSONArray jsonArray = data.getJSONObject("evaluations").optJSONArray(plKey);
+            if (jsonArray == null) {
+                jsonArray = new JSONArray();
+            }
+            evaluations.add(new pl(0, null, null, null, null, null, null));//首行
+            List<pl> plItems = new ArrayList<>();
             String[] prompts = "B".equals(scene) ? ImageUrls.PL_PROMPTS_B : ImageUrls.PL_PROMPTS_A;
             String[] skills = ImageUrls.PL_SKILLS;
             for(int i=0;i<skills.length;i++){

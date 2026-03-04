@@ -24,10 +24,11 @@ public class testcontext {
     private Boolean allowSwipe = true;//是否允许翻页
 
     private ArrayList<evaluation> evaluations;//测评题目
-    private HashMap<Integer, Integer> groupCounts = new HashMap<>();//每个组的完成题目数量
+    private HashMap<String, Integer> groupCounts = new HashMap<>();//每个场景+组的完成题目数量
     private Integer currentCount = 0;//当前组的完成题目数量
     private Integer lengths = 0;//题目总数
     private Integer groupNumber = 1;//当前评估分组编号
+    private String scene = "A"; // 当前选择的场景
 
     private static testcontext instance;
     public static testcontext getInstance(){
@@ -91,9 +92,10 @@ public class testcontext {
 
     public void incrementCount() {
         this.currentCount++;
-        // 保存到分组计数中
+        // 保存到分组计数中，使用场景+组号作为键
         if (groupNumber != null) {
-            groupCounts.put(groupNumber, currentCount);
+            String key = scene + "_" + groupNumber;
+            groupCounts.put(key, currentCount);
         }
     }
 
@@ -110,15 +112,17 @@ public class testcontext {
     }
 
     public void setGroupNumber(Integer groupNumber) {
-        // 保存当前组的计数
+        // 保存当前组的计数，使用场景+组号作为键
         if (this.groupNumber != null) {
-            groupCounts.put(this.groupNumber, currentCount);
+            String key = scene + "_" + this.groupNumber;
+            groupCounts.put(key, currentCount);
         }
         // 设置新的组号
         this.groupNumber = groupNumber;
-        // 恢复新组的计数，如果没有则设置为0
-        if (groupCounts.containsKey(groupNumber)) {
-            currentCount = groupCounts.get(groupNumber);
+        // 恢复新组的计数，如果没有则设置为0，使用场景+组号作为键
+        String newKey = scene + "_" + groupNumber;
+        if (groupCounts.containsKey(newKey)) {
+            currentCount = groupCounts.get(newKey);
         } else {
             currentCount = 0;
         }
@@ -139,8 +143,7 @@ public class testcontext {
 //        }
 //        return 0;
 //    }
-    public int searchOne(){
-        // 固定使用10作为每组题目数量
+    public int searchOne(){        // 固定使用10作为每组题目数量
         int groupLength = 10;
         if (evaluations == null || evaluations.size() == 0) {
             return 0;
@@ -150,9 +153,10 @@ public class testcontext {
             if(evaluations.get(i) != null && evaluations.get(i).getTime()!=null)
                 this.currentCount++;
         }
-        // 保存到分组计数中
+        // 保存到分组计数中，使用场景+组号作为键
         if (groupNumber != null) {
-            groupCounts.put(groupNumber, currentCount);
+            String key = scene + "_" + groupNumber;
+            groupCounts.put(key, currentCount);
         }
         for(int i = 0; i < groupLength && i < evaluations.size(); i++){
             if(evaluations.get(i) != null && evaluations.get(i).getTime()==null)
@@ -172,6 +176,14 @@ public class testcontext {
         this.lengths = 0;
         this.groupNumber = 1;
         this.groupCounts.clear();
+    }
+
+    public String getScene() {
+        return scene;
+    }
+
+    public void setScene(String scene) {
+        this.scene = scene;
     }
 
 

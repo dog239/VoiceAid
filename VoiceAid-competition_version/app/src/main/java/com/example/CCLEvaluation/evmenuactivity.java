@@ -336,9 +336,8 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             startActivity(intent);
 
         } else if (v.getId() == R.id.btn_prelinguisticTest) {
-            Intent intent = new Intent(this, testactivity.class);
+            Intent intent = new Intent(this, PrelinguisticSceneSelectActivity.class);
             intent.putExtra("fName", fName);
-            intent.putExtra("format", "PL");
             startActivity(intent);
         } else if (v.getId() == R.id.btn_prelinguisticResult) {
             Intent intent = new Intent(this, resultactivity.class);
