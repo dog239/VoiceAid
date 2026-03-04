@@ -10,6 +10,7 @@ import com.example.CCLEvaluation.R;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -140,19 +141,35 @@ public class pl extends evaluation {
         if (startButton != null) {
             startButton.setVisibility(View.GONE);
         }
-        yesButton.setText("有");
-        noButton.setText("无");
+        if (yesButton != null) {
+            yesButton.setText("有");
+        }
+        if (noButton != null) {
+            noButton.setText("无");
+        }
 
-        if (ImageIdList != null && position < ImageIdList.size()) {
-            int resId = ImageIdList.get(position);
-            if (resId != 0) {
-                imageView.setImageResource(resId);
-                imageView.setVisibility(View.VISIBLE);
+        // 根据场景显示固定图片
+        if (imageView != null) {
+            String scene = testcontext.getInstance().getScene();
+            if ("B".equals(scene)) {
+                // 场景B：玩球场景
+                int ballImageResId = view.getContext().getResources().getIdentifier("qy2", "drawable", view.getContext().getPackageName());
+                if (ballImageResId != 0) {
+                    imageView.setImageResource(ballImageResId);
+                    imageView.setVisibility(View.VISIBLE);
+                } else {
+                    imageView.setVisibility(View.GONE);
+                }
             } else {
-                imageView.setVisibility(View.GONE);
+                // 场景A：吹泡泡场景
+                int bubbleImageResId = view.getContext().getResources().getIdentifier("qy1", "drawable", view.getContext().getPackageName());
+                if (bubbleImageResId != 0) {
+                    imageView.setImageResource(bubbleImageResId);
+                    imageView.setVisibility(View.VISIBLE);
+                } else {
+                    imageView.setVisibility(View.GONE);
+                }
             }
-        } else {
-            imageView.setVisibility(View.GONE);
         }
 
         String skillText = skill == null ? "" : skill;
@@ -198,7 +215,13 @@ public class pl extends evaluation {
             object.put("audioPath",JSONObject.NULL);
             object.put("time",JSONObject.NULL);
         }
-        evaluations.getJSONArray("PL").put(object);
+        // 为不同场景使用不同的JSONArray键
+        String scene = testcontext.getInstance().getScene();
+        String plKey = "PL_" + scene;
+        if (!evaluations.has(plKey)) {
+            evaluations.put(plKey, new JSONArray());
+        }
+        evaluations.getJSONArray(plKey).put(object);
     }
 
     private void handleAnswer(int value, int position, TextView counter, TextView timer) {
@@ -215,7 +238,18 @@ public class pl extends evaluation {
 
     private void nextPage(int position,int count, int lengths) {
         int nP = position + 1;
-        if (count >= lengths) {
+        // 检查当前场景的所有题目是否都已完成
+        boolean allQuestionsCompleted = true;
+        for (int i = 0; i < lengths; i++) {
+            if (testcontext.getInstance().getEvaluations() != null && i < testcontext.getInstance().getEvaluations().size()) {
+                evaluation eval = testcontext.getInstance().getEvaluations().get(i);
+                if (eval != null && eval.getTime() == null) {
+                    allQuestionsCompleted = false;
+                    break;
+                }
+            }
+        }
+        if (allQuestionsCompleted) {
             Toast.makeText(testcontext.getInstance().getContext(), "已完成测评题目！", Toast.LENGTH_SHORT).show();
             if (listener != null) {
                 listener.onAllQuestionComplete();

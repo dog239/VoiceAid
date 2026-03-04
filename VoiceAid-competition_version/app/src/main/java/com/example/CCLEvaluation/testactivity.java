@@ -1113,15 +1113,23 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
 
         } else if (this.resolvedKey.equals(MODULE_PL) || FORMAT_PL.equals(this.resolvedKey) || FORMAT_PL.equals(format)) {
+            // 重置测评状态，确保切换场景时不继承之前的状态
+            testcontext.getInstance().resetEvaluationState();
+            
+            // 设置场景信息到testcontext
+            testcontext.getInstance().setScene(scene);
+            
             String[] skills = ImageUrls.PL_SKILLS;
             String[] prompts = "B".equals(scene) ? ImageUrls.PL_PROMPTS_B : ImageUrls.PL_PROMPTS_A;
             String[] imageNames = "B".equals(scene) ? ImageUrls.PL_IMAGES_B : ImageUrls.PL_IMAGES_A;
             int length = skills.length;
             testcontext.getInstance().setLengths(length);
-            JSONArray PL = evaluations.optJSONArray("PL");
+            // 为不同场景使用不同的JSONArray键
+            String plKey = "PL_" + scene;
+            JSONArray PL = evaluations.optJSONArray(plKey);
             if (PL == null) {
                 PL = new JSONArray();
-                evaluations.put("PL", PL);
+                evaluations.put(plKey, PL);
             }
             evTemp = new ArrayList<evaluation>(length);
 
@@ -1158,7 +1166,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             }
 
             testcontext.getInstance().setEvaluations(evTemp);
-            adapter = new testpageradapter(R.layout.word_test1, hasImage ? imageIds : null, Tb, evTemp, null, null, null, counter, timer);
+            adapter = new testpageradapter(R.layout.word_test1, null, Tb, evTemp, null, null, null, counter, timer);
             viewPager.setAdapter(adapter);
             viewPager.setCurrentItem(testcontext.getInstance().searchOne());
 
@@ -1571,6 +1579,15 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                     editor.putString(currentQuestionKey, String.valueOf(viewPager.getCurrentItem()));
                     editor.apply();
                     performCleanup(false);
+                    
+                    // 检查是否是PL模块
+                    boolean isPrelinguistic = MODULE_PL.equals(key) || FORMAT_PL.equals(key) || FORMAT_PL.equals(format);
+                    if (isPrelinguistic) {
+                        // 没做完题，退到场景选择界面
+                        Intent intent = new Intent(this, PrelinguisticSceneSelectActivity.class);
+                        intent.putExtra("fName", fName);
+                        startActivity(intent);
+                    }
                     finish();
                 }, "否", null);
         else
@@ -1631,6 +1648,15 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                     editor.putString(currentQuestionKey, String.valueOf(viewPager.getCurrentItem()));
                     editor.apply();
                     performCleanup(false);
+                    
+                    // 检查是否是PL模块
+                    boolean isPrelinguistic = MODULE_PL.equals(key) || FORMAT_PL.equals(key) || FORMAT_PL.equals(format);
+                    if (isPrelinguistic) {
+                        // 没做完题，退到场景选择界面
+                        Intent intent = new Intent(this, PrelinguisticSceneSelectActivity.class);
+                        intent.putExtra("fName", fName);
+                        startActivity(intent);
+                    }
                     finish();
                 }, "否", null);
             else {
