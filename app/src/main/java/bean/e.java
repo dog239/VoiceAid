@@ -1,0 +1,371 @@
+package bean;
+
+import android.view.View;
+import android.widget.Button;
+import android.widget.GridLayout;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.example.CCLEvaluation.R;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.util.List;
+
+import utils.AudioPlayer;
+import utils.AudioRecorder;
+import utils.ResultContext;
+import utils.testcontext;
+
+/**
+ * 词汇表达（E）
+ */
+public class e extends evaluation {
+    private String target;
+    private Boolean result;
+    private bean.audio audio;
+    private String time;
+
+    private final String colum1 = "序号";
+    private final String colum2 = "测试点";
+    private final String colum3 = "目标词";
+    private final String colum4 = "结果";
+    private final String colum5 = "答题时长";
+    private final String colum6 = "录音";
+    public e(int num, String target, Boolean result, bean.audio audio, String time) {
+        super(num);
+        this.target = target;
+        this.result = result;
+        this.audio = audio;
+        this.time = time;
+    }
+
+    private utils.allquestionlistener listener;
+    public void setAllQuestionListener(utils.allquestionlistener listener){
+        this.listener = listener;
+    }
+
+
+
+    public int getNum() {
+        return num;
+    }
+
+    public void setNum(int num) {
+        this.num = num;
+    }
+
+    public String getTarget() {
+        return target;
+    }
+
+    public void setTarget(String target) {
+        this.target = target;
+    }
+
+    public Boolean getResult() {
+        return result;
+    }
+
+    public void setResult(Boolean result) {
+        this.result = result;
+    }
+
+    public bean.audio getAudio() {
+        return audio;
+    }
+
+    public void setAudio(bean.audio audio) {
+        this.audio = audio;
+    }
+    @Override
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
+    }
+
+    @Override
+    public int handle(View[] views, int position) {
+        for(int i=0;i<6;i++)
+            views[i].setVisibility(View.VISIBLE);
+        if(position==0){
+            ((TextView)views[0]).setText(colum1);
+            ((TextView)views[1]).setText(colum2);
+            ((TextView)views[2]).setText(colum3);
+            ((TextView)views[3]).setText(colum4);
+            ((TextView)views[4]).setText(colum5);
+            ((TextView)views[5]).setText(colum6);
+        }
+        else {
+            ((TextView)views[0]).setText(String.valueOf(num));
+            
+            // 根据题目编号设置测试点
+            String testPoint = "";
+            switch (num) {
+                case 1:
+                    testPoint = "名词";
+                    break;
+                case 3:
+                    testPoint = "动词";
+                    break;
+                case 5:
+                    testPoint = "形容词";
+                    break;
+                case 7:
+                    testPoint = "分类名词（名词上位词）";
+                    break;
+                default:
+                    testPoint = "";
+                    break;
+            }
+            ((TextView)views[1]).setText(testPoint);
+            
+            ((TextView)views[2]).setText(target);
+
+            if(result!=null)
+                ((TextView)views[3]).setText(result? ResultContext.getInstance().getContext().getResources().getString(R.string.right) :
+                        ResultContext.getInstance().getContext().getResources().getString(R.string.wrong));
+            if(audio!=null){
+                ((TextView)views[4]).setText(time);
+                ((TextView)views[5]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
+                ((TextView)views[5]).setText(ResultContext.getInstance().getContext().getResources().getString(R.string.audio));
+                AudioPlayer.getInstance().addIcon((TextView)views[5]);
+                views[5].setOnClickListener(v -> AudioPlayer.getInstance().play(audio.getPath(),position-1));
+            }
+
+        }
+        return 5;
+    }
+
+    @Override
+    public void test(View view, int position, List<Integer> ImageIdList,List<Integer []> ImageGroupIdList,
+                     List<String []> StringGroupIdList,String[] Hint, String[] TabString,
+                     TextView counter, TextView timer) {
+        // 获取图片视图
+        ImageView imageView = view.findViewById(R.id.imageView);
+        GridLayout gridLayout = view.findViewById(R.id.gridLayout);
+        ImageView image1 = view.findViewById(R.id.image1);
+        ImageView image2 = view.findViewById(R.id.image2);
+        Button start = view.findViewById(R.id.btn_start);
+        Button correct = view.findViewById(R.id.btn_right);
+        Button wrong = view.findViewById(R.id.btn_wrong);
+        TextView tv2 = view.findViewById(R.id.tv_2);
+
+        // 隐藏所有图片视图，根据题目位置再显示
+        imageView.setVisibility(View.GONE);
+        gridLayout.setVisibility(View.GONE);
+        image1.setVisibility(View.GONE);
+        image2.setVisibility(View.GONE);
+
+        // 根据题目位置设置不同的提示语格式
+        if (position == 0) {
+            // 第一题：杯子
+            tv2.setText("第"+TabString[position]+"题：这个是____");
+        } else if (position == 1) {
+            // 第二题：耳朵
+            tv2.setText("第"+TabString[position]+"题：这个是____");
+        } else if (position == 2) {
+            // 第三题：睡觉
+            tv2.setText("第"+TabString[position]+"题：小朋友在____");
+        } else if (position == 3) {
+            // 第四题：喝水
+            tv2.setText("第"+TabString[position]+"题：小朋友在____");
+        } else if (position == 4) {
+            // 第五题：红色和蓝色
+            tv2.setText("第"+TabString[position]+"题：这个方块是红色，这个方块是____");
+        } else if (position == 5) {
+            // 第六题：牛仔裤和香蕉
+            tv2.setText("第"+TabString[position]+"题：裤子是衣服，香蕉是____");
+        } else if (position == 6) {
+            // 第七题：短和长
+            tv2.setText("第"+TabString[position]+"题：这根铅笔短，这根铅笔____");
+        }
+        counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
+
+        if(result!=null){
+            // 显示相应的图片
+            if (position < 4) {
+                imageView.setVisibility(View.VISIBLE);
+                if (position < ImageIdList.size()) {
+                    imageView.setImageResource(ImageIdList.get(position));
+                }
+            } else if (position == 4) {
+                gridLayout.setVisibility(View.VISIBLE);
+                image1.setVisibility(View.VISIBLE);
+                image2.setVisibility(View.VISIBLE);
+                if (position < ImageIdList.size()) {
+                    image1.setImageResource(ImageIdList.get(position));
+                }
+                if (position + 1 < ImageIdList.size()) {
+                    image2.setImageResource(ImageIdList.get(position + 1));
+                }
+            } else if (position == 5) {
+                gridLayout.setVisibility(View.VISIBLE);
+                image1.setVisibility(View.VISIBLE);
+                image2.setVisibility(View.VISIBLE);
+                // 显示牛仔裤和香蕉图片
+                if (6 < ImageIdList.size()) {
+                    image1.setImageResource(ImageIdList.get(6));
+                }
+                if (7 < ImageIdList.size()) {
+                    image2.setImageResource(ImageIdList.get(7));
+                }
+            } else if (position == 6) {
+                gridLayout.setVisibility(View.VISIBLE);
+                image1.setVisibility(View.VISIBLE);
+                image2.setVisibility(View.VISIBLE);
+                // 显示短和长图片
+                if (8 < ImageIdList.size()) {
+                    image1.setImageResource(ImageIdList.get(8));
+                }
+                if (9 < ImageIdList.size()) {
+                    image2.setImageResource(ImageIdList.get(9));
+                }
+            }
+            start.setEnabled(false);
+            if(result){
+                correct.setEnabled(false);
+                wrong.setEnabled(true);
+            }
+            else{
+                wrong.setEnabled(false);
+                correct.setEnabled(true);
+            }
+        }
+
+
+        AudioRecorder.OnRefreshUIThreadListener listener = time -> {
+            this.time = time;
+            timer.setText(time);
+        };
+
+
+
+        start.setOnClickListener(v -> {
+            try {
+                testcontext.getInstance().getViewPager().setPagingEnabled(false);
+                start.setEnabled(false);
+                correct.setEnabled(true);
+                wrong.setEnabled(true);
+                // 显示相应的图片
+                if (position < 4) {
+                    imageView.setVisibility(View.VISIBLE);
+                    if (position < ImageIdList.size()) {
+                        imageView.setImageResource(ImageIdList.get(position));
+                    }
+                } else if (position == 4) {
+                    gridLayout.setVisibility(View.VISIBLE);
+                    image1.setVisibility(View.VISIBLE);
+                    image2.setVisibility(View.VISIBLE);
+                    if (position < ImageIdList.size()) {
+                        image1.setImageResource(ImageIdList.get(position));
+                    }
+                    if (position + 1 < ImageIdList.size()) {
+                        image2.setImageResource(ImageIdList.get(position + 1));
+                    }
+                } else if (position == 5) {
+                    gridLayout.setVisibility(View.VISIBLE);
+                    image1.setVisibility(View.VISIBLE);
+                    image2.setVisibility(View.VISIBLE);
+                    // 显示牛仔裤和香蕉图片
+                    if (6 < ImageIdList.size()) {
+                        image1.setImageResource(ImageIdList.get(6));
+                    }
+                    if (7 < ImageIdList.size()) {
+                        image2.setImageResource(ImageIdList.get(7));
+                    }
+                } else if (position == 6) {
+                    gridLayout.setVisibility(View.VISIBLE);
+                    image1.setVisibility(View.VISIBLE);
+                    image2.setVisibility(View.VISIBLE);
+                    // 显示短和长图片
+                    if (8 < ImageIdList.size()) {
+                        image1.setImageResource(ImageIdList.get(8));
+                    }
+                    if (9 < ImageIdList.size()) {
+                        image2.setImageResource(ImageIdList.get(9));
+                    }
+                }
+                AudioRecorder.getInstance().setOnRefreshUIThreadListener(listener);
+                AudioRecorder.getInstance().startRecorder();
+                audio = new audio(AudioRecorder.getInstance().getOutputFilePath());
+                testcontext.getInstance().incrementCount();
+                counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
+
+            } catch (IOException e) {
+                Toast.makeText(testcontext.getInstance().getContext(), "录制失败！", Toast.LENGTH_SHORT).show();
+                throw new RuntimeException(e);
+            }
+        });
+        correct.setOnClickListener(v -> {
+            testcontext.getInstance().getViewPager().setPagingEnabled(true);
+            correct.setEnabled(false);
+            wrong.setEnabled(true);
+            if(audio!=null){
+                AudioRecorder.getInstance().stopRecorder();
+                result = new Boolean(true);
+            }
+            nextPage(position, testcontext.getInstance().getCount(), testcontext.getInstance().getLengths());
+            testcontext.getInstance().setAllowSwipe(true);
+
+        });
+        wrong.setOnClickListener(v -> {
+            testcontext.getInstance().getViewPager().setPagingEnabled(true);
+            correct.setEnabled(true);
+            wrong.setEnabled(false);
+            if(audio!=null){
+                AudioRecorder.getInstance().stopRecorder();
+                result = new Boolean(false);
+            }
+            nextPage(position, testcontext.getInstance().getCount(), testcontext.getInstance().getLengths());
+            testcontext.getInstance().setAllowSwipe(true);
+        });
+
+    }
+
+    @Override
+    public void toJson(JSONObject evaluations) throws JSONException {
+        JSONObject object = new JSONObject();
+        object.put("num",num);
+        object.put("target",target);
+        if(result!=null){
+            object.put("result",result);
+            object.put("audioPath",audio.getPath());
+            object.put("time",time);
+        }
+        else {
+            object.put("result",JSONObject.NULL);
+            object.put("audioPath",JSONObject.NULL);
+            object.put("time",JSONObject.NULL);
+        }
+        evaluations.getJSONArray("E").put(object);
+    }
+
+    private void nextPage(int position,int count, int lengths) {
+        int nP = position + 1;
+        if (count >= lengths) {
+            Toast.makeText(testcontext.getInstance().getContext(), "已完成测评题目！", Toast.LENGTH_SHORT).show();
+            //com.example.CCLEvaluation.testactivity.performCleanup();
+
+            if (listener != null) {
+                listener.onAllQuestionComplete();
+            }
+            // 直接返回菜单界面
+            testcontext.getInstance().getContext().finish();
+            return;
+        }
+        if(nP >= lengths){
+            testcontext.getInstance().getViewPager().setCurrentItem(testcontext.getInstance().searchOne(), true);
+        }
+        else {
+            testcontext.getInstance().getViewPager().setCurrentItem(nP, true);
+        }
+    }
+
+}

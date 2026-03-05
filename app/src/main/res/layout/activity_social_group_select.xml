@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background"
+    android:orientation="vertical"
+    android:paddingTop="10dp"
+    tools:context=".SocialGroupSelectActivity">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="10dp"
+        android:text="社交能力评估"
+        android:textColor="@color/black"
+        android:textSize="27sp" />
+
+    <TextView
+        android:id="@+id/tv_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        android:text="请选择要进行的评估分组"
+        android:textColor="@color/black"
+        android:textSize="20sp" />
+
+    <LinearLayout
+        android:layout_width="204dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp">
+
+        <Button
+            android:id="@+id/btn_group1"
+            android:layout_width="173dp"
+            android:layout_height="90dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/blue_button"
+            android:text="第一组：基础社交互动能力"
+            app:backgroundTint="#A4E2A0" />
+
+        <Button
+            android:id="@+id/btn_group2"
+            android:layout_width="173dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/blue_button"
+            android:text="第二组：社交沟通能力"
+            app:backgroundTint="#F6DB8F" />
+
+        <Button
+            android:id="@+id/btn_group3"
+            android:layout_width="175dp"
+            android:layout_height="90dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/blue_button"
+            android:text="第三组：同伴互动能力"
+            app:backgroundTint="#FAD0A8" />
+
+        <Button
+            android:id="@+id/btn_group4"
+            android:layout_width="175dp"
+            android:layout_height="90dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/blue_button"
+            android:text="第四组：复杂社交能力"
+            app:backgroundTint="#FDC1C1" />
+
+        <Button
+            android:id="@+id/btn_group5"
+            android:layout_width="175dp"
+            android:layout_height="90dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/blue_button"
+            android:text="第五组：高级社交能力"
+            app:backgroundTint="#AFDEF6" />
+
+        <Button
+            android:id="@+id/btn_group6"
+            android:layout_width="175dp"
+            android:layout_height="90dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/blue_button"
+            android:text="第六组：社交责任感"
+            app:backgroundTint="#D0BFED" />
+
+    </LinearLayout>
+
+</LinearLayout>
