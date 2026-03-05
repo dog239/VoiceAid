@@ -24,12 +24,14 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:background="@android:drawable/edit_text"
+        android:background="@null"
+        android:padding="8dp"
+        android:minHeight="48dp"
+        android:textColor="#333333"
         android:hint="请输入内容"
         android:inputType="textMultiLine"
         android:minLines="1"
-        android:padding="6dp"
-        android:textSize="14sp" />
+        android:textSize="15sp" />
 
     <ImageButton
         android:id="@+id/btn_delete_row"

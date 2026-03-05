@@ -14,16 +14,19 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="0.35"
-        android:textColor="@android:color/black"
-        android:textSize="14sp" />
+        android:textColor="#555555"
+        android:textSize="15sp"
+        android:textStyle="bold" />
 
     <EditText
         android:id="@+id/et_value"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="0.65"
-        android:background="@android:drawable/edit_text"
-        android:inputType="text"
-        android:padding="6dp"
-        android:textSize="14sp" />
+        android:background="@null"
+        android:padding="8dp"
+        android:minHeight="48dp"
+        android:textColor="#333333"
+        android:inputType="textMultiLine"
+        android:textSize="15sp" />
 </LinearLayout>

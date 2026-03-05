@@ -70,6 +70,8 @@ public class TreatmentPlanActivity extends AppCompatActivity {
     private final List<String> speechStageNames = new ArrayList<>();
     private TreatmentPlanAdapter adapter;
 
+    private JSONObject mChildData;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,20 +93,20 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         }
 
         JSONObject planObject = parsePlan(planJson);
-        JSONObject childData = null;
+        mChildData = null;
         JSONObject evaluations = null;
         JSONArray evaluationsA = null;
         if (fName != null && !fName.trim().isEmpty()) {
             try {
-                childData = dataManager.getInstance().loadData(fName);
-                evaluations = childData.optJSONObject("evaluations");
+                mChildData = dataManager.getInstance().loadData(fName);
+                evaluations = mChildData.optJSONObject("evaluations");
                 evaluationsA = evaluations == null ? null : evaluations.optJSONArray("A");
             } catch (Exception ignored) {
             }
         }
         currentPlan = ArticulationPlanHelper.ensureArticulation(planObject, evaluationsA);
-        if (childData != null) {
-            ArticulationPlanHelper.applyArticulationReport(currentPlan, childData, evaluationsA);
+        if (mChildData != null) {
+            ArticulationPlanHelper.applyArticulationReport(currentPlan, mChildData, evaluationsA);
         }
         ModuleReportHelper.applyModuleFindings(currentPlan, evaluations);
         items.clear();
@@ -112,17 +114,7 @@ public class TreatmentPlanActivity extends AppCompatActivity {
 
         RecyclerView recyclerView = findViewById(R.id.rv_plan);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new TreatmentPlanAdapter(items, new TreatmentPlanAdapter.ListActionListener() {
-            @Override
-            public void onAddRow(String listPath, int position) {
-                addListRow(listPath, position);
-            }
-
-            @Override
-            public void onRemoveRow(PlanUiItem.ListItem item, int position) {
-                removeListRow(item, position);
-            }
-        });
+        adapter = new TreatmentPlanAdapter(items);
         recyclerView.setAdapter(adapter);
 
         Button exportButton = findViewById(R.id.btn_export_plan_pdf);
@@ -214,31 +206,6 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         return name.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 
-    private void addListRow(String listPath, int position) {
-        PlanUiItem.ListItem newItem = new PlanUiItem.ListItem(listPath, 0, "");
-        items.add(position, newItem);
-        refreshListIndexes(listPath);
-        adapter.notifyItemInserted(position);
-    }
-
-    private void removeListRow(PlanUiItem.ListItem item, int position) {
-        items.remove(position);
-        refreshListIndexes(item.listPath);
-        adapter.notifyItemRemoved(position);
-    }
-
-    private void refreshListIndexes(String listPath) {
-        int index = 0;
-        for (PlanUiItem item : items) {
-            if (item instanceof PlanUiItem.ListItem) {
-                PlanUiItem.ListItem listItem = (PlanUiItem.ListItem) item;
-                if (listPath.equals(listItem.listPath)) {
-                    listItem.index = index++;
-                }
-            }
-        }
-    }
-
     private JSONObject parsePlan(String planJson) {
         if (planJson == null || planJson.trim().isEmpty()) {
             return new JSONObject();
@@ -254,14 +221,15 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         List<PlanUiItem> list = new ArrayList<>();
         speechStageNames.clear();
 
-        JSONObject caseSummary = plan.optJSONObject("case_summary");
-        int ageMonths = caseSummary == null ? 0 : caseSummary.optInt("age_months", 0);
-        String chiefComplaint = caseSummary == null ? "" : caseSummary.optString("chief_complaint", "");
-        List<String> keyFindings = getStringList(caseSummary, "key_findings");
+        // 1. 个人信息模块
+        list.add(new PlanUiItem.SectionDivider("个人信息"));
+        list.add(buildPersonalInfoCard());
 
-        list.add(new PlanUiItem.CardHeader(CARD_BASE_INFO, "card_base_info", true, true));
-        list.add(new PlanUiItem.KeyValue("case_summary.chief_complaint", "\u4e3b\u8bc9", chiefComplaint, InputType.TYPE_CLASS_TEXT));
-        list.add(new PlanUiItem.CardEnd());
+        // 2. 干预指导模块
+        list.add(new PlanUiItem.SectionDivider("干预指导"));
+
+        JSONObject caseSummary = plan.optJSONObject("case_summary");
+        List<String> keyFindings = getStringList(caseSummary, "key_findings");
 
         JSONObject modulePlan = plan.optJSONObject("module_plan");
         addModuleCard(list, CARD_SPEECH_SOUND, "speech_sound",
@@ -275,178 +243,168 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         addModuleCard(list, CARD_SOCIAL, "social_pragmatics",
                 modulePlan == null ? null : modulePlan.optJSONObject("social_pragmatics"), false, keyFindings);
 
-        // TODO(隐藏需求): 频次建议与备注区块暂时隐藏，后续恢复时取消注释。
-        /*
-        JSONObject schedule = plan.optJSONObject("schedule_recommendation");
-        int sessionsPerWeek = schedule == null ? 0 : schedule.optInt("sessions_per_week", 0);
-        int minutesPerSession = schedule == null ? 0 : schedule.optInt("minutes_per_session", 0);
-        int reviewWeeks = schedule == null ? 0 : schedule.optInt("review_in_weeks", 0);
-
-        list.add(new PlanUiItem.CardHeader(CARD_SCHEDULE, "card_schedule", true, true));
-        list.add(new PlanUiItem.KeyValue("schedule_recommendation.sessions_per_week", "\u6bcf\u5468\u6b21\u6570", String.valueOf(sessionsPerWeek), InputType.TYPE_CLASS_NUMBER));
-        list.add(new PlanUiItem.KeyValue("schedule_recommendation.minutes_per_session", "\u6bcf\u6b21\u65f6\u957f\u0028\u5206\u949f\u0029", String.valueOf(minutesPerSession), InputType.TYPE_CLASS_NUMBER));
-        list.add(new PlanUiItem.KeyValue("schedule_recommendation.review_in_weeks", "\u590d\u8bc4\u5468\u671f\u0028\u5468\u0029", String.valueOf(reviewWeeks), InputType.TYPE_CLASS_NUMBER));
-        list.add(new PlanUiItem.CardEnd());
-
-        list.add(new PlanUiItem.CardHeader(CARD_NOTES_THERAPIST, "card_notes_therapist", true, true));
-        addListGroup(list, null, "notes_for_therapist", getStringList(plan, "notes_for_therapist"), 1);
-        list.add(new PlanUiItem.CardEnd());
-
-        list.add(new PlanUiItem.CardHeader(CARD_NOTES_PARENTS, "card_notes_parents", true, true));
-        addListGroup(list, null, "notes_for_parents", getStringList(plan, "notes_for_parents"), 1);
-        list.add(new PlanUiItem.CardEnd());
-        */
-
         return list;
+    }
+
+    private PlanUiItem.ModuleCard buildPersonalInfoCard() {
+        List<PlanUiItem> children = new ArrayList<>();
+        JSONObject info = mChildData == null ? null : mChildData.optJSONObject("info");
+        
+        String name = info == null ? "" : info.optString("name", "");
+        String gender = "";
+        if (info != null && info.has("gender")) {
+            int g = info.optInt("gender");
+            gender = g == 0 ? "男" : (g == 1 ? "女" : "");
+        }
+        String birthday = info == null ? "" : info.optString("birthday", "");
+        String address = info == null ? "" : info.optString("address", "");
+        
+        // 计算年龄
+        int ageMonths = getExistingAgeMonths();
+        String ageStr = formatAgeMonths(ageMonths);
+
+        children.add(new PlanUiItem.KeyValue("info.name", "姓名", name, InputType.TYPE_CLASS_TEXT));
+        children.add(new PlanUiItem.KeyValue("info.gender", "性别", gender, InputType.TYPE_CLASS_TEXT));
+        children.add(new PlanUiItem.KeyValue("info.birthday", "出生日期", birthday, InputType.TYPE_DATETIME_VARIATION_DATE));
+        children.add(new PlanUiItem.KeyValue("case_summary.age_months", "年龄", ageStr, InputType.TYPE_CLASS_TEXT));
+        children.add(new PlanUiItem.KeyValue("info.address", "家庭住址", address, InputType.TYPE_CLASS_TEXT));
+
+        String contact = info == null ? "" : info.optString("contact", "");
+        if (!contact.isEmpty()) {
+            children.add(new PlanUiItem.KeyValue("info.contact", "联系方式", contact, InputType.TYPE_CLASS_PHONE));
+        }
+
+        return new PlanUiItem.ModuleCard("基本信息", "base_info", children);
     }
 
     private void addModuleCard(List<PlanUiItem> list, String label, String moduleKey, JSONObject moduleObj,
                                boolean speech, List<String> caseFindings) {
-        list.add(new PlanUiItem.CardHeader(label, "card_module_" + moduleKey, true, true));
+        list.add(new PlanUiItem.ModuleCard(label, moduleKey, buildModuleChildren(moduleKey, moduleObj, speech, caseFindings)));
+    }
+
+    private List<PlanUiItem> buildModuleChildren(String moduleKey, JSONObject moduleObj, boolean speech, List<String> caseFindings) {
+        List<PlanUiItem> children = new ArrayList<>();
+        
+        // 1. 测试结果 (InfoBox)
+        List<PlanUiItem> findingsItems = new ArrayList<>();
         String findingsTitle = speech ? SECTION_TEST_RESULTS : SECTION_FINDINGS;
-        list.add(new PlanUiItem.SectionHeader(findingsTitle, 1));
         List<String> moduleFindings = getStringList(moduleObj, "key_findings");
-        if (speech) {
-            addListGroup(list, null, "module_plan." + moduleKey + ".key_findings", moduleFindings, 2);
+        
+        String findingPath = "module_plan." + moduleKey + ".key_findings";
+        if (moduleFindings.isEmpty()) {
+             findingsItems.add(new PlanUiItem.ListItem(findingPath, 0, ""));
         } else {
-            list.add(new PlanUiItem.ListMirror(null, moduleFindings, PLACEHOLDER_TEXT));
+             for (int i = 0; i < moduleFindings.size(); i++) {
+                 findingsItems.add(new PlanUiItem.ListItem(findingPath, i, moduleFindings.get(i)));
+             }
         }
+        findingsItems.add(new PlanUiItem.AddButton(findingPath, "新增一条结果"));
+        children.add(new PlanUiItem.InfoBox(findingsTitle, findingsItems));
 
-        list.add(new PlanUiItem.SectionHeader(SECTION_PLAN, 1));
+        // 2. 干预计划内容
         if (speech && hasArticulationPlan(moduleObj)) {
-            addSpeechArticulationPlan(list, moduleObj);
+            addSpeechArticulationPlan(children, moduleObj);
         } else {
-            addListGroup(list, "\u76ee\u6807", "module_plan." + moduleKey + ".targets",
-                    getStringList(moduleObj, "targets"), 2);
-            if (speech) {
-                List<String> methods = getStringList(moduleObj, "methods");
-                if (methods.isEmpty()) {
-                    methods = getStringList(moduleObj, "activities");
-                }
-                addListGroup(list, "\u65b9\u6cd5", "module_plan." + moduleKey + ".methods", methods, 2);
-            } else {
-                List<String> activities = getStringList(moduleObj, "activities");
-                if (activities.isEmpty()) {
-                    activities = getStringList(moduleObj, "methods");
-                }
-                addListGroup(list, "\u6d3b\u52a8", "module_plan." + moduleKey + ".activities", activities, 2);
-            }
-            addListGroup(list, "\u5bb6\u5ead\u7ec3\u4e60", "module_plan." + moduleKey + ".home_practice",
-                    getStringList(moduleObj, "home_practice"), 2);
-            // \u8bc4\u4f30\u6307\u6807\u533a\u5757\u6682\u65f6\u4e0d\u5c55\u793a\u3002
-            if (speech) {
-                list.add(new PlanUiItem.SectionHeader(SECTION_STAGES, 1));
-                addSpeechStageCards(list, moduleObj);
-            }
+            addListGroupToChildren(children, "目标", "module_plan." + moduleKey + ".targets",
+                    getStringList(moduleObj, "targets"));
+            
+            List<String> methods = getStringList(moduleObj, "methods");
+            if (methods.isEmpty()) methods = getStringList(moduleObj, "activities");
+            addListGroupToChildren(children, "活动/方法", "module_plan." + moduleKey + ".methods", methods);
+            
+            addListGroupToChildren(children, "家庭练习", "module_plan." + moduleKey + ".home_practice",
+                    getStringList(moduleObj, "home_practice"));
         }
-        list.add(new PlanUiItem.CardEnd());
+        return children;
     }
 
-    private void addSpeechStageCards(List<PlanUiItem> list, JSONObject moduleObj) {
-        JSONArray stages = moduleObj == null ? null : moduleObj.optJSONArray("stages");
-        int stageCount = Math.max(stages == null ? 0 : stages.length(), DEFAULT_SPEECH_STAGE_NAMES.length);
-        for (int i = 0; i < stageCount; i++) {
-            JSONObject stageObj = stages == null ? null : stages.optJSONObject(i);
-            String name = stageObj == null ? "" : stageObj.optString("name", "");
-            if (name == null || name.trim().isEmpty()) {
-                name = i < DEFAULT_SPEECH_STAGE_NAMES.length ? DEFAULT_SPEECH_STAGE_NAMES[i] : "\u9636\u6bb5" + (i + 1);
-            }
-            speechStageNames.add(name);
-            list.add(new PlanUiItem.StageHeader(name));
-            // stages\u4f7f\u7528 module_plan.speech_sound.stages[i].<field> \u8def\u5f84\u56de\u5199 JSON
-            String base = "module_plan.speech_sound.stages[" + i + "]";
-            addListGroup(list, "\u8bad\u7ec3\u91cd\u70b9", base + ".focus",
-                    getStringList(stageObj, "focus"), 3);
-            addListGroup(list, "\u6d3b\u52a8", base + ".activities",
-                    getStringList(stageObj, "activities"), 3);
-            addListGroup(list, "\u5bb6\u5ead\u7ec3\u4e60", base + ".home_practice",
-                    getStringList(stageObj, "home_practice"), 3);
-            // \u8bc4\u4f30\u6307\u6807\u533a\u5757\u6682\u65f6\u4e0d\u5c55\u793a\u3002
-            list.add(new PlanUiItem.StageEnd());
-        }
-    }
-
-    private boolean hasArticulationPlan(JSONObject moduleObj) {
-        return moduleObj != null && moduleObj.optJSONObject("articulation") != null;
-    }
-
-    private void addSpeechArticulationPlan(List<PlanUiItem> list, JSONObject moduleObj) {
-        if (moduleObj == null) {
-            return;
-        }
+    private void addSpeechArticulationPlan(List<PlanUiItem> children, JSONObject moduleObj) {
+        if (moduleObj == null) return;
         JSONObject articulation = moduleObj.optJSONObject("articulation");
-        if (articulation == null) {
-            return;
-        }
+        if (articulation == null) return;
         String base = "module_plan.speech_sound.articulation";
 
         JSONObject overall = articulation.optJSONObject("overall_summary");
-        list.add(new PlanUiItem.SectionHeader(SECTION_ARTICULATION_OVERALL, 2));
-        list.add(new PlanUiItem.KeyValue(base + ".overall_summary.text", LABEL_OVERALL_SUMMARY,
+        children.add(new PlanUiItem.SectionHeader(SECTION_ARTICULATION_OVERALL, 2));
+        children.add(new PlanUiItem.KeyValue(base + ".overall_summary.text", LABEL_OVERALL_SUMMARY,
                 overall == null ? "" : overall.optString("text", ""),
                 InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE));
 
         JSONObject mastered = articulation.optJSONObject("mastered");
-        list.add(new PlanUiItem.SectionHeader(SECTION_ARTICULATION_MASTERED, 2));
-        list.add(new PlanUiItem.KeyValue(base + ".mastered.intro", LABEL_MASTERED_INTRO,
+        children.add(new PlanUiItem.SectionHeader(SECTION_ARTICULATION_MASTERED, 2));
+        children.add(new PlanUiItem.KeyValue(base + ".mastered.intro", LABEL_MASTERED_INTRO,
                 mastered == null ? "" : mastered.optString("intro", ""),
                 InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE));
-        addListGroup(list, null, base + ".mastered.items", getStringList(mastered, "items"), 3);
+        addListGroupToChildren(children, null, base + ".mastered.items", getStringList(mastered, "items"));
 
         JSONObject notMastered = articulation.optJSONObject("not_mastered_overview");
-        list.add(new PlanUiItem.SectionHeader(SECTION_ARTICULATION_NOT_MASTERED, 2));
-        list.add(new PlanUiItem.KeyValue(base + ".not_mastered_overview.text", LABEL_NOT_MASTERED,
+        children.add(new PlanUiItem.SectionHeader(SECTION_ARTICULATION_NOT_MASTERED, 2));
+        children.add(new PlanUiItem.KeyValue(base + ".not_mastered_overview.text", LABEL_NOT_MASTERED,
                 notMastered == null ? "" : notMastered.optString("text", ""),
                 InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE));
 
         JSONObject focus = articulation.optJSONObject("focus");
-        list.add(new PlanUiItem.SectionHeader(safeTitle(focus == null ? "" : focus.optString("title", ""),
+        children.add(new PlanUiItem.SectionHeader(safeTitle(focus == null ? "" : focus.optString("title", ""),
                 SECTION_ARTICULATION_FOCUS), 2));
-        addArticulationListGroup(list, null, base + ".focus.items", getStringList(focus, "items"), 3);
-        list.add(new PlanUiItem.KeyValue(base + ".focus.note", LABEL_FOCUS_NOTE,
+        addArticulationListGroupToChildren(children, null, base + ".focus.items", getStringList(focus, "items"));
+        children.add(new PlanUiItem.KeyValue(base + ".focus.note", LABEL_FOCUS_NOTE,
                 focus == null ? "" : focus.optString("note", ""),
                 InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE));
 
         JSONObject unstable = articulation.optJSONObject("unstable");
-        list.add(new PlanUiItem.SectionHeader(safeTitle(unstable == null ? "" : unstable.optString("title", ""),
+        children.add(new PlanUiItem.SectionHeader(safeTitle(unstable == null ? "" : unstable.optString("title", ""),
                 SECTION_ARTICULATION_UNSTABLE), 2));
-        addArticulationListGroup(list, null, base + ".unstable.items", getStringList(unstable, "items"), 3);
+        addArticulationListGroupToChildren(children, null, base + ".unstable.items", getStringList(unstable, "items"));
 
         JSONObject smartGoal = articulation.optJSONObject("smart_goal");
-        list.add(new PlanUiItem.SectionHeader(SECTION_ARTICULATION_SMART, 2));
-        list.add(new PlanUiItem.KeyValue(base + ".smart_goal.cycle_weeks", LABEL_SMART_CYCLE,
+        children.add(new PlanUiItem.SectionHeader(SECTION_ARTICULATION_SMART, 2));
+        children.add(new PlanUiItem.KeyValue(base + ".smart_goal.cycle_weeks", LABEL_SMART_CYCLE,
                 smartGoal == null ? "" : smartGoal.optString("cycle_weeks", ""), InputType.TYPE_CLASS_TEXT));
-        list.add(new PlanUiItem.KeyValue(base + ".smart_goal.level", LABEL_SMART_LEVEL,
+        children.add(new PlanUiItem.KeyValue(base + ".smart_goal.level", LABEL_SMART_LEVEL,
                 smartGoal == null ? "" : smartGoal.optString("level", ""), InputType.TYPE_CLASS_TEXT));
+        
         String accuracyValue = "";
         if (smartGoal != null && smartGoal.has("accuracy_threshold")) {
             accuracyValue = String.valueOf(smartGoal.optDouble("accuracy_threshold", 0.8));
         }
-        list.add(new PlanUiItem.KeyValue(base + ".smart_goal.accuracy_threshold", LABEL_SMART_ACCURACY,
+        children.add(new PlanUiItem.KeyValue(base + ".smart_goal.accuracy_threshold", LABEL_SMART_ACCURACY,
                 accuracyValue, InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL));
-        addListGroup(list, LABEL_SMART_TARGET_SOUNDS, base + ".smart_goal.target_sounds",
-                getStringList(smartGoal, "target_sounds"), 3);
-        addListGroup(list, LABEL_SMART_SUPPORT, base + ".smart_goal.support",
-                getStringList(smartGoal, "support"), 3);
+
+        addListGroupToChildren(children, LABEL_SMART_TARGET_SOUNDS, base + ".smart_goal.target_sounds",
+                getStringList(smartGoal, "target_sounds"));
+        addListGroupToChildren(children, LABEL_SMART_SUPPORT, base + ".smart_goal.support",
+                getStringList(smartGoal, "support"));
+
         String smartText = smartGoal == null ? "" : smartGoal.optString("text", "");
         if (smartText.isEmpty() && smartGoal != null) {
             smartText = ArticulationPlanHelper.buildSmartGoalText(smartGoal);
         }
-        List<String> smartTexts = new ArrayList<>();
-        if (!safeText(smartText).isEmpty()) {
-            smartTexts.add(smartText);
-        }
-        list.add(new PlanUiItem.SectionHeader(LABEL_SMART_TEXT, 3));
-        list.add(new PlanUiItem.ListMirror(null, smartTexts, smartText));
+        children.add(new PlanUiItem.KeyValue(base + ".smart_goal.text", LABEL_SMART_TEXT,
+                smartText, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE));
 
         JSONObject homeGuidance = articulation.optJSONObject("home_guidance");
-        list.add(new PlanUiItem.SectionHeader(SECTION_ARTICULATION_HOME, 2));
-        addArticulationListGroup(list, null, base + ".home_guidance.items", getStringList(homeGuidance, "items"), 3);
+        children.add(new PlanUiItem.SectionHeader(SECTION_ARTICULATION_HOME, 2));
+        addArticulationListGroupToChildren(children, null, base + ".home_guidance.items", getStringList(homeGuidance, "items"));
     }
 
-    private void addArticulationListGroup(List<PlanUiItem> list, String title, String listPath, List<String> values, int level) {
+    private void addListGroupToChildren(List<PlanUiItem> children, String title, String listPath, List<String> values) {
         if (title != null && !title.trim().isEmpty()) {
-            list.add(new PlanUiItem.SectionHeader(title, level));
+            children.add(new PlanUiItem.SectionHeader(title, 2));
+        }
+        List<String> safeValues = new ArrayList<>(values);
+        if (safeValues.isEmpty()) {
+            safeValues.add("");
+        }
+        int index = 0;
+        for (String value : safeValues) {
+            children.add(new PlanUiItem.ListItem(listPath, index++, value));
+        }
+        children.add(new PlanUiItem.AddButton(listPath, "新增一行"));
+    }
+
+    private void addArticulationListGroupToChildren(List<PlanUiItem> children, String title, String listPath, List<String> values) {
+        if (title != null && !title.trim().isEmpty()) {
+            children.add(new PlanUiItem.SectionHeader(title, 2));
         }
         List<String> safeValues = new ArrayList<>();
         if (values != null) {
@@ -462,29 +420,18 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         }
         int index = 0;
         for (String value : safeValues) {
-            list.add(new PlanUiItem.ListItem(listPath, index++, value));
+            children.add(new PlanUiItem.ListItem(listPath, index++, value));
         }
-        list.add(new PlanUiItem.AddButton(listPath, "\u65b0\u589e\u4e00\u884c"));
+        children.add(new PlanUiItem.AddButton(listPath, "新增一行"));
+    }
+
+    private boolean hasArticulationPlan(JSONObject moduleObj) {
+        return moduleObj != null && moduleObj.optJSONObject("articulation") != null;
     }
 
     private String safeTitle(String title, String fallback) {
         String value = safeText(title);
         return value.isEmpty() ? fallback : value;
-    }
-
-    private void addListGroup(List<PlanUiItem> list, String title, String listPath, List<String> values, int level) {
-        if (title != null && !title.trim().isEmpty()) {
-            list.add(new PlanUiItem.SectionHeader(title, level));
-        }
-        List<String> safeValues = new ArrayList<>(values);
-        if (safeValues.isEmpty()) {
-            safeValues.add("");
-        }
-        int index = 0;
-        for (String value : safeValues) {
-            list.add(new PlanUiItem.ListItem(listPath, index++, value));
-        }
-        list.add(new PlanUiItem.AddButton(listPath, "\u65b0\u589e\u4e00\u884c"));
     }
 
     private List<String> getStringList(JSONObject obj, String key) {
@@ -580,19 +527,34 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         return false;
     }
 
+    private JSONArray buildSpeechStages(Map<String, List<String>> listValues, String base, JSONObject existingSpeech) throws JSONException {
+        JSONArray stages = new JSONArray();
+        JSONArray existingStages = existingSpeech == null ? null : existingSpeech.optJSONArray("stages");
+        int stageCount = Math.max(speechStageNames.size(), DEFAULT_SPEECH_STAGE_NAMES.length);
+        for (int i = 0; i < stageCount; i++) {
+            String name = i < speechStageNames.size() ? speechStageNames.get(i) : "";
+            if (name == null || name.trim().isEmpty()) {
+                name = i < DEFAULT_SPEECH_STAGE_NAMES.length ? DEFAULT_SPEECH_STAGE_NAMES[i] : "\u9636\u6bb5" + (i + 1);
+            }
+            JSONObject stage = new JSONObject();
+            stage.put("name", name);
+            String stageBase = base + ".stages[" + i + "]";
+            JSONObject existingStage = existingStages == null ? null : existingStages.optJSONObject(i);
+            stage.put("focus", resolveList(listValues, stageBase + ".focus", existingStage, "focus"));
+            stage.put("activities", resolveList(listValues, stageBase + ".activities", existingStage, "activities"));
+            stage.put("home_practice", resolveList(listValues, stageBase + ".home_practice", existingStage, "home_practice"));
+            stage.put("metrics", resolveList(listValues, stageBase + ".metrics", existingStage, "metrics"));
+            stages.put(stage);
+        }
+        return stages;
+    }
+
     private JSONObject buildPlanJsonFromItems(int ageMonths) throws JSONException {
         Map<String, String> keyValues = new HashMap<>();
         Map<String, List<String>> listValues = new LinkedHashMap<>();
 
-        for (PlanUiItem item : items) {
-            if (item instanceof PlanUiItem.KeyValue) {
-                PlanUiItem.KeyValue kv = (PlanUiItem.KeyValue) item;
-                keyValues.put(kv.keyPath, safeText(kv.value));
-            } else if (item instanceof PlanUiItem.ListItem) {
-                PlanUiItem.ListItem li = (PlanUiItem.ListItem) item;
-                listValues.computeIfAbsent(li.listPath, k -> new ArrayList<>()).add(safeText(li.value));
-            }
-        }
+        // Recursively collect values
+        collectValues(items, keyValues, listValues);
 
         JSONObject plan = new JSONObject();
 
@@ -638,6 +600,42 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         plan.put("notes_for_parents", resolveArray(listValues, "notes_for_parents", existingParents));
 
         return plan;
+    }
+
+    private void collectValues(List<PlanUiItem> items, Map<String, String> keyValues, Map<String, List<String>> listValues) {
+        if (items == null) return;
+        for (PlanUiItem item : items) {
+            if (item instanceof PlanUiItem.KeyValue) {
+                PlanUiItem.KeyValue kv = (PlanUiItem.KeyValue) item;
+                keyValues.put(kv.keyPath, safeText(kv.value));
+            } else if (item instanceof PlanUiItem.ListItem) {
+                PlanUiItem.ListItem li = (PlanUiItem.ListItem) item;
+                listValues.computeIfAbsent(li.listPath, k -> new ArrayList<>()).add(safeText(li.value));
+            } else if (item instanceof PlanUiItem.ModuleCard) {
+                collectValues(((PlanUiItem.ModuleCard) item).children, keyValues, listValues);
+            } else if (item instanceof PlanUiItem.InfoBox) {
+                collectValues(((PlanUiItem.InfoBox) item).children, keyValues, listValues);
+            }
+        }
+    }
+
+    private String findKeyValue(List<PlanUiItem> items, String keyPath) {
+        if (items == null) return "";
+        for (PlanUiItem item : items) {
+            if (item instanceof PlanUiItem.KeyValue) {
+                PlanUiItem.KeyValue kv = (PlanUiItem.KeyValue) item;
+                if (keyPath.equals(kv.keyPath)) {
+                    return kv.value;
+                }
+            } else if (item instanceof PlanUiItem.ModuleCard) {
+                String val = findKeyValue(((PlanUiItem.ModuleCard) item).children, keyPath);
+                if (!val.isEmpty()) return val;
+            } else if (item instanceof PlanUiItem.InfoBox) {
+                String val = findKeyValue(((PlanUiItem.InfoBox) item).children, keyPath);
+                if (!val.isEmpty()) return val;
+            }
+        }
+        return "";
     }
 
     private JSONObject buildSpeechModulePlan(Map<String, List<String>> listValues, Map<String, String> keyValues) throws JSONException {
@@ -735,28 +733,6 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         return module;
     }
 
-    private JSONArray buildSpeechStages(Map<String, List<String>> listValues, String base, JSONObject existingSpeech) throws JSONException {
-        JSONArray stages = new JSONArray();
-        JSONArray existingStages = existingSpeech == null ? null : existingSpeech.optJSONArray("stages");
-        int stageCount = Math.max(speechStageNames.size(), DEFAULT_SPEECH_STAGE_NAMES.length);
-        for (int i = 0; i < stageCount; i++) {
-            String name = i < speechStageNames.size() ? speechStageNames.get(i) : "";
-            if (name == null || name.trim().isEmpty()) {
-                name = i < DEFAULT_SPEECH_STAGE_NAMES.length ? DEFAULT_SPEECH_STAGE_NAMES[i] : "\u9636\u6bb5" + (i + 1);
-            }
-            JSONObject stage = new JSONObject();
-            stage.put("name", name);
-            String stageBase = base + ".stages[" + i + "]";
-            JSONObject existingStage = existingStages == null ? null : existingStages.optJSONObject(i);
-            stage.put("focus", resolveList(listValues, stageBase + ".focus", existingStage, "focus"));
-            stage.put("activities", resolveList(listValues, stageBase + ".activities", existingStage, "activities"));
-            stage.put("home_practice", resolveList(listValues, stageBase + ".home_practice", existingStage, "home_practice"));
-            stage.put("metrics", resolveList(listValues, stageBase + ".metrics", existingStage, "metrics"));
-            stages.put(stage);
-        }
-        return stages;
-    }
-
     private JSONObject buildModulePlan(Map<String, List<String>> listValues, String base, JSONObject existingModule) throws JSONException {
         JSONObject module = new JSONObject();
         module.put("key_findings", resolveList(listValues, base + ".key_findings", existingModule, "key_findings"));
@@ -834,34 +810,26 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         if (requestCode == REQUEST_EXPORT_PDF && resultCode == RESULT_OK && data != null) {
             Uri uri = data.getData();
             if (uri == null) {
-                Toast.makeText(this, "\u672a\u83b7\u53d6\u4fdd\u5b58\u4f4d\u7f6e", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "未获取保存位置", Toast.LENGTH_SHORT).show();
                 return;
             }
             try {
                 JSONObject childJson = dataManager.getInstance().loadData(fName);
                 JSONObject plan = childJson.optJSONObject("treatmentPlan");
                 if (plan == null) {
-                    Toast.makeText(this, "\u8bf7\u5148\u4fdd\u5b58\u6cbb\u7597\u65b9\u6848\u518d\u5bfc\u51fa", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "请先保存治疗方案再导出", Toast.LENGTH_LONG).show();
                     return;
                 }
                 PdfGenerator.writeTreatmentPlanPdf(this, uri, childJson);
-                Toast.makeText(this, "\u5bfc\u51fa\u6210\u529f", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "导出成功", Toast.LENGTH_LONG).show();
             } catch (Exception e) {
-                Toast.makeText(this, "\u5bfc\u51fa\u5931\u8d25: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "导出失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         }
     }
 
     private String getKeyValue(String keyPath) {
-        for (PlanUiItem item : items) {
-            if (item instanceof PlanUiItem.KeyValue) {
-                PlanUiItem.KeyValue kv = (PlanUiItem.KeyValue) item;
-                if (keyPath.equals(kv.keyPath)) {
-                    return kv.value;
-                }
-            }
-        }
-        return "";
+        return findKeyValue(items, keyPath);
     }
 
     private String formatAgeMonths(int ageMonths) {

@@ -459,7 +459,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         }
 
         // concurrent plan generation
-        setLoading(true, "正在并发生成干预方案(速度提升300%)...");
+        setLoading(true, "正在并发生成干预方案...");
         schedulePlanHint();
 
         new ReportPipeline(this).generateTreatmentPlan(fName, new ReportPipeline.Callback() {
