@@ -37,3 +37,6 @@ Desktop.ini
 测试报告.md
 测试报告目录.md
 PROJECT_ARCH.md
+
+# Local-only files not intended for feature/ai commit
+.editorconfig
