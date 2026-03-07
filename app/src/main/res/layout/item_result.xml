@@ -10,6 +10,7 @@
         android:layout_height="match_parent"
         android:textSize="20dp"
         android:gravity="center"
+        android:textAlignment="center"
         android:background="@drawable/btn"
         android:textColor="@color/black"
         android:layout_marginHorizontal="2dp"
@@ -23,6 +24,7 @@
         android:layout_height="match_parent"
         android:textSize="20dp"
         android:gravity="center"
+        android:textAlignment="center"
         android:layout_marginHorizontal="2dp"
         android:background="@drawable/btn"
         android:textColor="@color/black"
@@ -36,13 +38,16 @@
         android:layout_height="match_parent"
         android:textSize="20dp"
         android:gravity="center"
+        android:textAlignment="center"
         android:layout_marginHorizontal="2dp"
         android:background="@drawable/btn"
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont"/>
-    <TextView
+        android:fontFamily="@font/iconfont"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <EditText
         android:id="@+id/i4"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -50,12 +55,16 @@
         android:layout_height="match_parent"
         android:textSize="20dp"
         android:gravity="center"
+        android:textAlignment="center"
         android:background="@drawable/btn"
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont"/>
-    <TextView
+        android:fontFamily="@font/iconfont"
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <EditText
         android:id="@+id/i5"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -63,12 +72,16 @@
         android:layout_marginHorizontal="2dp"
         android:textSize="20dp"
         android:gravity="center"
+        android:textAlignment="center"
         android:background="@drawable/btn"
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont"/>
-    <TextView
+        android:fontFamily="@font/iconfont"
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <EditText
         android:id="@+id/i6"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -76,13 +89,16 @@
         android:textSize="20dp"
         android:layout_marginHorizontal="2dp"
         android:gravity="center"
+        android:textAlignment="center"
         android:background="@drawable/btn"
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
         android:fontFamily="@font/iconfont"
-       />
-    <TextView
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <EditText
         android:id="@+id/i7"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -90,39 +106,36 @@
         android:layout_marginHorizontal="2dp"
         android:textSize="20dp"
         android:gravity="center"
+        android:textAlignment="center"
         android:background="@drawable/btn"
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
         android:fontFamily="@font/iconfont"
-        />
-    <TextView
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
+    <Spinner
         android:id="@+id/i8"
         android:layout_width="0dp"
         android:layout_weight="1"
         android:layout_height="match_parent"
         android:layout_marginHorizontal="2dp"
-        android:textSize="20dp"
         android:gravity="center"
         android:background="@drawable/btn"
-        android:textColor="@color/black"
-        android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont" />
-    <TextView
+        android:spinnerMode="dropdown" />
+    <Spinner
         android:id="@+id/i9"
         android:layout_width="0dp"
         android:layout_weight="1"
         android:layout_height="match_parent"
         android:layout_marginHorizontal="2dp"
-        android:textSize="20dp"
         android:gravity="center"
         android:background="@drawable/btn"
-        android:textColor="@color/black"
-        android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont" />
-    <TextView
+        android:spinnerMode="dropdown" />
+    <EditText
         android:id="@+id/i10"
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -130,11 +143,15 @@
         android:layout_marginHorizontal="2dp"
         android:textSize="20dp"
         android:gravity="center"
+        android:textAlignment="center"
         android:background="@drawable/btn"
         android:textColor="@color/black"
         android:padding="2dp"
         android:visibility="gone"
-        android:fontFamily="@font/iconfont" />
+        android:fontFamily="@font/iconfont"
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        android:maxLines="3" />
     <TextView
         android:id="@+id/i11"
         android:layout_width="0dp"
@@ -143,6 +160,7 @@
         android:layout_marginHorizontal="2dp"
         android:textSize="20dp"
         android:gravity="center"
+        android:textAlignment="center"
         android:background="@drawable/btn"
         android:textColor="@color/black"
         android:padding="2dp"

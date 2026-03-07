@@ -1,6 +1,7 @@
 package bean;
 
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
@@ -25,6 +26,7 @@ import java.util.List;
 
 import utils.AudioPlayer;
 import utils.AudioRecorder;
+import utils.ImageUrls;
 import utils.ResultContext;
 import utils.testcontext;
 
@@ -82,6 +84,15 @@ public class a extends evaluation {
     private String errorType; // 错误类型，默认空
     private String phonologyProcess; // 音系历程，默认空
     private String pinyin; // 拼音，可选
+
+    private String cachedTargetHanzi;
+    private String cachedPinyinLines;
+    private String cachedJoinedInitial;
+    private String cachedJoinedMedial;
+    private String cachedJoinedNucleus;
+    private String cachedJoinedCoda;
+    private String cachedJoinedInducible;
+
     private static final String[] ERROR_TYPE_OPTIONS = new String[]{
             "",
             "替代",
@@ -105,6 +116,10 @@ public class a extends evaluation {
             "去卷舌化",
             "卷舌化"
     };
+
+    // 结果表音系历程下拉的复用标记
+    private static final int TAG_PHONOLOGY_PROCESS_LISTENER = R.id.tag_phonology_process_listener;
+    private static final int TAG_ERROR_TYPE_LISTENER = R.id.tag_error_type_listener;
 
     public a(int num, String target, String progress, String target_tone1, String target_tone2, bean.audio audio, String time) {
         super(num);
@@ -133,6 +148,8 @@ public class a extends evaluation {
 
     public void setTargetWord(List<CharacterPhonology> targetWord) {
         this.targetWord = targetWord;
+        invalidateTargetCache();
+        invalidateAnswerCache();
     }
 
     public List<CharacterPhonology> getAnswerPhonology() {
@@ -141,6 +158,7 @@ public class a extends evaluation {
 
     public void setAnswerPhonology(List<CharacterPhonology> answerPhonology) {
         this.answerPhonology = answerPhonology;
+        invalidateAnswerCache();
     }
 
     public String getErrorType() {
@@ -165,6 +183,7 @@ public class a extends evaluation {
 
     public void setPinyin(String pinyin) {
         this.pinyin = pinyin;
+        invalidateTargetCache();
     }
 
     public void ensureAnswerSizeFromTarget() {
@@ -189,6 +208,7 @@ public class a extends evaluation {
             }
             answerPhonology.add(cp);
         }
+        invalidateAnswerCache();
     }
 
     private utils.allquestionlistener listener;
@@ -211,6 +231,7 @@ public class a extends evaluation {
 
     public void setTarget(String target) {
         this.target = target;
+        invalidateTargetCache();
     }
 
     public bean.audio getAudio() {
@@ -235,47 +256,54 @@ public class a extends evaluation {
         this.time = time;
     }
 
+    private static void setTextIfTextView(View view, String text) {
+        if (view instanceof TextView) {
+            ((TextView) view).setText(text);
+        }
+    }
+
     @Override
     public int handle(View[] views, int position) {
         // 词条序号 | 词条 | 拼音 | 声母 | 韵头 | 韵腹 | 韵尾 | 错误类型 | 音系历程 | 是否可诱发 | 录音
         for (int i = 0; i < views.length; i++) views[i].setVisibility(View.GONE);
         for (int i = 0; i < 11 && i < views.length; i++) views[i].setVisibility(View.VISIBLE);
         if (position == 0) {
-            ((TextView) views[0]).setText("词条序号");
-            ((TextView) views[1]).setText("词条");
-            ((TextView) views[2]).setText("拼音");
-            ((TextView) views[3]).setText("声母");
-            ((TextView) views[4]).setText("韵头");
-            ((TextView) views[5]).setText("韵腹");
-            ((TextView) views[6]).setText("韵尾");
-            ((TextView) views[7]).setText("错误类型");
-            ((TextView) views[8]).setText("音系历程");
-            ((TextView) views[9]).setText("是否可诱发");
-            if (views.length > 10) ((TextView) views[10]).setText("录音");
+            setTextIfTextView(views[0], "词条序号");
+            setTextIfTextView(views[1], "词条");
+            setTextIfTextView(views[2], "拼音");
+            setTextIfTextView(views[3], "声母");
+            setTextIfTextView(views[4], "韵头");
+            setTextIfTextView(views[5], "韵腹");
+            setTextIfTextView(views[6], "韵尾");
+            setTextIfTextView(views[7], "错误类型");
+            setTextIfTextView(views[8], "音系历程");
+            setTextIfTextView(views[9], "是否可诱发");
+            if (views.length > 10) setTextIfTextView(views[10], "录音");
         } else {
-            ((TextView) views[0]).setText(String.valueOf(num));
-            ((TextView) views[1]).setText(buildTargetHanzi());
-            String pinyinValue = computePinyinFallback();
-            ((TextView) views[2]).setText(pinyinValue == null ? "" : pinyinValue);
-            ((TextView) views[3]).setText(joinParts(answerPhonology, PartType.INITIAL));
-            ((TextView) views[4]).setText(joinParts(answerPhonology, PartType.MEDIAL));
-            ((TextView) views[5]).setText(joinParts(answerPhonology, PartType.NUCLEUS));
-            ((TextView) views[6]).setText(joinParts(answerPhonology, PartType.CODA));
-            ((TextView) views[7]).setText(errorType == null ? "" : errorType);
+            setTextIfTextView(views[0], String.valueOf(num));
+            setTextIfTextView(views[1], getCachedTargetHanzi());
+            String pinyinValue = getCachedPinyinLines();
+            setTextIfTextView(views[2], pinyinValue == null ? "" : pinyinValue);
+            setTextIfTextView(views[3], getCachedJoinedParts(PartType.INITIAL));
+            setTextIfTextView(views[4], getCachedJoinedParts(PartType.MEDIAL));
+            setTextIfTextView(views[5], getCachedJoinedParts(PartType.NUCLEUS));
+            setTextIfTextView(views[6], getCachedJoinedParts(PartType.CODA));
+            setTextIfTextView(views[7], errorType == null ? "" : errorType);
             if (views.length > 8) {
-                ((TextView) views[8]).setText(phonologyProcess == null ? "" : phonologyProcess);
+                setTextIfTextView(views[8], phonologyProcess == null ? "" : phonologyProcess);
             }
             if (views.length > 9) {
-                ((TextView) views[9]).setText(joinInducible(answerPhonology));
+                setTextIfTextView(views[9], getCachedInducible());
             }
-            if (views.length > 10) {
+            if (views.length > 10 && views[10] instanceof TextView) {
+                TextView audioView = (TextView) views[10];
                 if (audio != null && time != null) {
-                    ((TextView) views[10]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
-                    ((TextView) views[10]).setText(ResultContext.getInstance().getContext().getString(R.string.audio));
-                    AudioPlayer.getInstance().addIcon((TextView) views[10]);
+                    audioView.setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
+                    audioView.setText(ResultContext.getInstance().getContext().getString(R.string.audio));
+                    AudioPlayer.getInstance().addIcon(audioView);
                     views[10].setOnClickListener(v -> AudioPlayer.getInstance().play(audio.getPath(), position - 1));
                 } else {
-                    ((TextView) views[10]).setText("");
+                    audioView.setText("");
                 }
             }
         }
@@ -284,13 +312,68 @@ public class a extends evaluation {
 
     private enum PartType {INITIAL, MEDIAL, NUCLEUS, CODA}
 
+    private void invalidateTargetCache() {
+        cachedTargetHanzi = null;
+        cachedPinyinLines = null;
+    }
+
+    private void invalidateAnswerCache() {
+        cachedJoinedInitial = null;
+        cachedJoinedMedial = null;
+        cachedJoinedNucleus = null;
+        cachedJoinedCoda = null;
+        cachedJoinedInducible = null;
+    }
+
+    private String getCachedTargetHanzi() {
+        if (cachedTargetHanzi == null) {
+            cachedTargetHanzi = buildTargetHanzi();
+        }
+        return cachedTargetHanzi;
+    }
+
+    private String getCachedPinyinLines() {
+        if (cachedPinyinLines == null) {
+            cachedPinyinLines = buildPinyinLines();
+        }
+        return cachedPinyinLines;
+    }
+
+    private String getCachedJoinedParts(PartType type) {
+        switch (type) {
+            case INITIAL:
+                if (cachedJoinedInitial == null) cachedJoinedInitial = joinParts(answerPhonology, PartType.INITIAL);
+                return cachedJoinedInitial;
+            case MEDIAL:
+                if (cachedJoinedMedial == null) cachedJoinedMedial = joinParts(answerPhonology, PartType.MEDIAL);
+                return cachedJoinedMedial;
+            case NUCLEUS:
+                if (cachedJoinedNucleus == null) cachedJoinedNucleus = joinParts(answerPhonology, PartType.NUCLEUS);
+                return cachedJoinedNucleus;
+            case CODA:
+                if (cachedJoinedCoda == null) cachedJoinedCoda = joinParts(answerPhonology, PartType.CODA);
+                return cachedJoinedCoda;
+            default:
+                return "";
+        }
+    }
+
+    private String getCachedInducible() {
+        if (cachedJoinedInducible == null) {
+            cachedJoinedInducible = joinInducible(answerPhonology);
+        }
+        return cachedJoinedInducible;
+    }
+
     private String buildTargetHanzi() {
-        if (targetWord == null || targetWord.isEmpty()) return target == null ? "" : target;
+        if (cachedTargetHanzi != null) return cachedTargetHanzi;
+        if (targetWord == null || targetWord.isEmpty()) return cachedTargetHanzi = (target == null ? "" : target);
         StringBuilder sb = new StringBuilder();
         for (CharacterPhonology cp : targetWord) {
             if (cp != null && cp.hanzi != null) sb.append(cp.hanzi);
         }
-        return sb.toString();
+        cachedTargetHanzi = sb.toString();
+        return cachedTargetHanzi;
     }
 
     private String joinParts(List<CharacterPhonology> ans, PartType type) {
@@ -335,6 +418,141 @@ public class a extends evaluation {
 
     private String nullToEmpty(String s) {
         return s == null ? "" : s;
+    }
+
+    private String splitToLines(String text) {
+        if (text == null) return "";
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) return "";
+        String[] parts = trimmed.split("\\s+");
+        if (parts.length <= 1) return trimmed;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            if (parts[i].isEmpty()) continue;
+            if (sb.length() > 0) sb.append("\n");
+            sb.append(parts[i]);
+        }
+        return sb.toString();
+    }
+
+    private String buildZeroInitialPinyin(String vowel) {
+        if (vowel == null || vowel.isEmpty()) return "";
+        if ("er".equals(vowel)) return "er";
+        if ("i".equals(vowel)) return "yi";
+        if ("u".equals(vowel)) return "wu";
+        if ("ü".equals(vowel)) return "yu";
+        if (vowel.startsWith("i")) return "y" + vowel.substring(1);
+        if (vowel.startsWith("u")) return "w" + vowel.substring(1);
+        if (vowel.startsWith("ü")) return "yu" + vowel.substring(1);
+        return vowel;
+    }
+
+    private String applyContractions(String vowel) {
+        if ("iou".equals(vowel)) return "iu";
+        if ("uei".equals(vowel)) return "ui";
+        if ("uen".equals(vowel)) return "un";
+        return vowel;
+    }
+
+    private String buildSyllable(PhonologyPart part) {
+        if (part == null) return "";
+        String initial = nullToEmpty(part.initial);
+        String medial = nullToEmpty(part.medial);
+        String nucleus = nullToEmpty(part.nucleus);
+        String coda = nullToEmpty(part.coda);
+        String vowel = medial + nucleus + coda;
+        if (initial.isEmpty()) {
+            return buildZeroInitialPinyin(vowel);
+        }
+        String adjustedVowel = applyContractions(vowel);
+        if (("j".equals(initial) || "q".equals(initial) || "x".equals(initial)) && adjustedVowel.startsWith("ü")) {
+            adjustedVowel = "u" + adjustedVowel.substring(1);
+        }
+        return initial + adjustedVowel;
+    }
+
+    private String buildPinyinLines() {
+        if (cachedPinyinLines != null) return cachedPinyinLines;
+        String targetText = buildTargetHanzi();
+        if (targetText == null || targetText.isEmpty()) targetText = target;
+        String result = "";
+        if ((targetWord == null || targetWord.isEmpty()) && targetText != null && !targetText.isEmpty()) {
+            List<CharacterPhonology> lexiconWord = ImageUrls.getATargetWord(targetText);
+            if (lexiconWord != null && !lexiconWord.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                for (CharacterPhonology cp : lexiconWord) {
+                    String syllable = cp == null ? "" : buildSyllable(cp.phonology);
+                    if (sb.length() > 0) sb.append("\n");
+                    sb.append(syllable);
+                }
+                if (sb.length() > 0) result = sb.toString();
+            }
+        }
+        if (result.isEmpty() && pinyin != null && !pinyin.isEmpty()) {
+            int hanziCount = (targetWord != null && !targetWord.isEmpty())
+                    ? targetWord.size()
+                    : (targetText == null ? 1 : Math.max(1, targetText.length()));
+            result = splitPinyinByHanzi(pinyin, hanziCount);
+        }
+        if (result.isEmpty() && targetWord != null && !targetWord.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (CharacterPhonology cp : targetWord) {
+                String syllable = cp == null ? "" : buildSyllable(cp.phonology);
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(syllable);
+            }
+            if (sb.length() > 0) result = sb.toString();
+        }
+        if (result.isEmpty() && targetText != null && !targetText.isEmpty()) {
+            String mapped = ImageUrls.getAPinyin(targetText);
+            if (mapped != null && !mapped.isEmpty()) result = splitPinyinByHanzi(mapped, targetText.length());
+        }
+        if (result.isEmpty() && target != null && !target.isEmpty()) result = target;
+        if (result.isEmpty()) {
+            String built = buildTargetHanzi();
+            result = built == null ? "" : built;
+        }
+        cachedPinyinLines = result;
+        return cachedPinyinLines;
+    }
+
+    private String splitPinyinByHanzi(String pinyinText, int hanziCount) {
+        if (pinyinText == null) return "";
+        if (hanziCount <= 1) return pinyinText;
+        String[] tokens = pinyinText.trim().split("\\s+");
+        if (tokens.length == hanziCount) return splitToLines(pinyinText);
+        if (tokens.length > 1) return splitToLines(pinyinText);
+        return guessSplitFromPhonology(pinyinText, hanziCount);
+    }
+
+    private String guessSplitFromPhonology(String pinyinText, int hanziCount) {
+        if (targetWord == null || targetWord.isEmpty() || hanziCount <= 1) return pinyinText;
+        String continuous = pinyinText.trim();
+        if (continuous.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        int offset = 0;
+        for (int i = 0; i < targetWord.size(); i++) {
+            CharacterPhonology cp = targetWord.get(i);
+            String syllable = cp == null ? "" : buildSyllable(cp.phonology);
+            if (syllable.isEmpty()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append("");
+                continue;
+            }
+            int len = syllable.length();
+            String part;
+            if (offset + len <= continuous.length()) {
+                part = continuous.substring(offset, offset + len);
+            } else if (offset < continuous.length()) {
+                part = continuous.substring(offset);
+            } else {
+                part = "";
+            }
+            if (sb.length() > 0) sb.append("\n");
+            sb.append(part);
+            offset += len;
+        }
+        return sb.toString();
     }
 
     @Override
@@ -523,13 +741,13 @@ public class a extends evaluation {
         });
 
         imageView.setImageResource(ImageIdList.get(position));
-        numberTextView.setText("第" + TabString[position] + "题：图片画的是什么？");
+        numberTextView.setText("第" + TabString[position] + "题：" + Hint[position]);
         counter.setText(testcontext.getInstance().getCount() + "/" + testcontext.getInstance().getLengths());
         ansTextView.setText(Hint[position]);
 
 
         if (time != null) {
-            ansTextView.setVisibility(View.VISIBLE);
+            ansTextView.setVisibility(View.GONE);
             imageView.setVisibility(View.VISIBLE);
             startButton.setEnabled(false);
         }
@@ -543,7 +761,7 @@ public class a extends evaluation {
 
         startButton.setOnClickListener(v -> {
             try {
-                ansTextView.setVisibility(View.VISIBLE);
+                ansTextView.setVisibility(View.GONE);
                 imageView.setVisibility(View.VISIBLE);
                 testcontext.getInstance().getViewPager().setPagingEnabled(false);
                 startButton.setEnabled(false);
@@ -572,22 +790,33 @@ public class a extends evaluation {
         });
 
         LinearLayout phonologyContainer = view.findViewById(R.id.ll_phonology_container);
+        LinearLayout inducibleContainer = view.findViewById(R.id.ll_inducible_container);
         ensureAnswerSizeFromTarget();
-        renderPhonologyTable(phonologyContainer);
+        // 可诱发从表格中移出，右侧单独一列，保持每行高度一致
+        renderPhonologyTable(phonologyContainer, inducibleContainer);
     }
 
-    private void renderPhonologyTable(LinearLayout container) {
+    private void renderPhonologyTable(LinearLayout container, LinearLayout inducibleContainer) {
         container.removeViews(1, Math.max(0, container.getChildCount() - 1));
+        if (inducibleContainer != null) {
+            inducibleContainer.removeAllViews();
+        }
         if (targetWord == null) return;
+        int cellSize = container.getResources().getDimensionPixelSize(R.dimen.articulation_cell_size);
         for (int i = 0; i < targetWord.size(); i++) {
             CharacterPhonology targetCp = targetWord.get(i);
             CharacterPhonology ansCp = (answerPhonology != null && i < answerPhonology.size()) ? answerPhonology.get(i) : null;
             LinearLayout row = new LinearLayout(container.getContext());
             row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setPadding(0, 4, 0, 4);
+            row.setBaselineAligned(false);
 
             TextView tvHan = new TextView(container.getContext());
-            tvHan.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+            LinearLayout.LayoutParams hanParams = new LinearLayout.LayoutParams(0, cellSize, 1);
+            tvHan.setLayoutParams(hanParams);
+            tvHan.setGravity(android.view.Gravity.CENTER);
+            tvHan.setIncludeFontPadding(false);
+            tvHan.setPadding(0, 0, 0, 0);
+            tvHan.setBackgroundResource(R.drawable.table);
             tvHan.setText(targetCp != null ? targetCp.hanzi : "");
             row.addView(tvHan);
 
@@ -595,35 +824,61 @@ public class a extends evaluation {
             EditText etMedial = createPartEdit(container, ansCp != null && ansCp.phonology != null ? ansCp.phonology.medial : "");
             EditText etNucleus = createPartEdit(container, ansCp != null && ansCp.phonology != null ? ansCp.phonology.nucleus : "");
             EditText etCoda = createPartEdit(container, ansCp != null && ansCp.phonology != null ? ansCp.phonology.coda : "");
-            CheckBox cbInd = new CheckBox(container.getContext());
-            cbInd.setChecked(ansCp != null && ansCp.phonology != null && ansCp.phonology.isInducible);
 
             row.addView(etInitial);
             row.addView(etMedial);
             row.addView(etNucleus);
             row.addView(etCoda);
-            row.addView(cbInd);
 
             final int idx = i;
-            cbInd.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                ensureAnswerSizeFromTarget();
-                CharacterPhonology cpAns = answerPhonology.get(idx);
-                if (cpAns.phonology == null) cpAns.phonology = new PhonologyPart();
-                cpAns.phonology.isInducible = isChecked;
-            });
-
             etInitial.addTextChangedListener(simpleWatcher(text -> setAns(idx, part -> part.initial = text)));
             etMedial.addTextChangedListener(simpleWatcher(text -> setAns(idx, part -> part.medial = text)));
             etNucleus.addTextChangedListener(simpleWatcher(text -> setAns(idx, part -> part.nucleus = text)));
             etCoda.addTextChangedListener(simpleWatcher(text -> setAns(idx, part -> part.coda = text)));
 
             container.addView(row);
+
+            // 右侧“可诱发”列：每个汉字一格，用勾选表示是否可诱发
+            if (inducibleContainer != null) {
+                CheckBox cbInd = new CheckBox(container.getContext());
+                LinearLayout.LayoutParams cbParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, cellSize);
+                cbInd.setLayoutParams(cbParams);
+                cbInd.setGravity(android.view.Gravity.CENTER);
+                cbInd.setIncludeFontPadding(false);
+                cbInd.setPadding(0, 0, 0, 0);
+                cbInd.setMinWidth(0);
+                cbInd.setMinHeight(0);
+                cbInd.setButtonDrawable(null);
+                cbInd.setBackgroundResource(R.drawable.table);
+                boolean isChecked = ansCp != null && ansCp.phonology != null && ansCp.phonology.isInducible;
+                cbInd.setChecked(isChecked);
+                cbInd.setText(isChecked ? "✔" : "");
+
+                cbInd.setOnCheckedChangeListener((buttonView, checked) -> {
+                    ensureAnswerSizeFromTarget();
+                    CharacterPhonology cpAns = answerPhonology.get(idx);
+                    if (cpAns.phonology == null) cpAns.phonology = new PhonologyPart();
+                    cpAns.phonology.isInducible = checked;
+                    cbInd.setText(checked ? "✔" : "");
+                });
+
+                inducibleContainer.addView(cbInd);
+            }
         }
     }
 
     private EditText createPartEdit(LinearLayout container, String val) {
         EditText et = new EditText(container.getContext());
-        et.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        int cellSize = container.getResources().getDimensionPixelSize(R.dimen.articulation_cell_size);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, cellSize, 1);
+        et.setLayoutParams(params);
+        et.setGravity(android.view.Gravity.CENTER);
+        et.setIncludeFontPadding(false);
+        et.setPadding(0, 0, 0, 0);
+        et.setMinWidth(0);
+        et.setMinHeight(0);
+        et.setBackgroundResource(R.drawable.table);
         et.setSingleLine(true);
         if (val != null) et.setText(val);
         return et;
@@ -650,7 +905,9 @@ public class a extends evaluation {
 
             @Override
             public void afterTextChanged(Editable s) {
-                consumer.accept(s.toString());
+                if (consumer != null) {
+                    consumer.accept(s == null ? "" : s.toString());
+                }
             }
         };
     }
@@ -663,7 +920,6 @@ public class a extends evaluation {
     }
 
     private void nextPage(int position, int count, int lengths) {
-
         int nP = position + 1;
         if (count >= lengths) {
             Toast.makeText(testcontext.getInstance().getContext(), "已完成测评题目！", Toast.LENGTH_SHORT).show();
@@ -681,6 +937,12 @@ public class a extends evaluation {
 
     private String computePinyinFallback() {
         if (pinyin != null && !pinyin.isEmpty()) return pinyin;
+        String targetText = buildTargetHanzi();
+        if (targetText == null || targetText.isEmpty()) targetText = target;
+        if (targetText != null && !targetText.isEmpty()) {
+            String mapped = ImageUrls.getAPinyin(targetText);
+            if (mapped != null && !mapped.isEmpty()) return mapped;
+        }
         if (targetWord != null && !targetWord.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (CharacterPhonology cp : targetWord) {
@@ -697,5 +959,310 @@ public class a extends evaluation {
         if (target != null && !target.isEmpty()) return target;
         String built = buildTargetHanzi();
         return built == null ? "" : built;
+    }
+
+    private static class SimpleTextWatcher implements TextWatcher {
+        private final StringConsumer consumer;
+
+        SimpleTextWatcher(StringConsumer consumer) {
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            if (consumer != null) {
+                consumer.accept(s == null ? "" : s.toString());
+            }
+        }
+    }
+
+    private static void setEditable(EditText editText, boolean enabled) {
+        if (editText == null) return;
+        editText.setEnabled(enabled);
+        editText.setFocusable(enabled);
+        editText.setFocusableInTouchMode(enabled);
+    }
+
+    private static void setFocusableOnly(EditText editText, boolean focusable) {
+        if (editText == null) return;
+        editText.setFocusable(focusable);
+        editText.setFocusableInTouchMode(focusable);
+    }
+
+    private static void attachWatcher(EditText editText, TextWatcher watcher) {
+        if (editText == null) return;
+        Object old = editText.getTag(R.id.tag_text_watcher);
+        if (old instanceof TextWatcher) {
+            editText.removeTextChangedListener((TextWatcher) old);
+        }
+        editText.addTextChangedListener(watcher);
+        editText.setTag(R.id.tag_text_watcher, watcher);
+    }
+
+    private static void detachWatcher(EditText editText) {
+        if (editText == null) return;
+        Object old = editText.getTag(R.id.tag_text_watcher);
+        if (old instanceof TextWatcher) {
+            editText.removeTextChangedListener((TextWatcher) old);
+        }
+        editText.setTag(R.id.tag_text_watcher, null);
+    }
+
+    private static void setTextIfChanged(EditText editText, String value) {
+        if (editText == null) return;
+        CharSequence current = editText.getText();
+        if (!TextUtils.equals(current, value)) {
+            editText.setText(value);
+        }
+    }
+
+    private static void attachSpinnerListener(Spinner spinner, AdapterView.OnItemSelectedListener listener) {
+        if (spinner == null) return;
+        Object old = spinner.getTag(TAG_PHONOLOGY_PROCESS_LISTENER);
+        if (old instanceof AdapterView.OnItemSelectedListener) {
+            spinner.setOnItemSelectedListener(null);
+        }
+        spinner.setOnItemSelectedListener(listener);
+        spinner.setTag(TAG_PHONOLOGY_PROCESS_LISTENER, listener);
+    }
+
+    private static void attachErrorSpinnerListener(Spinner spinner, AdapterView.OnItemSelectedListener listener) {
+        if (spinner == null) return;
+        Object old = spinner.getTag(TAG_ERROR_TYPE_LISTENER);
+        if (old instanceof AdapterView.OnItemSelectedListener) {
+            spinner.setOnItemSelectedListener(null);
+        }
+        spinner.setOnItemSelectedListener(listener);
+        spinner.setTag(TAG_ERROR_TYPE_LISTENER, listener);
+    }
+
+    public void bindEditable(View[] views, int position, adapter.resultadapter.ResultUpdateListener updateListener, boolean editable, int cellIndex) {
+        if (views == null || views.length < 11) return;
+        if (position == 0) {
+            for (int i = 0; i < views.length; i++) {
+                if (views[i] instanceof EditText) {
+                    setEditable((EditText) views[i], false);
+                }
+            }
+            return;
+        }
+        if (!(views[3] instanceof EditText)
+                || !(views[4] instanceof EditText)
+                || !(views[5] instanceof EditText)
+                || !(views[6] instanceof EditText)
+                || !(views[7] instanceof Spinner)
+                || !(views[8] instanceof Spinner)
+                || !(views[9] instanceof EditText)) {
+            return;
+        }
+
+        EditText etInitial = (EditText) views[3];
+        EditText etMedial = (EditText) views[4];
+        EditText etNucleus = (EditText) views[5];
+        EditText etCoda = (EditText) views[6];
+        Spinner spError = (Spinner) views[7];
+        Spinner spProcess = (Spinner) views[8];
+        EditText etInducible = (EditText) views[9];
+
+        EditText[] cells = new EditText[]{etInitial, etMedial, etNucleus, etCoda, null, null, etInducible};
+        PartType[] partMap = new PartType[]{PartType.INITIAL, PartType.MEDIAL, PartType.NUCLEUS, PartType.CODA, null, null, null};
+
+        for (EditText cell : cells) {
+            setEditable(cell, false);
+            detachWatcher(cell);
+        }
+        spError.setEnabled(false);
+        spError.setOnItemSelectedListener(null);
+        spProcess.setEnabled(false);
+        spProcess.setOnItemSelectedListener(null);
+
+        setTextIfChanged(etInitial, getCachedJoinedParts(PartType.INITIAL));
+        setTextIfChanged(etMedial, getCachedJoinedParts(PartType.MEDIAL));
+        setTextIfChanged(etNucleus, getCachedJoinedParts(PartType.NUCLEUS));
+        setTextIfChanged(etCoda, getCachedJoinedParts(PartType.CODA));
+        setTextIfChanged(etInducible, getCachedInducible());
+
+        ArrayAdapter<String> errorAdapter = (ArrayAdapter<String>) spError.getAdapter();
+        if (errorAdapter == null) {
+            errorAdapter = new ArrayAdapter<>(spError.getContext(), android.R.layout.simple_spinner_dropdown_item, ERROR_TYPE_OPTIONS);
+            spError.setAdapter(errorAdapter);
+        }
+        int errorIndex = findOptionIndex(errorType, ERROR_TYPE_OPTIONS);
+        if (spError.getSelectedItemPosition() != errorIndex) {
+            spError.setSelection(errorIndex, false);
+        }
+
+        ArrayAdapter<String> processAdapter = (ArrayAdapter<String>) spProcess.getAdapter();
+        if (processAdapter == null) {
+            processAdapter = new ArrayAdapter<>(spProcess.getContext(), android.R.layout.simple_spinner_dropdown_item, PHONOLOGY_PROCESS_OPTIONS);
+            spProcess.setAdapter(processAdapter);
+        }
+        int processIndex = findOptionIndex(phonologyProcess, PHONOLOGY_PROCESS_OPTIONS);
+        if (spProcess.getSelectedItemPosition() != processIndex) {
+            spProcess.setSelection(processIndex, false);
+        }
+
+        if (!editable) {
+            return;
+        }
+
+        for (EditText cell : cells) {
+            if (cell != null) {
+                cell.setEnabled(true);
+                setFocusableOnly(cell, false);
+            }
+        }
+        spError.setEnabled(true);
+        spProcess.setEnabled(true);
+
+        int localIndex = cellIndex - 3;
+        if (localIndex < 0 || localIndex >= cells.length) {
+            return;
+        }
+
+        if (cellIndex == 7) {
+            // 中文注释：错误类型使用下拉单选，编辑态只允许当前单元格交互
+            attachErrorSpinnerListener(spError, new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                    errorType = ERROR_TYPE_OPTIONS[pos];
+                    if (errorType != null && errorType.isEmpty()) errorType = null;
+                    notifyArticulationChanged(updateListener);
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
+            });
+            // 中文注释：切换到该单元格时自动展开下拉选项
+            spError.post(spError::performClick);
+            return;
+        }
+
+        if (cellIndex == 8) {
+            // 中文注释：音系历程使用下拉单选，编辑态只允许当前单元格交互
+            attachSpinnerListener(spProcess, new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                    phonologyProcess = PHONOLOGY_PROCESS_OPTIONS[pos];
+                    if (phonologyProcess != null && phonologyProcess.isEmpty()) phonologyProcess = null;
+                    notifyArticulationChanged(updateListener);
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
+            });
+            // 中文注释：切换到该单元格时自动展开下拉选项
+            spProcess.post(spProcess::performClick);
+            return;
+        }
+
+        EditText active = cells[localIndex];
+        // 中文注释：明确激活当前单元格，保证可输入
+        setEditable(active, true);
+        setFocusableOnly(active, true);
+
+        PartType type = partMap[localIndex];
+        if (type != null) {
+            attachWatcher(active, new SimpleTextWatcher(text -> {
+                updateAnswerPartsFromLines(text, type);
+                notifyArticulationChanged(updateListener);
+            }));
+            return;
+        }
+        if (active == etInducible) {
+            attachWatcher(active, new SimpleTextWatcher(text -> {
+                updateInducibleFromLines(text);
+                notifyArticulationChanged(updateListener);
+            }));
+        }
+    }
+
+    private static int findOptionIndex(String value, String[] options) {
+        if (options == null) return 0;
+        if (value == null) return 0;
+        for (int i = 0; i < options.length; i++) {
+            if (value.equals(options[i])) return i;
+        }
+        return 0;
+    }
+
+    private void updateAnswerPartsFromLines(String text, PartType type) {
+        ensureAnswerSizeFromTarget();
+        String[] lines = splitLines(text, answerPhonology == null ? 0 : answerPhonology.size());
+        for (int i = 0; i < lines.length; i++) {
+            CharacterPhonology cp = answerPhonology.get(i);
+            if (cp.phonology == null) cp.phonology = new PhonologyPart();
+            switch (type) {
+                case INITIAL:
+                    cp.phonology.initial = emptyToNull(lines[i]);
+                    break;
+                case MEDIAL:
+                    cp.phonology.medial = emptyToNull(lines[i]);
+                    break;
+                case NUCLEUS:
+                    cp.phonology.nucleus = emptyToNull(lines[i]);
+                    break;
+                case CODA:
+                    cp.phonology.coda = emptyToNull(lines[i]);
+                    break;
+            }
+        }
+        invalidateAnswerCache();
+    }
+
+    private void updateInducibleFromLines(String text) {
+        ensureAnswerSizeFromTarget();
+        String[] lines = splitLines(text, answerPhonology == null ? 0 : answerPhonology.size());
+        for (int i = 0; i < lines.length; i++) {
+            CharacterPhonology cp = answerPhonology.get(i);
+            if (cp.phonology == null) cp.phonology = new PhonologyPart();
+            cp.phonology.isInducible = parseInducible(lines[i]);
+        }
+        invalidateAnswerCache();
+    }
+
+    private boolean parseInducible(String value) {
+        if (value == null) return false;
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) return false;
+        String normalized = trimmed.toLowerCase();
+        return "1".equals(normalized)
+                || "y".equals(normalized)
+                || "yes".equals(normalized)
+                || "true".equals(normalized)
+                || "t".equals(normalized)
+                || "√".equals(trimmed)
+                || "✔".equals(trimmed);
+    }
+
+    private String[] splitLines(String text, int size) {
+        String[] lines = text == null ? new String[0] : text.split("\\n", -1);
+        if (size <= 0) return lines;
+        String[] result = new String[size];
+        for (int i = 0; i < size; i++) {
+            result[i] = i < lines.length ? lines[i] : "";
+        }
+        return result;
+    }
+
+    private String emptyToNull(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private void notifyArticulationChanged(adapter.resultadapter.ResultUpdateListener updateListener) {
+        if (updateListener != null) {
+            updateListener.onArticulationDataChanged();
+        }
     }
 }

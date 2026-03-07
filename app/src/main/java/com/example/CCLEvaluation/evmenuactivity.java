@@ -49,9 +49,8 @@ import utils.dataManager;
 import utils.dialogUtils;
 import utils.dirpath;
 import utils.ImageUrls;
-import utils.LlmPlanService;
 import utils.NetInteractUtils;
-import utils.TreatmentPromptBuilder;
+import utils.ReportPipeline;
 
 public class evmenuactivity extends AppCompatActivity implements View.OnClickListener {
     private ActivityResultLauncher<Intent> createDocumentLauncher;
@@ -455,20 +454,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         // concurrent plan generation
         setLoading(true, "正在并发生成干预方案(速度提升300%)...");
         schedulePlanHint();
-
-        // build 6 parallel prompts
-        Map<String, String> prompts;
-        try {
-            prompts = TreatmentPromptBuilder.buildConcurrentPrompts(latestData);
-        } catch (JSONException e) {
-            setLoading(false, null);
-            Toast.makeText(this, "构建任务失败", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // call concurrent service
-        LlmPlanService service = new LlmPlanService();
-        service.generateTreatmentPlanConcurrent(prompts, new LlmPlanService.PlanCallback() {
+        new ReportPipeline(this).generateTreatmentPlan(fName, new ReportPipeline.Callback() {
             @Override
             public void onSuccess(JSONObject plan) {
                 // merged full JSON already
@@ -749,3 +735,4 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     }
 
 }
+

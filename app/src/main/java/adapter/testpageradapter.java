@@ -43,15 +43,13 @@ public class testpageradapter extends PagerAdapter {
 
     @Override
     public int getCount() {
-        return evaluations != null ? evaluations.size() : 0;
+        return testcontext.getInstance().getLengths();
     }
 
     @Override
     public Object instantiateItem(@NonNull ViewGroup container, int position) {
         View view = LayoutInflater.from(container.getContext()).inflate(viewId, container, false);
-        if (evaluations != null && position >= 0 && position < evaluations.size()) {
-            evaluations.get(position).test(view,position,ImageIdList,ImageGroupIdList,StringGroupIdList,Hint,TabString, counter, timer);
-        }
+        evaluations.get(position).test(view,position,ImageIdList,ImageGroupIdList,StringGroupIdList,Hint,TabString, counter, timer);
         container.addView(view);
         return view;
     }

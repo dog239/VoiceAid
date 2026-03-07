@@ -63,6 +63,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
     private EditText vowelAccuracy;
     private EditText initialAccuracy;
     private EditText speechClarity;
+    private EditText vowelErrorList;
     private CheckBox diagNormal;
     private CheckBox diagPhonology;
     private CheckBox diagTone;
@@ -97,6 +98,126 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             "q", "x", "zh", "ch",
             "sh", "r", "z", "c"
     };
+    private final int[] vowelIds = new int[]{
+            R.id.vowel_a, R.id.vowel_o, R.id.vowel_e, R.id.vowel_i,
+            R.id.vowel_u, R.id.vowel_v, R.id.vowel_er, R.id.vowel_ai,
+            R.id.vowel_ei, R.id.vowel_ao, R.id.vowel_ou, R.id.vowel_ia,
+            R.id.vowel_ie, R.id.vowel_iao, R.id.vowel_iou, R.id.vowel_ua,
+            R.id.vowel_uo, R.id.vowel_uai, R.id.vowel_uei, R.id.vowel_ue,
+            R.id.vowel_an, R.id.vowel_en, R.id.vowel_ang, R.id.vowel_eng,
+            R.id.vowel_ian, R.id.vowel_in, R.id.vowel_iang, R.id.vowel_ing,
+            R.id.vowel_uan, R.id.vowel_uen, R.id.vowel_uang, R.id.vowel_ong,
+            R.id.vowel_uan_umlaut, R.id.vowel_un, R.id.vowel_iong
+    };
+    private final String[] vowelLabels = new String[]{
+            "a", "o", "e", "i",
+            "u", "ü", "er", "ai",
+            "ei", "ao", "ou", "ia",
+            "ie", "iao", "iou", "ua",
+            "uo", "uai", "uei", "üe",
+            "an", "en", "ang", "eng",
+            "ian", "in", "iang", "ing",
+            "uan", "uen", "uang", "ong",
+            "üan", "ün", "iong"
+    };
+
+    // --- Begin: Articulation stat helpers and recompute logic ---
+    private List<a> collectArticulationItems() {
+        List<a> items = new ArrayList<>();
+        if (evaluations == null) return items;
+        for (evaluation eval : evaluations) {
+            if (eval instanceof a) {
+                a item = (a) eval;
+                if (item.getNum() > 0) {
+                    items.add(item);
+                }
+            }
+        }
+        return items;
+    }
+
+    private void recomputeArticulationStats() {
+        if (!isArticulationResult) return;
+        List<a> aItems = collectArticulationItems();
+        int[] correctInitial = new int[initialLabels.length];
+        int[] totalInitial = new int[initialLabels.length];
+        int[] correctVowel = new int[vowelLabels.length];
+        int[] totalVowel = new int[vowelLabels.length];
+        int[] errorVowel = new int[vowelLabels.length];
+        for (a item : aItems) {
+            List<a.CharacterPhonology> targets = item.getTargetWord();
+            List<a.CharacterPhonology> answers = item.getAnswerPhonology();
+            if (targets == null) continue;
+            for (int idx = 0; idx < targets.size(); idx++) {
+                a.CharacterPhonology tgt = targets.get(idx);
+                a.CharacterPhonology ans = (answers != null && idx < answers.size()) ? answers.get(idx) : null;
+                String tgtInitial = safeLower(initialOf(tgt));
+                String ansInitial = safeLower(initialOf(ans));
+                if (!tgtInitial.isEmpty()) {
+                    int pos = initialIndexOf(tgtInitial);
+                    if (pos >= 0) {
+                        totalInitial[pos]++;
+                        if (tgtInitial.equals(ansInitial)) correctInitial[pos]++;
+                    }
+                }
+                String tgtVowel = normalizeVowel(vowelString(tgt));
+                if (!tgtVowel.isEmpty()) {
+                    int pos = vowelIndexOf(tgtVowel);
+                    if (pos >= 0) {
+                        totalVowel[pos]++;
+                        String ansVowel = normalizeVowel(vowelString(ans));
+                        if (tgtVowel.equals(ansVowel)) {
+                            correctVowel[pos]++;
+                        } else {
+                            errorVowel[pos]++;
+                        }
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < initialIds.length && i < initialLabels.length; i++) {
+            EditText et = findViewById(initialIds[i]);
+            if (et != null) {
+                int total = totalInitial[i];
+                int correct = correctInitial[i];
+                et.setText(total > 0 ? (correct + "/" + total) : "0/0");
+            }
+        }
+        for (int i = 0; i < vowelIds.length && i < vowelLabels.length; i++) {
+            EditText et = findViewById(vowelIds[i]);
+            if (et != null) {
+                int total = totalVowel[i];
+                int correct = correctVowel[i];
+                et.setText(total > 0 ? (correct + "/" + total) : "0/0");
+            }
+        }
+        if (vowelErrorList != null) {
+            List<String> errorItems = new ArrayList<>();
+            for (int i = 0; i < vowelLabels.length; i++) {
+                if (errorVowel[i] > 0) {
+                    errorItems.add(vowelLabels[i]);
+                }
+            }
+            vowelErrorList.setText(joinText(errorItems, "、"));
+        }
+        double initialRate = 0d;
+        if (initialAccuracy != null) {
+            int sumTotal = 0, sumCorrect = 0;
+            for (int i = 0; i < totalInitial.length; i++) { sumTotal += totalInitial[i]; sumCorrect += correctInitial[i]; }
+            initialRate = sumTotal > 0 ? (sumCorrect * 1.0d / sumTotal) : 0d;
+            String rateStr = sumTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (initialRate * 100.0d)) : "0%";
+            initialAccuracy.setText(rateStr);
+        }
+        if (speechClarity != null) {
+            String level;
+            if (initialRate >= 0.85d) level = "轻度";
+            else if (initialRate >= 0.65d) level = "轻中度";
+            else if (initialRate >= 0.50d) level = "中重度";
+            else level = "重度";
+            speechClarity.setText(level);
+        }
+    }
+    // --- End: Articulation stat helpers and recompute logic ---
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -108,9 +229,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         tv2 = findViewById(R.id.tv_2);
         extraAResults = findViewById(R.id.extra_a_results);
         extraASuggestions = findViewById(R.id.extra_a_suggestions);
-        vowelAccuracy = findViewById(R.id.extra_a_vowel_accuracy);
         initialAccuracy = findViewById(R.id.extra_a_initial_accuracy);
         speechClarity = findViewById(R.id.extra_a_speech_clarity);
+        vowelErrorList = findViewById(R.id.vowel_error_list);
         diagNormal = findViewById(R.id.extra_a_diag_normal);
         diagPhonology = findViewById(R.id.extra_a_diag_phonology);
         diagTone = findViewById(R.id.extra_a_diag_tone);
@@ -182,14 +303,6 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         String format = intent.getStringExtra("format");
         String moduleKey = intent.getStringExtra("moduleKey");
         this.fName = fName;
-        
-        // 检查fName是否为空
-        if (fName == null || fName.isEmpty()) {
-            Toast.makeText(this, "文件名不能为空！", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-        
         JSONObject data = dataManager.getInstance().loadData(fName);
         if(format==null && moduleKey == null)
             return;
@@ -215,66 +328,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 aItems.add(item);
                 evaluations.add(item);
             }
-            // 统计声母正确率：每个声母独立 “正确/总”
-            int[] correctInitial = new int[initialLabels.length];
-            int[] totalInitial = new int[initialLabels.length];
-            int vowelCorrect = 0;
-            int vowelTotal = 0;
-            for (a item : aItems) {
-                List<a.CharacterPhonology> targets = item.getTargetWord();
-                List<a.CharacterPhonology> answers = item.getAnswerPhonology();
-                if (targets == null) continue;
-                for (int idx = 0; idx < targets.size(); idx++) {
-                    a.CharacterPhonology tgt = targets.get(idx);
-                    a.CharacterPhonology ans = (answers != null && idx < answers.size()) ? answers.get(idx) : null;
-                    String tgtInitial = safeLower(initialOf(tgt));
-                    String ansInitial = safeLower(initialOf(ans));
-                    if (!tgtInitial.isEmpty()) {
-                        int pos = initialIndexOf(tgtInitial);
-                        if (pos >= 0) {
-                            totalInitial[pos]++;
-                            if (tgtInitial.equals(ansInitial)) correctInitial[pos]++;
-                        }
-                    }
-                    String tgtVowel = vowelString(tgt);
-                    if (!tgtVowel.isEmpty()) {
-                        vowelTotal++;
-                        if (tgtVowel.equals(vowelString(ans))) vowelCorrect++;
-                    }
-                }
-            }
-            // 填充声母表格
-            for (int i = 0; i < initialIds.length && i < initialLabels.length; i++) {
-                EditText et = findViewById(initialIds[i]);
-                if (et != null) {
-                    int total = totalInitial[i];
-                    int correct = correctInitial[i];
-                    et.setText(total > 0 ? (correct + "/" + total) : "0/0");
-                }
-            }
-            // 填充总体声母正确率
-            double initialRate = 0d;
-            if (initialAccuracy != null) {
-                int sumTotal = 0, sumCorrect = 0;
-                for (int i = 0; i < totalInitial.length; i++) { sumTotal += totalInitial[i]; sumCorrect += correctInitial[i]; }
-                initialRate = sumTotal > 0 ? (sumCorrect * 1.0d / sumTotal) : 0d;
-                String rateStr = sumTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (initialRate * 100.0d)) : "0%";
-                initialAccuracy.setText(rateStr);
-            }
-            // 填充韵母正确率
-            if (vowelAccuracy != null) {
-                String rate = vowelTotal > 0 ? String.format(Locale.getDefault(), "%.2f%%", (vowelCorrect * 100.0f / vowelTotal)) : "0%";
-                vowelAccuracy.setText(rate);
-            }
-            // 根据声母总正确率填写语音清晰度等级
-            if (speechClarity != null) {
-                String level;
-                if (initialRate >= 0.85d) level = "轻度";
-                else if (initialRate >= 0.65d) level = "轻中度";
-                else if (initialRate >= 0.50d) level = "中重度";
-                else level = "重度";
-                speechClarity.setText(level);
-            }
+            recomputeArticulationStats();
             JSONObject evaluations = data.optJSONObject("evaluations");
             if (evaluations != null) {
                 String savedClarity = safeText(evaluations.optString("speech_intelligibility", ""));
@@ -289,96 +343,30 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         else if (safeFormat.equals("E")) {
             if (extraAResults != null) extraAResults.setVisibility(View.GONE);
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
-            
-            // 词汇表达结果
             double counte = 0;
-            JSONArray eArray = null;
-            try {
-                eArray = data.getJSONObject("evaluations").getJSONArray("E");
-            } catch (Exception e) {
-                eArray = new JSONArray();
-            }
-            
-            // 添加词汇表达表头
-            evaluations.add(new e(0, "目标词", null, null, null));//词汇表达首行
-            for (int i = 0; i < eArray.length(); i++) {
-                JSONObject object = eArray.getJSONObject(i);
+            JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("E");
+            evaluations.add(new e(0, null, null, null, null));//首行
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject object = jsonArray.getJSONObject(i);
                 if (object.has("result") && !object.isNull("result")) {
                     if (object.getBoolean("result")) {
                         counte++;
                     }
-                    // 检查是否有录音路径
-                    if (object.has("audioPath") && !object.isNull("audioPath")) {
-                        evaluations.add(new e(i + 1, object.getString("target"), object.getBoolean("result"), new audio(object.getString("audioPath")), object.getString("time")));
-                    } else {
-                        evaluations.add(new e(i + 1, object.getString("target"), object.getBoolean("result"), null, object.getString("time")));
-                    }
+                    evaluations.add(new e(i + 1, object.getString("target"), object.getBoolean("result"), new audio(object.getString("audioPath")), object.getString("time")));
                 } else {
                     evaluations.add(new e(i + 1, object.getString("target"), null, null, null));
                 }
             }
-            double lenthe = eArray.length();
-            double scoree = lenthe > 0 ? (counte / lenthe) * 100 : 0;
+            double lenthe = jsonArray.length();
+            double scoree = (counte / lenthe) * 100;
             String stre = String.format("%.2f%%", scoree);
-            
-            // 添加词汇理解表头
-            evaluations.add(new ev(0, "目标词", null, null));//词汇理解首行
-            double countev = 0;
-            JSONArray evArray = null;
-            try {
-                evArray = data.getJSONObject("evaluations").getJSONArray("EV");
-            } catch (Exception e) {
-                evArray = new JSONArray();
-            }
-            for (int i = 0; i < evArray.length(); i++) {
-                JSONObject object = evArray.getJSONObject(i);
-                if (object.has("result") && !object.isNull("result")) {
-                    if (object.getBoolean("result")) {
-                        countev++;
-                    }
-                    evaluations.add(new ev(i + 1, object.getString("target"), object.getBoolean("result"), object.getString("time")));
-                } else {
-                    evaluations.add(new ev(i + 1, object.getString("target"), null, null));
-                }
-            }
-            double lenthev = evArray.length();
-            double scoreev = lenthev > 0 ? (countev / lenthev) * 100 : 0;
-            String strev = String.format("%.2f%%", scoreev);
-            
-            // 合并显示结果
-            tv2.setText("词汇表达正确率：" + stre + "\n词汇理解正确率：" + strev);
-            
-            // 添加评估建议
-            TextView tv3 = findViewById(R.id.tv_3);
-            if (tv3 != null) {
-                tv3.setVisibility(View.VISIBLE);
-                
-                // 自动匹配评估建议
-                if (scoree == 100 && scoreev == 100) {
-                    tv3.setText("评估建议：词汇部分主要考察对语言基本概念的理解和表达，包含名词、动词、形容词和分类概念名词的表达，根据测评结果显示，孩子各类型词汇掌握较好，词汇表达和理解能力都达到了优秀水平。建议继续丰富孩子的词汇量，鼓励孩子使用更复杂的词汇和句子。");
-                } else if (scoree == 0 && scoreev == 0) {
-                    tv3.setText("评估建议：词汇部分主要考察对语言基本概念的理解和表达，包含名词、动词、形容词和分类概念名词的表达，根据测评结果显示，孩子各类型词汇掌握得不够好，需要针对性的学习。建议从基础词汇开始，通过实物、图片等直观方式帮助孩子理解和记忆词汇，逐步提高词汇量。");
-                } else if (scoree >= 60 && scoreev >= 60) {
-                    tv3.setText("评估建议：词汇部分主要考察对语言基本概念的理解和表达，包含名词、动词、形容词和分类概念名词的表达，根据测评结果显示，孩子各类型词汇掌握较好，建议继续扩大词汇量，注重词汇的实际应用，鼓励孩子在日常生活中多使用新学的词汇。");
-                } else if (scoree >= 60 && scoreev < 60) {
-                    tv3.setText("评估建议：词汇部分主要考察对语言基本概念的理解和表达，包含名词、动词、形容词和分类概念名词的表达，根据测评结果显示，孩子词汇表达能力较好，但理解能力有待提高，需要针对性的学习。建议通过多听、多看、多互动的方式，帮助孩子理解更多词汇的含义。");
-                } else if (scoree < 60 && scoreev >= 60) {
-                    tv3.setText("评估建议：词汇部分主要考察对语言基本概念的理解和表达，包含名词、动词、形容词和分类概念名词的表达，根据测评结果显示，孩子词汇理解能力较好，但表达能力有待提高，需要针对性的学习。建议多鼓励孩子开口说话，通过模仿、复述等方式，帮助孩子提高词汇表达能力。");
-                } else {
-                    tv3.setText("评估建议：词汇部分主要考察对语言基本概念的理解和表达，包含名词、动词、形容词和分类概念名词的表达，根据测评结果显示，孩子词汇能力发展还有待加强，需要针对性的学习。建议根据孩子的兴趣和生活经验，选择适合的词汇进行教学，注重词汇的趣味性和实用性。");
-                }
-            }
+            tv2.setText("本题正确率为：" + stre);
 
         } else if (safeFormat.equals("EV")) {
             if (extraAResults != null) extraAResults.setVisibility(View.GONE);
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             double countev = 0;
-            JSONArray jsonArray = null;
-            try {
-                jsonArray = data.getJSONObject("evaluations").getJSONArray("EV");
-            } catch (Exception e) {
-                jsonArray = new JSONArray();
-            }
+            JSONArray jsonArray = data.getJSONObject("evaluations").getJSONArray("EV");
             evaluations.add(new ev(0, null, null, null));//首行
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject object = jsonArray.getJSONObject(i);
@@ -392,20 +380,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 }
             }
             double lenthev = jsonArray.length();
-            double scoreev = lenthev > 0 ? (countev / lenthev) * 100 : 0;
+            double scoreev = (countev / lenthev) * 100;
             String strev = String.format("%.2f%%", scoreev);
             tv2.setText("本题正确率为：" + strev);
-            
-            // 添加评估建议
-            TextView tv3 = findViewById(R.id.tv_3);
-            if (tv3 != null) {
-                tv3.setVisibility(View.VISIBLE);
-                if (scoreev >= 60) {
-                    tv3.setText("评估建议：孩子的词汇理解能力较好，基本达标，建议继续扩大词汇量，注重词汇的实际应用。");
-                } else {
-                    tv3.setText("评估建议：孩子的词汇理解能力还有待提高，建议通过多听、多看、多互动的方式，帮助孩子理解更多词汇的含义。");
-                }
-            }
 
         }else if(safeFormat.equals("PN")){
             if (extraAResults != null) extraAResults.setVisibility(View.GONE);
@@ -495,10 +472,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             }
             // 如果没有找到分组特定的 JSONArray，则使用默认的 "RG" JSONArray
             if (jsonArray == null) {
-                jsonArray = evaluationsObj.optJSONArray("RG");
-                if (jsonArray == null) {
-                    jsonArray = new JSONArray();
-                }
+                jsonArray = evaluationsObj.getJSONArray("RG");
             }
             evaluations.add(new rg(0,null,null,null,null,-1,null,null));//首行
             int completedCount = 0;
@@ -508,15 +482,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     if(object.getBoolean("result")){
                         countre++;
                     }
-                    // 检查是否有录音路径和分数
-                    int score = object.has("score") && !object.isNull("score") ? object.getInt("score") : -1;
-                    if (object.has("audioPath") && !object.isNull("audioPath")) {
-                        evaluations.add(new rg(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
-                                object.getBoolean("result"),score,new audio(object.getString("audioPath")),object.getString("time")));
-                    } else {
-                        evaluations.add(new rg(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
-                                object.getBoolean("result"),score,null,object.getString("time")));
-                    }
+                    evaluations.add(new rg(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
+                            object.getBoolean("result"),object.getInt("score"),new audio(object.getString("audioPath")),object.getString("time")));
                     completedCount++;
                 }
                 // 只显示已经完成的题目，跳过未完成的题目
@@ -562,10 +529,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             }
             // 如果没有找到分组特定的 JSONArray，则使用默认的 "SE" JSONArray
             if (jsonArray == null) {
-                jsonArray = evaluationsObj.optJSONArray("SE");
-                if (jsonArray == null) {
-                    jsonArray = new JSONArray();
-                }
+                jsonArray = evaluationsObj.getJSONArray("SE");
             }
             evaluations.add(new se(0,null,null,null,null,-1,null,null));//首行
             int completedCount = 0;
@@ -575,15 +539,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     if(object.getBoolean("result")){
                         countre++;
                     }
-                    // 检查是否有录音路径和分数
-                    int score = object.has("score") && !object.isNull("score") ? object.getInt("score") : -1;
-                    if (object.has("audioPath") && !object.isNull("audioPath")) {
-                        evaluations.add(new se(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
-                                object.getBoolean("result"),score,new audio(object.getString("audioPath")),object.getString("time")));
-                    } else {
-                        evaluations.add(new se(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
-                                object.getBoolean("result"),score,null,object.getString("time")));
-                    }
+                    evaluations.add(new se(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
+                            object.getBoolean("result"),object.getInt("score"),new audio(object.getString("audioPath")),object.getString("time")));
                     completedCount++;
                 }
                 // 只显示已经完成的题目，跳过未完成的题目
@@ -632,21 +589,17 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             if (plSuggestions != null) plSuggestions.setVisibility(View.VISIBLE);
 
-            // 先获取场景信息
-            JSONObject report = ModuleReportHelper.loadPrelinguisticReport(data);
-            String scene = report != null ? report.optString("scene", "") : "";
-            if (scene == null || scene.trim().isEmpty()) {
-                scene = "A";
-            }
-            
-            // 根据场景获取对应的JSONArray
-            String plKey = "PL_" + scene;
-            JSONArray jsonArray = data.getJSONObject("evaluations").optJSONArray(plKey);
+            JSONArray jsonArray = data.getJSONObject("evaluations").optJSONArray(MODULE_PL);
             if (jsonArray == null) {
                 jsonArray = new JSONArray();
             }
             evaluations.add(new pl(0, null, null, null, null, null, null));//首行
             List<pl> plItems = new ArrayList<>();
+            JSONObject report = ModuleReportHelper.loadPrelinguisticReport(data);
+            String scene = report != null ? report.optString("scene", "") : "";
+            if (scene == null || scene.trim().isEmpty()) {
+                scene = "A";
+            }
             String[] prompts = "B".equals(scene) ? ImageUrls.PL_PROMPTS_B : ImageUrls.PL_PROMPTS_A;
             String[] skills = ImageUrls.PL_SKILLS;
             for(int i=0;i<skills.length;i++){
@@ -713,33 +666,26 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 plSaveButton.setVisibility(View.GONE);
             }
         } else if (safeFormat.equals("SOCIAL")) {
-            // 强制横屏显示
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             if (extraAResults != null) extraAResults.setVisibility(View.GONE);
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
+            // 隐藏（三）评估建议部分
+            View rootView = findViewById(android.R.id.content);
+            if (rootView != null) {
+                // 查找所有TextView，隐藏文本为"（三）评估建议"的控件
+                findAndHideEvaluationSuggestionTitle(rootView);
+            }
 
             JSONArray jsonArray = data.getJSONObject("evaluations").optJSONArray("SOCIAL");
             if (jsonArray == null) {
                 jsonArray = new JSONArray();
             }
-            
-            // 清空之前的评估结果
-            evaluations.clear();
-            
-            // 添加表头
-            evaluations.add(new social(0, "题号", "社交能力", "考查点", null, null, null, null));
-            
+            evaluations.add(new social(0, null, null, null, null, null, null, null));//首行
             List<social> socialItems = new ArrayList<>();
+            JSONObject report = ModuleReportHelper.loadSocialReport(data);
             
             String[] abilities = ImageUrls.SOCIAL_abilities;
             String[] focuses = ImageUrls.SOCIAL_focuses;
             String[] contents = ImageUrls.SOCIAL_contents;
-            
-            // 检查数组是否为null
-            if (abilities == null || focuses == null || contents == null) {
-                Toast.makeText(this, "数据加载失败：题目数据为空！", Toast.LENGTH_SHORT).show();
-                return;
-            }
             
             // 创建一个映射来存储已有的结果，避免重复
             HashMap<Integer, social> socialItemMap = new HashMap<>();
@@ -757,123 +703,124 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 }
             }
             
-            // 按组处理题目，只显示已完成的组
+            // 处理所有题目
+            for (int i = 0; i < abilities.length; i++) {
+                int questionNumber = i + 1;
+                social item = socialItemMap.get(questionNumber);
+                
+                if (item == null) {
+                    // 如果没有已有结果，创建新对象
+                    item = new social(questionNumber, abilities[i], focuses[i], contents[i], null, null, null, null);
+                } else {
+                    // 如果有已有结果，确保能力、考查点和题目内容正确
+                    if (item.getAbility() == null || item.getAbility().trim().isEmpty()) {
+                        item.setAbility(abilities[i]);
+                    }
+                    if (item.getFocus() == null || item.getFocus().trim().isEmpty()) {
+                        item.setFocus(focuses[i]);
+                    }
+                    if (item.getContent() == null || item.getContent().trim().isEmpty()) {
+                        item.setContent(contents[i]);
+                    }
+                }
+                
+                socialItems.add(item);
+                
+                // 只添加做过且得分不为2的项目到评估结果中
+                Integer score = item.getScore();
+                if (score != null && score != 2) {
+                    evaluations.add(item);
+                }
+            }
+            
             int totalScore = 0;
-            int completedQuestions = 0;
-            List<String> weaknesses = new ArrayList<>();
+            List<String> strengths = new ArrayList<>();
             List<String> inProgress = new ArrayList<>();
-            
-            // 按组号从小到大处理
-            for (int group = 1; group <= 6; group++) {
-                boolean hasCompletedQuestions = false;
-                
-                // 处理该组的10个题目
-                for (int i = 0; i < 10; i++) {
-                    int questionIndex = (group - 1) * 10 + i;
-                    if (questionIndex >= abilities.length) break;
-                    
-                    int questionNumber = questionIndex + 1;
-                    social item = socialItemMap.get(questionNumber);
-                    
-                    if (item == null) {
-                        // 如果没有已有结果，创建新对象
-                        item = new social(questionNumber, abilities[questionIndex], focuses[questionIndex], contents[questionIndex], null, null, null, null);
-                    } else {
-                        // 如果有已有结果，确保能力、考查点和题目内容正确
-                        if (item.getAbility() == null || item.getAbility().trim().isEmpty()) {
-                            item.setAbility(abilities[questionIndex]);
-                        }
-                        if (item.getFocus() == null || item.getFocus().trim().isEmpty()) {
-                            item.setFocus(focuses[questionIndex]);
-                        }
-                        if (item.getContent() == null || item.getContent().trim().isEmpty()) {
-                            item.setContent(contents[questionIndex]);
-                        }
-                    }
-                    
-                    socialItems.add(item);
-                    
-                    // 检查是否有得分
-                    Integer score = item.getScore();
-                    if (score != null) {
-                        hasCompletedQuestions = true;
-                        completedQuestions++;
-                        totalScore += score;
-                        
-                        // 收集需要重点关注和进一步发展的能力
-                        if (score == 1 && !inProgress.contains(item.getAbility())) {
-                            inProgress.add(item.getAbility());
-                        } else if (score == 0 && !weaknesses.contains(item.getAbility())) {
-                            weaknesses.add(item.getAbility());
-                        }
-                        
-                        // 添加到评估结果中 - 无论得分如何，只要完成了就显示
-                        evaluations.add(item);
-                    }
-                }
-                
-                // 如果该组有完成的题目，添加一个空行作为分隔
-                if (hasCompletedQuestions) {
-                    evaluations.add(new social(-1, "", "", "", null, null, null, null));
+            List<String> weaknesses = new ArrayList<>();
+            for (social item : socialItems) {
+                int value = item.getScore() == null ? 0 : item.getScore();
+                totalScore += value;
+                if (value == 2) {
+                    strengths.add(item.getAbility());
+                } else if (value == 1) {
+                    inProgress.add(item.getAbility());
+                } else {
+                    weaknesses.add(item.getAbility());
                 }
             }
             
-            // 计算总体评估结果
-            double accuracy = 0;
-            if (completedQuestions > 0) {
-                accuracy = (double) totalScore / (completedQuestions * 2);
-            }
+            // 显示总分和评估结果
+            double percentage = totalScore / 120.0 * 100;
+            String assessment = percentage >= 80 ? "从整体上来说，孩子的社交能力较好，基本达标。" : "从整体上来说，孩子的社交能力还有待进一步发展，尚未达标。";
             
-            // 生成评估建议
+            // 生成详细建议
             StringBuilder detailedAssessment = new StringBuilder();
-            detailedAssessment.append("（二）评估建议\n\n");
-            detailedAssessment.append("通过对儿童社交能力的评估（家长试卷）结果如下：\n\n");
+            detailedAssessment.append(assessment).append("\n总分：").append(totalScore).append("/120\n\n");
             
-            // 根据正确率选择评估结果
-            if (accuracy >= 0.6) {
-                detailedAssessment.append("● 从整体上来说，孩子的社交能力较好，基本达标。\n\n");
-            } else {
-                detailedAssessment.append("● 从整体上来说，孩子的社交能力还有待进一步发展，尚未达标。\n\n");
-            }
+            // 只显示表格中有的能力，也就是做过但是没达到2分的能力
+            List<String> tableWeaknesses = new ArrayList<>();
+            List<String> tableInProgress = new ArrayList<>();
             
-            // 显示需要重点关注的能力
-            detailedAssessment.append("1.需要重点关注：\n");
-            if (!weaknesses.isEmpty()) {
-                for (int i = 0; i < weaknesses.size(); i++) {
-                    detailedAssessment.append((i + 1)).append(". " ).append(weaknesses.get(i)).append("\n");
+            // 遍历evaluations，只添加在结果表格中显示的能力
+            if (evaluations != null) {
+                for (evaluation eval : evaluations) {
+                    if (!(eval instanceof social)) {
+                        continue;
+                    }
+                    social item = (social) eval;
+                    // 跳过首行和总分行
+                    if (item.getNum() == 0 || item.getNum() == -1) {
+                        continue;
+                    }
+                    String ability = item.getAbility();
+                    if (ability == null || ability.trim().isEmpty()) {
+                        continue;
+                    }
+                    Integer score = item.getScore();
+                    if (score == null) {
+                        continue;
+                    }
+                    if (score == 0 && !tableWeaknesses.contains(ability)) {
+                        tableWeaknesses.add(ability);
+                    } else if (score == 1 && !tableInProgress.contains(ability)) {
+                        tableInProgress.add(ability);
+                    }
                 }
-            } else {
-                detailedAssessment.append("无\n");
             }
-            detailedAssessment.append("\n");
             
-            // 显示需要进一步发展的能力
-            detailedAssessment.append("2.有些社交能力已经表现出来，但是不够经常，我们可以多去发展以下能力：\n");
-            if (!inProgress.isEmpty()) {
-                for (int i = 0; i < inProgress.size(); i++) {
-                    detailedAssessment.append((i + 1)).append(". " ).append(inProgress.get(i)).append("\n");
+            if (!tableWeaknesses.isEmpty()) {
+                detailedAssessment.append("1.需要重点关注：\n");
+                for (String weakness : tableWeaknesses) {
+                    detailedAssessment.append(weakness).append("\n");
                 }
-            } else {
-                detailedAssessment.append("无\n");
+                detailedAssessment.append("\n");
             }
-            detailedAssessment.append("\n");
             
-            if (tv2 != null) {
-                tv2.setText(detailedAssessment.toString());
+            if (!tableInProgress.isEmpty()) {
+                detailedAssessment.append("2.有些社交能力已经表现出来，但是不够经常，我们可以多去发展以下能力：\n");
+                for (String skill : tableInProgress) {
+                    detailedAssessment.append(skill).append("\n");
+                }
+                detailedAssessment.append("\n");
             }
+            
+            tv2.setText(detailedAssessment.toString());
 
-            // 添加总分行
             evaluations.add(new social(-1, "总分", null, null, totalScore, null, null, null));
         }
         else {
             if (extraAResults != null) extraAResults.setVisibility(View.GONE);
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
         }
-        adapter = new resultadapter(this, evaluations);
-        if (recyclerView != null) {
-            recyclerView.setLayoutManager(new LinearLayoutManager(this));
-            recyclerView.setAdapter(adapter);
-        }
+        adapter = new resultadapter(this, evaluations, this::recomputeArticulationStats);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setItemPrefetchEnabled(true);
+        layoutManager.setInitialPrefetchItemCount(6);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setItemAnimator(null);
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.getRecycledViewPool().setMaxRecycledViews(0, 20);
+        recyclerView.setAdapter(adapter);
 
 
 
@@ -1027,12 +974,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (initialText.isEmpty()) {
                 initialText = safeText(evaluations.optString("initial_accuracy", ""));
             }
-            String vowelText = safeText(getEditTextValue(vowelAccuracy));
-            if (vowelText.isEmpty()) {
-                vowelText = safeText(evaluations.optString("vowel_accuracy", ""));
-            }
             evaluations.put("initial_accuracy", initialText);
-            evaluations.put("vowel_accuracy", vowelText);
             dataManager.getInstance().saveChildJson(fName, data);
             Toast.makeText(this, "已保存评估报告", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
@@ -1093,11 +1035,10 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         JSONObject report = ModuleReportHelper.buildSocialReport(totalScore, strengths, inProgress, weaknesses);
         try {
             ModuleReportHelper.saveSocialReport(data, report);
-            // 直接使用saveData方法保存数据，而不是saveChildJson
-            dataManager.getInstance().saveData(fName, data);
+            dataManager.getInstance().saveChildJson(fName, data);
             Toast.makeText(this, "已保存社交能力评估报告", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Toast.makeText(this, "保存社交能力评估报告失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "保存社交能力评估报告失败", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -1243,6 +1184,21 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (initialLabels[i].equalsIgnoreCase(ini)) return i;
         }
         return -1;
+    }
+
+    private int vowelIndexOf(String vowel) {
+        for (int i = 0; i < vowelLabels.length; i++) {
+            if (vowelLabels[i].equalsIgnoreCase(vowel)) return i;
+        }
+        return -1;
+    }
+
+    private String normalizeVowel(String vowel) {
+        String value = safeLower(vowel);
+        if (value.isEmpty()) {
+            return value;
+        }
+        return value.replace("v", "ü");
     }
 
     /**

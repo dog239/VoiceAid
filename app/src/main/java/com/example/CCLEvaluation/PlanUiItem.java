@@ -2,6 +2,7 @@ package com.example.CCLEvaluation;
 
 import androidx.annotation.IntDef;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -16,9 +17,13 @@ public abstract class PlanUiItem {
     public static final int TYPE_LIST_MIRROR = 6;
     public static final int TYPE_STAGE_HEADER = 7;
     public static final int TYPE_STAGE_END = 8;
+    public static final int TYPE_MODULE_CARD = 9;
+    public static final int TYPE_SECTION_DIVIDER = 10; // 新增：蓝色分区标题条
+    public static final int TYPE_INFO_BOX = 11;        // 新增：灰色信息框
 
     @IntDef({TYPE_SECTION, TYPE_KEY_VALUE, TYPE_LIST_ITEM, TYPE_ADD_BUTTON,
-            TYPE_CARD_HEADER, TYPE_CARD_END, TYPE_LIST_MIRROR, TYPE_STAGE_HEADER, TYPE_STAGE_END})
+            TYPE_CARD_HEADER, TYPE_CARD_END, TYPE_LIST_MIRROR, TYPE_STAGE_HEADER, TYPE_STAGE_END, 
+            TYPE_MODULE_CARD, TYPE_SECTION_DIVIDER, TYPE_INFO_BOX})
     @Retention(RetentionPolicy.SOURCE)
     public @interface ItemType {}
 
@@ -27,6 +32,43 @@ public abstract class PlanUiItem {
 
     protected PlanUiItem(@ItemType int type) {
         this.type = type;
+    }
+
+    public static class SectionDivider extends PlanUiItem {
+        public final String title;
+
+        public SectionDivider(String title) {
+            super(TYPE_SECTION_DIVIDER);
+            this.title = title;
+        }
+    }
+
+    public static class InfoBox extends PlanUiItem {
+        public final String title;
+        public final List<PlanUiItem> children;
+
+        public InfoBox(String title, List<PlanUiItem> children) {
+            super(TYPE_INFO_BOX);
+            this.title = title;
+            this.children = children != null ? children : new ArrayList<>();
+        }
+    }
+
+    public static class ModuleCard extends PlanUiItem {
+        public final String title;
+        public final String moduleKey;
+        public final List<PlanUiItem> children;
+        public boolean expanded;
+        public boolean isEditing;
+
+        public ModuleCard(String title, String moduleKey, List<PlanUiItem> children) {
+            super(TYPE_MODULE_CARD);
+            this.title = title;
+            this.moduleKey = moduleKey;
+            this.children = children != null ? children : new ArrayList<>();
+            this.expanded = true;
+            this.isEditing = false;
+        }
     }
 
     public static class SectionHeader extends PlanUiItem {
