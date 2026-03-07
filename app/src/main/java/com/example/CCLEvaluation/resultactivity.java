@@ -320,13 +320,28 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (extraAResults != null) extraAResults.setVisibility(View.VISIBLE);
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.VISIBLE);
             evaluations.add(new a(0, (List<a.CharacterPhonology>) null, null, null, null)); // 首行
-            // 逐题读取
-            List<a> aItems = new ArrayList<>();
-            for(int i=0;i<jsonArray.length();i++){
+            // 构音记录去重：按题号保留最后一次写入，避免历史重复append导致1-53重复显示。
+            HashMap<Integer, a> uniqueByNum = new HashMap<>();
+            int maxNum = 0;
+            for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject object = jsonArray.getJSONObject(i);
                 a item = a.fromJson(object);
-                aItems.add(item);
-                evaluations.add(item);
+                int num = item.getNum();
+                if (num <= 0) {
+                    continue;
+                }
+                uniqueByNum.put(num, item);
+                if (num > maxNum) {
+                    maxNum = num;
+                }
+            }
+            List<a> aItems = new ArrayList<>();
+            for (int num = 1; num <= maxNum; num++) {
+                a item = uniqueByNum.get(num);
+                if (item != null) {
+                    aItems.add(item);
+                    evaluations.add(item);
+                }
             }
             recomputeArticulationStats();
             JSONObject evaluations = data.optJSONObject("evaluations");
@@ -472,7 +487,10 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             }
             // 如果没有找到分组特定的 JSONArray，则使用默认的 "RG" JSONArray
             if (jsonArray == null) {
-                jsonArray = evaluationsObj.getJSONArray("RG");
+                jsonArray = evaluationsObj.optJSONArray("RG");
+                if (jsonArray == null) {
+                    jsonArray = new JSONArray();
+                }
             }
             evaluations.add(new rg(0,null,null,null,null,-1,null,null));//首行
             int completedCount = 0;
@@ -482,8 +500,14 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     if(object.getBoolean("result")){
                         countre++;
                     }
-                    evaluations.add(new rg(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
-                            object.getBoolean("result"),object.getInt("score"),new audio(object.getString("audioPath")),object.getString("time")));
+                    int score = object.has("score") && !object.isNull("score") ? object.getInt("score") : -1;
+                    if (object.has("audioPath") && !object.isNull("audioPath")) {
+                        evaluations.add(new rg(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
+                                object.getBoolean("result"),score,new audio(object.getString("audioPath")),object.getString("time")));
+                    } else {
+                        evaluations.add(new rg(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
+                                object.getBoolean("result"),score,null,object.getString("time")));
+                    }
                     completedCount++;
                 }
                 // 只显示已经完成的题目，跳过未完成的题目
@@ -529,7 +553,10 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             }
             // 如果没有找到分组特定的 JSONArray，则使用默认的 "SE" JSONArray
             if (jsonArray == null) {
-                jsonArray = evaluationsObj.getJSONArray("SE");
+                jsonArray = evaluationsObj.optJSONArray("SE");
+                if (jsonArray == null) {
+                    jsonArray = new JSONArray();
+                }
             }
             evaluations.add(new se(0,null,null,null,null,-1,null,null));//首行
             int completedCount = 0;
@@ -539,8 +566,14 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     if(object.getBoolean("result")){
                         countre++;
                     }
-                    evaluations.add(new se(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
-                            object.getBoolean("result"),object.getInt("score"),new audio(object.getString("audioPath")),object.getString("time")));
+                    int score = object.has("score") && !object.isNull("score") ? object.getInt("score") : -1;
+                    if (object.has("audioPath") && !object.isNull("audioPath")) {
+                        evaluations.add(new se(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
+                                object.getBoolean("result"),score,new audio(object.getString("audioPath")),object.getString("time")));
+                    } else {
+                        evaluations.add(new se(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
+                                object.getBoolean("result"),score,null,object.getString("time")));
+                    }
                     completedCount++;
                 }
                 // 只显示已经完成的题目，跳过未完成的题目
@@ -666,26 +699,33 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 plSaveButton.setVisibility(View.GONE);
             }
         } else if (safeFormat.equals("SOCIAL")) {
+            // 强制横屏显示
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             if (extraAResults != null) extraAResults.setVisibility(View.GONE);
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
-            // 隐藏（三）评估建议部分
-            View rootView = findViewById(android.R.id.content);
-            if (rootView != null) {
-                // 查找所有TextView，隐藏文本为"（三）评估建议"的控件
-                findAndHideEvaluationSuggestionTitle(rootView);
-            }
 
             JSONArray jsonArray = data.getJSONObject("evaluations").optJSONArray("SOCIAL");
             if (jsonArray == null) {
                 jsonArray = new JSONArray();
             }
-            evaluations.add(new social(0, null, null, null, null, null, null, null));//首行
+            
+            // 清空之前的评估结果
+            evaluations.clear();
+            
+            // 添加表头
+            evaluations.add(new social(0, "题号", "社交能力", "考查点", null, null, null, null));
+            
             List<social> socialItems = new ArrayList<>();
-            JSONObject report = ModuleReportHelper.loadSocialReport(data);
             
             String[] abilities = ImageUrls.SOCIAL_abilities;
             String[] focuses = ImageUrls.SOCIAL_focuses;
             String[] contents = ImageUrls.SOCIAL_contents;
+            
+            // 检查数组是否为null
+            if (abilities == null || focuses == null || contents == null) {
+                Toast.makeText(this, "数据加载失败：题目数据为空！", Toast.LENGTH_SHORT).show();
+                return;
+            }
             
             // 创建一个映射来存储已有的结果，避免重复
             HashMap<Integer, social> socialItemMap = new HashMap<>();
@@ -703,109 +743,112 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 }
             }
             
-            // 处理所有题目
-            for (int i = 0; i < abilities.length; i++) {
-                int questionNumber = i + 1;
-                social item = socialItemMap.get(questionNumber);
-                
-                if (item == null) {
-                    // 如果没有已有结果，创建新对象
-                    item = new social(questionNumber, abilities[i], focuses[i], contents[i], null, null, null, null);
-                } else {
-                    // 如果有已有结果，确保能力、考查点和题目内容正确
-                    if (item.getAbility() == null || item.getAbility().trim().isEmpty()) {
-                        item.setAbility(abilities[i]);
-                    }
-                    if (item.getFocus() == null || item.getFocus().trim().isEmpty()) {
-                        item.setFocus(focuses[i]);
-                    }
-                    if (item.getContent() == null || item.getContent().trim().isEmpty()) {
-                        item.setContent(contents[i]);
-                    }
-                }
-                
-                socialItems.add(item);
-                
-                // 只添加做过且得分不为2的项目到评估结果中
-                Integer score = item.getScore();
-                if (score != null && score != 2) {
-                    evaluations.add(item);
-                }
-            }
-            
+            // 按组处理题目，只显示已完成的组
             int totalScore = 0;
-            List<String> strengths = new ArrayList<>();
-            List<String> inProgress = new ArrayList<>();
+            int completedQuestions = 0;
             List<String> weaknesses = new ArrayList<>();
-            for (social item : socialItems) {
-                int value = item.getScore() == null ? 0 : item.getScore();
-                totalScore += value;
-                if (value == 2) {
-                    strengths.add(item.getAbility());
-                } else if (value == 1) {
-                    inProgress.add(item.getAbility());
-                } else {
-                    weaknesses.add(item.getAbility());
-                }
-            }
+            List<String> inProgress = new ArrayList<>();
             
-            // 显示总分和评估结果
-            double percentage = totalScore / 120.0 * 100;
-            String assessment = percentage >= 80 ? "从整体上来说，孩子的社交能力较好，基本达标。" : "从整体上来说，孩子的社交能力还有待进一步发展，尚未达标。";
-            
-            // 生成详细建议
-            StringBuilder detailedAssessment = new StringBuilder();
-            detailedAssessment.append(assessment).append("\n总分：").append(totalScore).append("/120\n\n");
-            
-            // 只显示表格中有的能力，也就是做过但是没达到2分的能力
-            List<String> tableWeaknesses = new ArrayList<>();
-            List<String> tableInProgress = new ArrayList<>();
-            
-            // 遍历evaluations，只添加在结果表格中显示的能力
-            if (evaluations != null) {
-                for (evaluation eval : evaluations) {
-                    if (!(eval instanceof social)) {
-                        continue;
+            // 按组号从小到大处理
+            for (int group = 1; group <= 6; group++) {
+                boolean hasCompletedQuestions = false;
+                
+                // 处理该组的10个题目
+                for (int i = 0; i < 10; i++) {
+                    int questionIndex = (group - 1) * 10 + i;
+                    if (questionIndex >= abilities.length) break;
+                    
+                    int questionNumber = questionIndex + 1;
+                    social item = socialItemMap.get(questionNumber);
+                    
+                    if (item == null) {
+                        // 如果没有已有结果，创建新对象
+                        item = new social(questionNumber, abilities[questionIndex], focuses[questionIndex], contents[questionIndex], null, null, null, null);
+                    } else {
+                        // 如果有已有结果，确保能力、考查点和题目内容正确
+                        if (item.getAbility() == null || item.getAbility().trim().isEmpty()) {
+                            item.setAbility(abilities[questionIndex]);
+                        }
+                        if (item.getFocus() == null || item.getFocus().trim().isEmpty()) {
+                            item.setFocus(focuses[questionIndex]);
+                        }
+                        if (item.getContent() == null || item.getContent().trim().isEmpty()) {
+                            item.setContent(contents[questionIndex]);
+                        }
                     }
-                    social item = (social) eval;
-                    // 跳过首行和总分行
-                    if (item.getNum() == 0 || item.getNum() == -1) {
-                        continue;
-                    }
-                    String ability = item.getAbility();
-                    if (ability == null || ability.trim().isEmpty()) {
-                        continue;
-                    }
+                    
+                    socialItems.add(item);
+                    
+                    // 检查是否有得分
                     Integer score = item.getScore();
-                    if (score == null) {
-                        continue;
+                    if (score != null) {
+                        hasCompletedQuestions = true;
+                        completedQuestions++;
+                        totalScore += score;
+                        
+                        // 收集需要重点关注和进一步发展的能力
+                        if (score == 1 && !inProgress.contains(item.getAbility())) {
+                            inProgress.add(item.getAbility());
+                        } else if (score == 0 && !weaknesses.contains(item.getAbility())) {
+                            weaknesses.add(item.getAbility());
+                        }
+                        
+                        // 添加到评估结果中 - 无论得分如何，只要完成了就显示
+                        evaluations.add(item);
                     }
-                    if (score == 0 && !tableWeaknesses.contains(ability)) {
-                        tableWeaknesses.add(ability);
-                    } else if (score == 1 && !tableInProgress.contains(ability)) {
-                        tableInProgress.add(ability);
-                    }
+                }
+                
+                // 如果该组有完成的题目，添加一个空行作为分隔
+                if (hasCompletedQuestions) {
+                    evaluations.add(new social(-1, "", "", "", null, null, null, null));
                 }
             }
             
-            if (!tableWeaknesses.isEmpty()) {
-                detailedAssessment.append("1.需要重点关注：\n");
-                for (String weakness : tableWeaknesses) {
-                    detailedAssessment.append(weakness).append("\n");
-                }
-                detailedAssessment.append("\n");
+            // 计算总体评估结果
+            double accuracy = 0;
+            if (completedQuestions > 0) {
+                accuracy = (double) totalScore / (completedQuestions * 2);
             }
             
-            if (!tableInProgress.isEmpty()) {
-                detailedAssessment.append("2.有些社交能力已经表现出来，但是不够经常，我们可以多去发展以下能力：\n");
-                for (String skill : tableInProgress) {
-                    detailedAssessment.append(skill).append("\n");
-                }
-                detailedAssessment.append("\n");
+            // 生成评估建议
+            StringBuilder detailedAssessment = new StringBuilder();
+            detailedAssessment.append("（二）评估建议\n\n");
+            detailedAssessment.append("通过对儿童社交能力的评估（家长试卷）结果如下：\n\n");
+            
+            // 根据正确率选择评估结果
+            if (accuracy >= 0.6) {
+                detailedAssessment.append("● 从整体上来说，孩子的社交能力较好，基本达标。\n\n");
+            } else {
+                detailedAssessment.append("● 从整体上来说，孩子的社交能力还有待进一步发展，尚未达标。\n\n");
             }
             
-            tv2.setText(detailedAssessment.toString());
+            // 显示需要重点关注的能力
+            detailedAssessment.append("1.需要重点关注：\n");
+            if (!weaknesses.isEmpty()) {
+                for (int i = 0; i < weaknesses.size(); i++) {
+                    detailedAssessment.append((i + 1)).append(". ").append(weaknesses.get(i)).append("\n");
+                }
+            } else {
+                detailedAssessment.append("无\n");
+            }
+            detailedAssessment.append("\n");
+            
+            // 显示需要进一步发展的能力
+            detailedAssessment.append("2.有些社交能力已经表现出来，但是不够经常，我们可以多去发展以下能力：\n");
+            if (!inProgress.isEmpty()) {
+                for (int i = 0; i < inProgress.size(); i++) {
+                    detailedAssessment.append((i + 1)).append(". ").append(inProgress.get(i)).append("\n");
+                }
+            } else {
+                detailedAssessment.append("无\n");
+            }
+            detailedAssessment.append("\n");
+            
+            if (tv2 != null) {
+                tv2.setText(detailedAssessment.toString());
+            }
 
+            // 添加总分行
             evaluations.add(new social(-1, "总分", null, null, totalScore, null, null, null));
         }
         else {
