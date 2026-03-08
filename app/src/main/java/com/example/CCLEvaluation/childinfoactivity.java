@@ -92,7 +92,7 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
                 info.put("familyMembers", FamilyMemberAdapter.toJsonArray(familyMemberAdapter.getMembers()));
                 info.put("testDate", tTestDate.isEmpty() ? dateFormat.format(new Date()) : tTestDate);
 
-                Intent intent = new Intent(childinfoactivity.this, evmenuactivity.class);
+                Intent intent = new Intent(childinfoactivity.this, AssessmentModulesActivity.class);
                 JSONObject data = dataManager.getInstance().createData(info);
                 String baseName = tNa.isEmpty() ? "child" : tNa;
                 String fName = dataManager.getInstance().saveData(baseName + System.currentTimeMillis() + ".json", data);

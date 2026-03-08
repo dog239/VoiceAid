@@ -104,7 +104,7 @@ public class showprivatechildinformation extends AppCompatActivity {
         buttonSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(showprivatechildinformation.this, evmenuactivity.class);
+                Intent intent = new Intent(showprivatechildinformation.this, com.example.CCLEvaluation.AssessmentModulesActivity.class);
                 intent.putExtra("fName", fName);
                 intent.putExtra("reload", true);
                 intent.putExtra("private", true);

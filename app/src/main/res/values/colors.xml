@@ -20,4 +20,6 @@
     <color name="wrong_color">#57E46D13</color>
     <color name="holo_gray_light">#97999999</color>
     <color name="green_blue">#00B4C1</color>
+    <color name="teal_700">#008A7C</color>
+    <color name="purple_500">#A855F7</color>
 </resources>

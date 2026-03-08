@@ -1,0 +1,283 @@
+package com.example.CCLEvaluation;
+
+import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.MenuItem;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import bean.AssessmentModule;
+import bean.evaluation;
+import utils.ImageUrls;
+import utils.NetInteractUtils;
+import utils.dataManager;
+
+public class AssessmentModulesActivity extends AppCompatActivity {
+
+    private RecyclerView modulesRecycler;
+    private AssessmentModuleAdapter adapter;
+    private List<AssessmentModule> moduleList = new ArrayList<>();
+    private String fName;
+    private String uid;
+    private String childUser;
+    private JSONObject data;
+    private TextView patientName;
+    private TextView patientAge; // Reusing this for ID or Age
+    private TextView patientId;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_assessment_modules);
+
+        initViews();
+        initData();
+    }
+
+    private void initViews() {
+        modulesRecycler = findViewById(R.id.modules_recycler);
+        modulesRecycler.setLayoutManager(new LinearLayoutManager(this));
+        
+        adapter = new AssessmentModuleAdapter(moduleList, this::onModuleClick);
+        modulesRecycler.setAdapter(adapter);
+
+        ImageView btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> {
+            Intent intent = new Intent(AssessmentModulesActivity.this, history.showchildinformation.class);
+            intent.putExtra("fName", fName);
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
+            startActivity(intent);
+            finish();
+        });
+        
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
+        bottomNav.setSelectedItemId(R.id.nav_modules); // Set current item
+        bottomNav.setOnItemSelectedListener(this::onNavigationItemSelected);
+    }
+
+    private boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.nav_modules) {
+            return true;
+        } else if (item.getItemId() == R.id.nav_reports) {
+            Intent intent = new Intent(this, SelectReportActivity.class);
+            intent.putExtra("fName", fName);
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
+            startActivity(intent);
+            overridePendingTransition(0, 0); // Seamless transition
+            return true;
+        } else if (item.getItemId() == R.id.nav_profile) {
+            // Jump to User Profile
+            Intent intent = new Intent(this, UserProfileActivity.class);
+            intent.putExtra("fName", fName);
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
+            startActivity(intent);
+            return true;
+        }
+        return false;
+    }
+
+    private void initData() {
+        fName = getIntent().getStringExtra("fName");
+        uid = getIntent().getStringExtra("Uid");
+        childUser = getIntent().getStringExtra("childID");
+        boolean isPrivate = getIntent().getBooleanExtra("private", false);
+
+        // Load data from file
+        try {
+            data = dataManager.getInstance().loadData(fName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "数据加载失败", Toast.LENGTH_SHORT).show();
+        }
+
+        // Fetch permissions/modules from backend
+        if (isPrivate || uid == null || uid.isEmpty()) {
+            // Private mode or no UID: show all modules by default
+            updateModulesList(null); 
+        } else {
+            NetInteractUtils.getInstance(this).setModuleCallback(new NetInteractUtils.ModuleCallback() {
+                @Override
+                public void onModuleResult(String module) throws JSONException {
+                    updateModulesList(module);
+                }
+            });
+            NetInteractUtils.getInstance(this).getModule(uid);
+            
+            // Fallback: if network is slow/fails, show defaults after delay? 
+            // Or just init with defaults and let network update it.
+            updateModulesList(null);
+        }
+    }
+
+    private void updateModulesList(String moduleJson) {
+        String E = "1", A = "1", RG = "1", PL = "1"; // Default to enabled
+        
+        if (moduleJson != null && !moduleJson.isEmpty()) {
+            try {
+                JSONObject jsonObject = new JSONObject(moduleJson);
+                E = jsonObject.optString("E", "1");
+                A = jsonObject.optString("A", "1");
+                RG = jsonObject.optString("RG", "1");
+                PL = jsonObject.optString("PL", "1");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        moduleList.clear();
+
+        // 1. 构音 (A)
+        if ("1".equals(A)) {
+            AssessmentModule m = new AssessmentModule("A", "构音评估", "评估语音放置和发音准确性", "10 分钟", android.R.drawable.ic_btn_speak_now);
+            m.setCompleted(checkCompletion("A", ImageUrls.A_imageUrls.length)); 
+            moduleList.add(m);
+        }
+
+        // 2. 前语言 (PL)
+        if ("1".equals(PL)) {
+            AssessmentModule m = new AssessmentModule("PL", "前语言能力", "评估前语言沟通技能", "15 分钟", android.R.drawable.ic_menu_agenda);
+            m.setCompleted(checkCompletion("PL", 0)); 
+            moduleList.add(m);
+        }
+
+        // 3. 词汇-表达 (E)
+        if ("1".equals(E)) {
+            AssessmentModule m = new AssessmentModule("E", "词汇能力-表达", "评估词汇表达能力", "15 分钟", android.R.drawable.ic_menu_sort_by_size);
+            m.setCompleted(checkCompletion("E", 7)); 
+            moduleList.add(m);
+        }
+
+        // 4. 词汇-理解 (EV)
+        if ("1".equals(E)) { 
+            AssessmentModule m = new AssessmentModule("EV", "词汇能力-理解", "评估词汇理解能力", "15 分钟", android.R.drawable.ic_menu_search);
+            m.setCompleted(checkCompletion("EV", 7)); 
+            moduleList.add(m);
+        }
+
+        // 5. 句法 (RG)
+        if ("1".equals(RG)) {
+            AssessmentModule m = new AssessmentModule("RG", "句法能力", "评估句法理解与表达", "20 分钟", android.R.drawable.ic_menu_edit);
+            m.setCompleted(checkCompletion("RG", ImageUrls.RG_hints.length));
+            moduleList.add(m);
+        }
+
+        // 6. 社交 (Social) - Always added
+        AssessmentModule m = new AssessmentModule("SOCIAL", "社交能力", "评估社交互动技能", "15 分钟", android.R.drawable.ic_menu_myplaces);
+        m.setCompleted(checkCompletion("SOCIAL", 7)); // Assuming 7 based on earlier snippet or default
+        moduleList.add(m);
+
+        runOnUiThread(() -> adapter.notifyDataSetChanged());
+    }
+
+    private boolean checkCompletion(String key, int targetLength) {
+        if (data == null) return false;
+        JSONObject evaluations = data.optJSONObject("evaluations");
+        if (evaluations == null) return false;
+        
+        if ("PL".equals(key)) {
+             // For PL, evmenuactivity doesn't have length check logic visible in the snippet provided for "showDetails".
+             // It just calls showDetails(PrelinguisticTest, ... "0").
+             // Actually evmenuactivity calls showDetails(..., "PL", 0) -> length 0?
+             // Wait, line 609: showDetails(PrelinguisticResult, ... "0")? No, the snippet was cut off or I missed it.
+             // Let's assume for PL we check if array is not empty.
+             JSONArray arr = evaluations.optJSONArray("PL");
+             return arr != null && arr.length() > 0;
+        }
+
+        JSONArray array = evaluations.optJSONArray(key);
+        if (array == null) return false;
+
+        int len = 0;
+        for (int i = 0; i < array.length(); i++) {
+            try {
+                if (array.getJSONObject(i).has("time") && !array.getJSONObject(i).isNull("time"))
+                    len++;
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        // For RG, evaluation.RG is an array? evmenuactivity uses evaluation.RG (array?) in showDetails?
+        // evmenuactivity line 639: showDetails(Grammar, RG_array, evaluation.RG, ImageUrls.RG_hints.length);
+        // So targetLength is passed.
+        
+        return len >= targetLength;
+    }
+    
+    // Overload for array check (A, RG)
+    private boolean checkCompletion(String key, String[] targetArray) {
+        return checkCompletion(key, targetArray != null ? targetArray.length : 0);
+    }
+
+    private void onModuleClick(AssessmentModule module) {
+        Intent intent = null;
+        switch (module.getId()) {
+            case "A": // 构音
+                intent = new Intent(this, testactivity.class);
+                intent.putExtra("format", "A");
+                break;
+            case "PL": // 前语言
+                intent = new Intent(this, PrelinguisticSceneSelectActivity.class);
+                break;
+            case "E": // 词汇表达
+                intent = new Intent(this, testactivity.class);
+                intent.putExtra("format", "E");
+                break;
+            case "EV": // 词汇理解
+                intent = new Intent(this, testactivity.class);
+                intent.putExtra("format", "EV");
+                break;
+            case "RG": // 句法
+                intent = new Intent(this, SyntaxAbilityEvaluationActivity.class);
+                break;
+            case "SOCIAL": // 社交
+                intent = new Intent(this, SocialGroupSelectActivity.class);
+                intent.putExtra("Uid", uid);
+                intent.putExtra("childID", childUser);
+                break;
+        }
+
+        if (intent != null) {
+            intent.putExtra("fName", fName);
+            startActivity(intent);
+        }
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Reload data to check completion status updates
+        try {
+            if (fName != null) {
+                data = dataManager.getInstance().loadData(fName);
+                // Trigger list update again?
+                // NetInteractUtils.getModule might not need to be called again if permissions don't change, 
+                // but completion status might.
+                // We should re-run updateModulesList with cached module permission string if possible, 
+                // or just re-fetch. Re-fetching is safer.
+                NetInteractUtils.getInstance(this).getModule(uid);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

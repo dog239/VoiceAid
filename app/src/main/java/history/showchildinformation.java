@@ -101,7 +101,7 @@ public class showchildinformation extends AppCompatActivity {
         buttonSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(showchildinformation.this, evmenuactivity.class);
+                Intent intent = new Intent(showchildinformation.this, com.example.CCLEvaluation.AssessmentModulesActivity.class);
                 intent.putExtra("fName", fName);
                 String Uid = getIntent().getStringExtra("Uid");
                 intent.putExtra("Uid", Uid);
