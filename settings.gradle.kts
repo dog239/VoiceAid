@@ -19,6 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CCLevaluation"
+rootProject.name = "VoiceAid"
 include(":app")
- 
