@@ -16,6 +16,7 @@ import android.view.ViewParent;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -256,17 +257,52 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             plSaveButton.setOnClickListener(this);
         }
 
+        // --- New UI Adapters ---
+        ImageView btnBackNew = findViewById(R.id.btn_back_new);
+        if (btnBackNew != null) {
+            btnBackNew.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // Delegate to the original back button logic
+                    if (back != null) {
+                        back.performClick();
+                    } else {
+                        AudioPlayer.getInstance().setPlayPos(-1);
+                        AudioPlayer.getInstance().stop();
+                        savePrelinguisticReport();
+                        saveArticulationReport();
+                        saveSocialReport();
+                        finish();
+                    }
+                }
+            });
+        }
+        
+        // Share button (Placeholder)
+        ImageView btnShare = findViewById(R.id.btn_share);
+        if (btnShare != null) {
+            // TODO: Implement share logic
+        }
+
+        // Generate Plan button
+        View btnGeneratePlan = findViewById(R.id.btn_generate_plan);
+        if (btnGeneratePlan != null) {
+            btnGeneratePlan.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(resultactivity.this, TreatmentPlanActivity.class);
+                    intent.putExtra("fName", fName);
+                    // intent.putExtra("Uid", ...); 
+                    startActivity(intent);
+                }
+            });
+        }
+
     }
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-
-        if(newConfig.orientation==Configuration.ORIENTATION_LANDSCAPE) {
-            //横向
-            setContentView(R.layout.activity_ev_menu);
-        } else {
-            //竖向
-            setContentView(R.layout.activity_ev_menu);
-        }
+        // Do nothing to preserve the current layout (activity_result11)
+        // The ConstraintLayout will adapt to the new orientation.
     }
 
     /**
@@ -304,6 +340,63 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         String moduleKey = intent.getStringExtra("moduleKey");
         this.fName = fName;
         JSONObject data = dataManager.getInstance().loadData(fName);
+
+        // --- Dynamic Title & Date Setup ---
+        TextView tvPageTitle = findViewById(R.id.tv_page_title);
+        TextView tvPageDate = findViewById(R.id.tv_page_date);
+        if (tvPageTitle != null) {
+            String title = "评估结果";
+            String sF = format == null ? "" : format;
+            String sM = moduleKey == null ? "" : moduleKey;
+            
+            if ("A".equals(sF)) title = "构音评估结果";
+            else if ("PL".equals(sM) || "PL".equals(sF) || "11".equals(sF)) title = "前语言评估结果";
+            else if ("E".equals(sF)) title = "词汇表达评估结果";
+            else if ("EV".equals(sF)) title = "词汇理解评估结果";
+            else if ("RG".equals(sF) || "RE".equals(sF)) title = "句法理解评估结果";
+            else if ("SE".equals(sF)) title = "句法表达评估结果";
+            else if ("SOCIAL".equals(sF)) title = "社交评估结果";
+            else if ("PN".equals(sF)) title = "个人生活经验评估结果";
+            else if ("PST".equals(sF)) title = "看图说故事评估结果";
+            else if ("S".equals(sF)) title = "词义评估结果";
+            
+            tvPageTitle.setText(title);
+        }
+        
+        // Attempt to extract date from the first available time in data
+        if (tvPageDate != null && data != null) {
+             String dateFound = "";
+             // Try common locations or iterating evaluations
+             // Since traversing the whole JSON generically is complex, we will rely on specific modules below to update date if needed.
+             // But here is a best-effort check:
+             try {
+                 JSONObject evals = data.optJSONObject("evaluations");
+                 if (evals != null) {
+                     // Check A, E, EV, etc.
+                     String[] keys = {"A", "E", "EV", "RG", "SE", "SOCIAL", "PL"};
+                     for (String key : keys) {
+                         JSONArray arr = evals.optJSONArray(key);
+                         if (arr != null && arr.length() > 0) {
+                             JSONObject item = arr.optJSONObject(0);
+                             if (item != null && item.has("time")) {
+                                 String t = item.optString("time");
+                                 if (t.contains(" ")) t = t.split(" ")[0]; // Take date part
+                                 dateFound = t;
+                                 break;
+                             }
+                         }
+                     }
+                 }
+             } catch (Exception e) { e.printStackTrace(); }
+             
+             if (!dateFound.isEmpty()) {
+                 tvPageDate.setText("测评日期：" + dateFound);
+             } else {
+                 // Fallback to today
+                 tvPageDate.setText("测评日期：" + new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new java.util.Date()));
+             }
+        }
+
         if(format==null && moduleKey == null)
             return;
         String safeFormat = format == null ? "" : format;
