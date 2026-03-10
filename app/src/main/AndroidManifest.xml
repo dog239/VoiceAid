@@ -118,6 +118,10 @@
             android:screenOrientation="portrait"
             android:exported="false" />
         <activity
+            android:name=".InterventionPlanActivity"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+        <activity
             android:name=".SocialGroupSelectActivity"
             android:screenOrientation="portrait"
             android:exported="true" />

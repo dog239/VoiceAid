@@ -528,17 +528,36 @@
         android:background="#FFFFFF"
         android:elevation="8dp"
         android:padding="16dp"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <com.google.android.material.button.MaterialButton
-            android:layout_width="match_parent"
+            android:id="@+id/btn_generate_plan"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="56dp"
+            android:layout_marginEnd="8dp"
             android:backgroundTint="#008A7C"
-            android:text="生成干预方案"
+            android:text="生成干预报告"
             android:textColor="#FFFFFF"
             app:cornerRadius="12dp"
             app:icon="@android:drawable/ic_menu_edit"
             app:iconGravity="textStart" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_view_plan"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="56dp"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="#E2E8F0"
+            android:enabled="false"
+            android:text="查看干预报告"
+            android:textColor="#94A3B8"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_menu_view"
+            app:iconGravity="textStart"
+            app:iconTint="#94A3B8" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

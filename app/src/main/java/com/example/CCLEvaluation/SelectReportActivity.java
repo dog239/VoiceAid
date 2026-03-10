@@ -251,12 +251,33 @@ public class SelectReportActivity extends AppCompatActivity {
     }
     
     private boolean checkReportGenerated(String key) {
-        // Check if individual report is generated?
-        // Maybe check if 'treatmentPlan' has this module?
         if (data == null || !data.has("treatmentPlan")) return false;
         try {
             JSONObject plan = data.getJSONObject("treatmentPlan");
-            return plan.has(key); // Assuming plan keys match module keys
+            JSONObject modulePlan = plan.optJSONObject("module_plan");
+            if (modulePlan == null) return false;
+
+            String jsonKey = "";
+            switch (key) {
+                case "A":
+                    jsonKey = "speech_sound";
+                    break;
+                case "PL":
+                    jsonKey = "prelinguistic";
+                    break;
+                case "E":
+                    jsonKey = "vocabulary";
+                    break;
+                case "RG":
+                    jsonKey = "syntax";
+                    break;
+                case "SOCIAL":
+                    jsonKey = "social_pragmatics";
+                    break;
+                default:
+                    return false;
+            }
+            return modulePlan.has(jsonKey) && !modulePlan.isNull(jsonKey);
         } catch (JSONException e) {
             return false;
         }

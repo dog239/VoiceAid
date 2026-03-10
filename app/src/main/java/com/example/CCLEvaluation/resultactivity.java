@@ -47,6 +47,7 @@ import bean.se;
 import bean.social;
 import utils.AudioPlayer;
 import utils.ImageUrls;
+import utils.ModuleInterventionService;
 import utils.ModuleReportHelper;
 import utils.dataManager;
 import utils.ResultContext;
@@ -85,6 +86,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
     private boolean isPrelinguisticResult;
     private boolean isArticulationResult;
     private boolean isSocialResult;
+    private String currentModuleType = "";
     private final int[] initialIds = new int[]{
             R.id.initial_b, R.id.initial_p, R.id.initial_m, R.id.initial_f,
             R.id.initial_d, R.id.initial_t, R.id.initial_n, R.id.initial_l,
@@ -290,12 +292,22 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             btnGeneratePlan.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Intent intent = new Intent(resultactivity.this, TreatmentPlanActivity.class);
-                    intent.putExtra("fName", fName);
-                    // intent.putExtra("Uid", ...); 
-                    startActivity(intent);
+                    generateModuleInterventionGuide(v);
                 }
             });
+        }
+        
+        // View Plan button (Added per request)
+        com.google.android.material.button.MaterialButton btnViewPlan = findViewById(R.id.btn_view_plan);
+        if (btnViewPlan != null) {
+            btnViewPlan.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    openInterventionDetail();
+                }
+            });
+            // Initial check
+            updateViewPlanButtonState(btnViewPlan);
         }
 
     }
@@ -400,6 +412,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         if(format==null && moduleKey == null)
             return;
         String safeFormat = format == null ? "" : format;
+        currentModuleType = resolveModuleType(safeFormat, moduleKey);
         boolean isPrelinguistic = MODULE_PL.equals(moduleKey) || MODULE_PL.equals(format) || FORMAT_PL.equals(format);
         isPrelinguisticResult = isPrelinguistic;
         boolean isArticulation = "A".equals(safeFormat);
@@ -1178,6 +1191,97 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+    private void generateModuleInterventionGuide(View triggerView) {
+        if (fName == null || fName.trim().isEmpty()) {
+            Toast.makeText(this, "未找到评测数据", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (currentModuleType == null || currentModuleType.trim().isEmpty()) {
+            Toast.makeText(this, "当前结果页未映射模块", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        savePrelinguisticReport();
+        saveArticulationReport();
+        saveSocialReport();
+        if (triggerView != null) {
+            triggerView.setEnabled(false);
+        }
+        Toast.makeText(this, "正在生成模块干预报告...", Toast.LENGTH_SHORT).show();
+        JSONObject childData;
+        try {
+            childData = dataManager.getInstance().loadData(fName);
+        } catch (Exception e) {
+            if (triggerView != null) {
+                triggerView.setEnabled(true);
+            }
+            Toast.makeText(this, "读取评测数据失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new ModuleInterventionService().generate(childData, currentModuleType, new ModuleInterventionService.Callback() {
+            @Override
+            public void onSuccess(JSONObject interventionGuide) {
+                runOnUiThread(() -> {
+                    try {
+                        JSONObject latest = dataManager.getInstance().loadData(fName);
+                        ModuleReportHelper.saveModuleInterventionGuide(latest, currentModuleType, interventionGuide);
+                        dataManager.getInstance().saveChildJson(fName, latest);
+                        openInterventionDetail();
+                        Toast.makeText(resultactivity.this, "模块干预报告已生成", Toast.LENGTH_SHORT).show();
+
+                        com.google.android.material.button.MaterialButton btnViewPlan = findViewById(R.id.btn_view_plan);
+                        if (btnViewPlan != null) {
+                            updateViewPlanButtonState(btnViewPlan);
+                        }
+                    } catch (Exception e) {
+                        Toast.makeText(resultactivity.this, "保存模块干预报告失败", Toast.LENGTH_SHORT).show();
+                    } finally {
+                        if (triggerView != null) {
+                            triggerView.setEnabled(true);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                runOnUiThread(() -> {
+                    if (triggerView != null) {
+                        triggerView.setEnabled(true);
+                    }
+                    Toast.makeText(resultactivity.this, "生成失败: " + errorMessage, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void openInterventionDetail() {
+        Intent intent = new Intent(this, InterventionPlanActivity.class);
+        intent.putExtra("fName", fName);
+        intent.putExtra("moduleType", currentModuleType);
+        startActivity(intent);
+    }
+
+    private String resolveModuleType(String format, String moduleKey) {
+        String f = safeText(format).toUpperCase(Locale.ROOT);
+        String mk = safeText(moduleKey).toUpperCase(Locale.ROOT);
+        if ("PL".equals(f) || "11".equals(f) || "PL".equals(mk)) {
+            return "prelinguistic";
+        }
+        if ("A".equals(f)) {
+            return "articulation";
+        }
+        if ("SOCIAL".equals(f)) {
+            return "social";
+        }
+        if ("RG".equals(f) || "SE".equals(f)) {
+            return "syntax";
+        }
+        if ("E".equals(f) || "EV".equals(f) || "RE".equals(f) || "S".equals(f) || "NWR".equals(f)) {
+            return "vocabulary";
+        }
+        return ModuleReportHelper.normalizeModuleType(format);
+    }
+
     private String buildDiagnosisText() {
         List<String> items = new ArrayList<>();
         addCheckedLabel(items, diagNormal);
@@ -1383,6 +1487,30 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         } catch (Exception e) {
             // 捕获任何异常，确保方法不会导致崩溃
             e.printStackTrace();
+        }
+    }
+
+    private void updateViewPlanButtonState(com.google.android.material.button.MaterialButton btnViewPlan) {
+        if (btnViewPlan == null) return;
+        boolean exists = false;
+        try {
+            if (fName != null && currentModuleType != null) {
+                JSONObject data = dataManager.getInstance().loadData(fName);
+                JSONObject guide = ModuleReportHelper.loadModuleInterventionGuide(data, currentModuleType);
+                exists = (guide != null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (exists) {
+            btnViewPlan.setEnabled(true);
+            btnViewPlan.setTextColor(getResources().getColor(R.color.teal_700));
+            btnViewPlan.setIconTint(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.teal_700)));
+        } else {
+            btnViewPlan.setEnabled(false);
+            btnViewPlan.setTextColor(android.graphics.Color.parseColor("#94A3B8"));
+            btnViewPlan.setIconTint(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#94A3B8")));
         }
     }
 

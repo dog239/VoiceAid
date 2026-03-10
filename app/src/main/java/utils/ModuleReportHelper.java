@@ -17,6 +17,65 @@ public final class ModuleReportHelper {
     private ModuleReportHelper() {
     }
 
+    public static String normalizeModuleType(String moduleType) {
+        String key = safeText(moduleType).toLowerCase();
+        if (key.isEmpty()) {
+            return "articulation";
+        }
+        switch (key) {
+            case "a":
+            case "speech_sound":
+                return "articulation";
+            case "rg":
+            case "se":
+                return "syntax";
+            case "social_pragmatics":
+            case "social":
+                return "social";
+            case "pl":
+            case "pre_linguistic":
+                return "prelinguistic";
+            case "e":
+            case "ev":
+            case "re":
+            case "s":
+            case "nwr":
+                return "vocabulary";
+            default:
+                return key;
+        }
+    }
+
+    public static String moduleTitle(String moduleType) {
+        switch (normalizeModuleType(moduleType)) {
+            case "articulation":
+                return "构音模块";
+            case "syntax":
+                return "句法模块";
+            case "social":
+                return "社交模块";
+            case "prelinguistic":
+                return "前语言模块";
+            case "vocabulary":
+                return "词汇模块";
+            default:
+                return "干预模块";
+        }
+    }
+
+    public static JSONArray defaultSubtypes(String moduleType) {
+        String key = normalizeModuleType(moduleType);
+        JSONArray out = new JSONArray();
+        if ("syntax".equals(key)) {
+            out.put("RG");
+            out.put("SE");
+        } else if ("vocabulary".equals(key)) {
+            out.put("expressive");
+            out.put("receptive");
+        }
+        return out;
+    }
+
     public static void applyModuleFindings(JSONObject plan, JSONObject evaluations) {
         applyModuleFindings(plan, evaluations, null);
     }
@@ -635,6 +694,88 @@ public final class ModuleReportHelper {
         }
         reports.put(SOCIAL_KEY, report == null ? new JSONObject() : report);
         return report;
+    }
+
+    public static JSONObject loadModuleReport(JSONObject childData, String moduleType) {
+        if (childData == null) {
+            return null;
+        }
+        JSONObject reports = optJSONObjectFlexible(childData, "moduleReports");
+        if (reports == null) {
+            reports = optJSONObjectFlexible(childData, "module_reports");
+        }
+        if (reports == null) {
+            reports = optJSONObjectFlexible(childData, "reports");
+        }
+        if (reports == null) {
+            return null;
+        }
+
+        String key = normalizeModuleType(moduleType);
+        JSONObject direct = optJSONObjectFlexible(reports, key);
+        if (direct != null) {
+            return direct;
+        }
+
+        // Backward compatibility aliases.
+        if ("prelinguistic".equals(key)) {
+            return optJSONObjectFlexible(reports, PRELINGUISTIC_KEY);
+        }
+        if ("social".equals(key)) {
+            return optJSONObjectFlexible(reports, SOCIAL_KEY);
+        }
+        if ("articulation".equals(key)) {
+            return optJSONObjectFlexible(reports, "A");
+        }
+        return null;
+    }
+
+    public static JSONObject saveModuleInterventionGuide(JSONObject childData,
+                                                         String moduleType,
+                                                         JSONObject interventionGuide) throws JSONException {
+        if (childData == null) {
+            return interventionGuide;
+        }
+        JSONObject reports = optJSONObjectFlexible(childData, "moduleReports");
+        if (reports == null) {
+            reports = new JSONObject();
+            childData.put("moduleReports", reports);
+        }
+
+        String key = normalizeModuleType(moduleType);
+        JSONObject moduleReport = optJSONObjectFlexible(reports, key);
+        if (moduleReport == null) {
+            moduleReport = new JSONObject();
+            reports.put(key, moduleReport);
+        }
+        moduleReport.put("interventionGuide", interventionGuide == null ? new JSONObject() : interventionGuide);
+        return moduleReport;
+    }
+
+    public static JSONObject loadModuleInterventionGuide(JSONObject childData, String moduleType) {
+        JSONObject moduleReport = loadModuleReport(childData, moduleType);
+        if (moduleReport == null) {
+            return null;
+        }
+        JSONObject guide = optJSONObjectFlexible(moduleReport, "interventionGuide");
+        if (guide == null) {
+            guide = optJSONObjectFlexible(moduleReport, "intervention_guide");
+        }
+        return guide;
+    }
+
+    public static void saveTreatmentPlanSummary(JSONObject childData, JSONObject summary) throws JSONException {
+        if (childData == null) {
+            return;
+        }
+        childData.put("treatmentPlanSummary", summary == null ? new JSONObject() : summary);
+    }
+
+    public static JSONObject loadTreatmentPlanSummary(JSONObject childData) {
+        if (childData == null) {
+            return null;
+        }
+        return optJSONObjectFlexible(childData, "treatmentPlanSummary");
     }
 
     public static JSONObject buildSocialReport(int totalScore, List<String> strengths, List<String> inProgress, List<String> weaknesses) {

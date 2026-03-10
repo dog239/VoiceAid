@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -14,7 +14,7 @@
         android:gravity="center"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
-        android:text="句法能力测评结果"
+        android:text="鍙ユ硶鑳藉姏娴嬭瘎缁撴灉"
         android:textColor="@color/black"
         android:textSize="27sp" />
 
@@ -30,7 +30,7 @@
             android:paddingHorizontal="20dp"
             android:paddingBottom="20dp">
 
-            <!-- 题目详细信息表格 -->
+            <!-- 棰樼洰璇︾粏淇℃伅琛ㄦ牸 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -42,7 +42,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="题目详情"
+                    android:text="棰樼洰璇︽儏"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:gravity="center"
@@ -58,7 +58,7 @@
                             android:layout_height="wrap_content"
                             android:stretchColumns="*">
 
-                            <!-- 表头 -->
+                            <!-- 琛ㄥご -->
                             <TableRow
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -67,7 +67,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="测试阶段"
+                                    android:text="娴嬭瘯闃舵"
                                     android:textStyle="bold"
                                     android:gravity="center"
                                     android:padding="8dp"
@@ -76,7 +76,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="题号"
+                                    android:text="棰樺彿"
                                     android:textStyle="bold"
                                     android:gravity="center"
                                     android:padding="8dp"
@@ -85,7 +85,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="例句"
+                                    android:text="渚嬪彞"
                                     android:textStyle="bold"
                                     android:gravity="center"
                                     android:padding="8dp"
@@ -94,7 +94,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="测试结果"
+                                    android:text="娴嬭瘯缁撴灉"
                                     android:textStyle="bold"
                                     android:gravity="center"
                                     android:padding="8dp"
@@ -103,7 +103,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="对应测试语"
+                                    android:text="对应语法点"
                                     android:textStyle="bold"
                                     android:gravity="center"
                                     android:padding="8dp"
@@ -117,7 +117,7 @@
 
             </LinearLayout>
 
-            <!-- 评估建议 -->
+            <!-- 璇勪及寤鸿 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -128,7 +128,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="评估建议"
+                    android:text="璇勪及寤鸿"
                     android:textSize="20sp"
                     android:textStyle="bold"
                     android:paddingBottom="10dp" />
@@ -137,11 +137,11 @@
                     android:id="@+id/tv_3"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="评估建议内容"
+                    android:text="璇勪及寤鸿鍐呭"
                     android:textSize="16sp"
                     android:lineSpacingExtra="8dp" />
 
-                <!-- 需要重点关注的能力 -->
+                <!-- 闇€瑕侀噸鐐瑰叧娉ㄧ殑鑳藉姏 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -151,7 +151,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="1. 【需要重点关注的能力】"
+                        android:text="1. 重点关注能力"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:paddingBottom="8dp" />
@@ -159,7 +159,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="这些语言能力还没有发展出来，需要重点关注。"
+                        android:text="这些语法能力尚不稳定，建议重点关注。"
                         android:textSize="16sp"
                         android:paddingBottom="8dp" />
 
@@ -174,7 +174,7 @@
                             android:id="@+id/weakness_1"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="1. 复杂句理解"
+                            android:text="1. 示例能力"
                             android:textSize="16sp"
                             android:padding="5dp" />
 
@@ -182,7 +182,7 @@
 
                 </LinearLayout>
 
-                <!-- 不稳定的能力 -->
+                <!-- 涓嶇ǔ瀹氱殑鑳藉姏 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -192,7 +192,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="2. 【不稳定的能力】"
+                        android:text="2. 不稳定能力"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:paddingBottom="8dp" />
@@ -200,7 +200,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="有些语言能力已经发展出来，但是不够稳定，我们可以多去引导，在家多做语言示范。"
+                        android:text="这些能力已有出现，但稳定性不足，建议持续训练。"
                         android:textSize="16sp"
                         android:paddingBottom="8dp" />
 
@@ -215,7 +215,7 @@
                             android:id="@+id/unstable_1"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="1. 复合句理解"
+                            android:text="1. 示例能力"
                             android:textSize="16sp"
                             android:padding="5dp" />
 
@@ -229,14 +229,31 @@
 
     </ScrollView>
 
-    <Button
-        android:id="@+id/back"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginBottom="20dp"
-        android:background="@drawable/blue_button"
-        android:text="返回"
-        android:textSize="20sp" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="20dp">
+
+        <Button
+            android:id="@+id/back"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_marginEnd="12dp"
+            android:layout_weight="1"
+            android:background="@drawable/blue_button"
+            android:text="返回"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btn_generate_intervention"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1"
+            android:background="@drawable/green_button"
+            android:text="生成干预报告"
+            android:textSize="18sp" />
+    </LinearLayout>
 
 </LinearLayout>

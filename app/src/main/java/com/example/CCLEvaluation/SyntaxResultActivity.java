@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import utils.ModuleInterventionService;
+import utils.ModuleReportHelper;
 import utils.AudioPlayer;
 import utils.dataManager;
 
@@ -28,6 +30,7 @@ public class SyntaxResultActivity extends AppCompatActivity implements View.OnCl
 
     private TextView tv3;
     private Button back;
+    private Button btnGenerateIntervention;
     private String fName;
     private String format; // RG 或 SE
 
@@ -39,9 +42,13 @@ public class SyntaxResultActivity extends AppCompatActivity implements View.OnCl
         setContentView(R.layout.activity_syntax_result);
 
         back = findViewById(R.id.back);
+        btnGenerateIntervention = findViewById(R.id.btn_generate_intervention);
         tv3 = findViewById(R.id.tv_3);
 
         back.setOnClickListener(this);
+        if (btnGenerateIntervention != null) {
+            btnGenerateIntervention.setOnClickListener(this);
+        }
 
         // 获取传递的数据
         Intent intent = getIntent();
@@ -699,6 +706,63 @@ public class SyntaxResultActivity extends AppCompatActivity implements View.OnCl
     public void onClick(View v) {
         if (v.getId() == R.id.back) {
             finish();
+        } else if (v.getId() == R.id.btn_generate_intervention) {
+            generateSyntaxInterventionGuide();
         }
+    }
+
+    private void generateSyntaxInterventionGuide() {
+        if (fName == null || fName.trim().isEmpty()) {
+            Toast.makeText(this, "未找到评测数据", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (btnGenerateIntervention != null) {
+            btnGenerateIntervention.setEnabled(false);
+        }
+        Toast.makeText(this, "正在生成句法干预报告...", Toast.LENGTH_SHORT).show();
+        JSONObject childData;
+        try {
+            childData = dataManager.getInstance().loadData(fName);
+        } catch (Exception e) {
+            if (btnGenerateIntervention != null) {
+                btnGenerateIntervention.setEnabled(true);
+            }
+            Toast.makeText(this, "读取评测数据失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new ModuleInterventionService().generate(childData, "syntax", new ModuleInterventionService.Callback() {
+            @Override
+            public void onSuccess(JSONObject interventionGuide) {
+                runOnUiThread(() -> {
+                    try {
+                        JSONObject latest = dataManager.getInstance().loadData(fName);
+                        ModuleReportHelper.saveModuleInterventionGuide(latest, "syntax", interventionGuide);
+                        dataManager.getInstance().saveChildJson(fName, latest);
+                        Intent intent = new Intent(SyntaxResultActivity.this, InterventionPlanActivity.class);
+                        intent.putExtra("fName", fName);
+                        intent.putExtra("moduleType", "syntax");
+                        startActivity(intent);
+                        Toast.makeText(SyntaxResultActivity.this, "句法干预报告已生成", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Toast.makeText(SyntaxResultActivity.this, "保存干预报告失败", Toast.LENGTH_SHORT).show();
+                    } finally {
+                        if (btnGenerateIntervention != null) {
+                            btnGenerateIntervention.setEnabled(true);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                runOnUiThread(() -> {
+                    if (btnGenerateIntervention != null) {
+                        btnGenerateIntervention.setEnabled(true);
+                    }
+                    Toast.makeText(SyntaxResultActivity.this, "生成失败: " + errorMessage, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
 }
