@@ -55,6 +55,18 @@ public final class ModuleInterventionPromptBuilder {
         prompt.append("3) smartGoal.cycleWeeks 为正整数，accuracyThreshold 为 0~1 小数。\n");
         prompt.append("4) meta.reviewStatus 初始为 draft，reviewedByTherapist 初始为 false。\n");
         prompt.append("5) 输出中不要包含姓名、电话、地址等隐私信息。\n");
+
+        // 模块特定的 Prompt 指令
+        if ("articulation".equals(safeModuleType)) {
+            prompt.append("6) [构音模块] 请在 custom.oralMotorSuggestions 字段中提供针对性的口肌训练建议（如唇舌操）。\n");
+            prompt.append("7) [构音模块] 请将“未掌握能力的整体说明”拆解：\n");
+            prompt.append("   - 尚未建立/完全不会的能力 -> 放入 'focus' 数组（对应【需要重点关注的能力】）；\n");
+            prompt.append("   - 已出现但不稳定的能力 -> 放入 'unstable' 数组（对应【不稳定的能力】）；\n");
+            prompt.append("   - notMasteredOverview 仅保留一句话的总体描述。\n");
+        } else if ("social".equals(safeModuleType)) {
+            prompt.append("6) [社交模块] 请在 custom.socialScripts 字段中提供2-3个具体的社交情境对话脚本。\n");
+        }
+
         prompt.append("\n输入数据:\n").append(moduleInput.toString()).append("\n");
         prompt.append("\n输出 schema:\n").append(schema.toString()).append("\n");
         return prompt.toString();

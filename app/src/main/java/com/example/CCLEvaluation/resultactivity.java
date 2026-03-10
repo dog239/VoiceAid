@@ -1225,15 +1225,25 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                         JSONObject latest = dataManager.getInstance().loadData(fName);
                         ModuleReportHelper.saveModuleInterventionGuide(latest, currentModuleType, interventionGuide);
                         dataManager.getInstance().saveChildJson(fName, latest);
-                        openInterventionDetail();
+
+                        // 数据保存成功后，先提示用户，再更新按钮状态，最后跳转
                         Toast.makeText(resultactivity.this, "模块干预报告已生成", Toast.LENGTH_SHORT).show();
 
                         com.google.android.material.button.MaterialButton btnViewPlan = findViewById(R.id.btn_view_plan);
                         if (btnViewPlan != null) {
                             updateViewPlanButtonState(btnViewPlan);
                         }
+                        
+                        // 确保跳转逻辑在 try 块内执行，但如果失败只打印日志不影响整体流程
+                        try {
+                            openInterventionDetail();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(resultactivity.this, "自动跳转失败，请点击查看按钮", Toast.LENGTH_SHORT).show();
+                        }
                     } catch (Exception e) {
-                        Toast.makeText(resultactivity.this, "保存模块干预报告失败", Toast.LENGTH_SHORT).show();
+                        e.printStackTrace();
+                        Toast.makeText(resultactivity.this, "保存模块干预报告失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     } finally {
                         if (triggerView != null) {
                             triggerView.setEnabled(true);
@@ -1248,7 +1258,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     if (triggerView != null) {
                         triggerView.setEnabled(true);
                     }
-                    Toast.makeText(resultactivity.this, "生成失败: " + errorMessage, Toast.LENGTH_LONG).show();
+                    Toast.makeText(resultactivity.this, "DeepSeek生成失败: " + errorMessage, Toast.LENGTH_LONG).show();
                 });
             }
         });

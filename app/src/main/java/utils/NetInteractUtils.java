@@ -313,7 +313,8 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    showToast("解析服务器数据错误！");
+                    // showToast("解析服务器数据错误！");
+                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -351,7 +352,8 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    showToast("解析服务器数据错误！");
+                    // showToast("解析服务器数据错误！");
+                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -394,7 +396,8 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    showToast("解析服务器数据错误！");
+                    // showToast("解析服务器数据错误！");
+                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -431,7 +434,8 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    showToast("解析服务器数据错误！");
+                    // showToast("解析服务器数据错误！");
+                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -472,7 +476,8 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    showToast("解析服务器数据错误！");
+                    // showToast("解析服务器数据错误！");
+                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -513,7 +518,8 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    showToast("解析服务器数据错误！");
+                    // showToast("解析服务器数据错误！");
+                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -555,7 +561,8 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    showToast("解析服务器数据错误！");
+                    // showToast("解析服务器数据错误！");
+                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -597,7 +604,8 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    showToast("解析服务器数据错误！");
+                    // showToast("解析服务器数据错误！");
+                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -634,7 +642,8 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    showToast("解析服务器数据错误！");
+                    // showToast("解析服务器数据错误！");
+                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -675,8 +684,9 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    showToast("解析服务器数据错误！");
+                    // showToast("解析服务器数据错误！");
                     Log.d("NetInteractUtils", "JSON解析错误");
+                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }

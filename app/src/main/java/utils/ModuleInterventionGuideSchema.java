@@ -76,6 +76,27 @@ public final class ModuleInterventionGuideSchema {
         put(meta, "reviewStatus", firstNonEmpty(srcMeta.optString("reviewStatus", ""), "draft"));
         meta.put("reviewedByTherapist", srcMeta.optBoolean("reviewedByTherapist", false));
         out.put("meta", meta);
+
+        // 处理模块特定的字段
+        JSONObject custom = new JSONObject();
+        // 尝试从 custom 字段获取，如果没有则尝试从根节点获取
+        JSONObject srcCustom = src.optJSONObject("custom");
+        if (srcCustom == null) {
+            srcCustom = src;
+        }
+
+        if ("articulation".equals(moduleType)) {
+            // 构音模块：口肌训练建议
+            custom.put("oralMotorSuggestions", normalizeStringArray(srcCustom, "oralMotorSuggestions", "oral_motor_suggestions"));
+        } else if ("social".equals(moduleType)) {
+            // 社交模块：社交脚本
+            custom.put("socialScripts", normalizeStringArray(srcCustom, "socialScripts", "social_scripts"));
+        }
+
+        if (custom.length() > 0) {
+            out.put("custom", custom);
+        }
+
         return out;
     }
 

@@ -199,7 +199,7 @@ public class LlmPlanService {
                             + " in " + elapsedMs + "ms"
                             + " bodyLen=" + bodyString.length());
                     if (!response.isSuccessful()) {
-                        callback.onError("HTTP " + response.code() + ": " + bodyString);
+                        callback.onError("HTTP " + response.code() + ": " + truncateContent(bodyString, 100));
                         return;
                     }
                     try {
@@ -256,7 +256,9 @@ public class LlmPlanService {
                         callback.onSuccess(plan);
                     } catch (JSONException e) {
                         Log.w(TAG, "request#" + requestId + " parse error after " + elapsedMs + "ms: " + e.getMessage());
-                        callback.onError("Parse error: " + e.getMessage());
+                        // 返回前50个字符以便排查是否为HTML
+                        String preview = truncateContent(bodyString, 50);
+                        callback.onError("非JSON响应(" + preview + "): " + e.getMessage());
                     }
                 }
             });
