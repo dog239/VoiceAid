@@ -284,10 +284,72 @@ public class SelectReportActivity extends AppCompatActivity {
     }
 
     private void onReportClick(AssessmentModule module) {
+        if ("RG".equals(module.getId())) {
+            showSyntaxReportSelectionDialog();
+            return;
+        }
+
         Intent intent = new Intent(this, resultactivity.class);
         intent.putExtra("fName", fName);
         intent.putExtra("format", module.getId());
         startActivity(intent);
+    }
+
+    private void showSyntaxReportSelectionDialog() {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        builder.setTitle("选择句法报告类型");
+        String[] options = {"句法理解测试报告", "句法表达测试报告"};
+        builder.setItems(options, (dialog, which) -> {
+            if (which == 0) {
+                // 句法理解
+                checkAndOpenSyntaxReport("RG");
+            } else {
+                // 句法表达
+                checkAndOpenSyntaxReport("SE");
+            }
+        });
+        builder.show();
+    }
+
+    private void checkAndOpenSyntaxReport(String format) {
+        if (data == null || !data.has("evaluations")) {
+            Toast.makeText(this, "暂无评估数据", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        JSONObject evaluations = data.optJSONObject("evaluations");
+        boolean hasCompletedAnyGroup = false;
+
+        // 检查是否有任何一组题已经完成 (RG1-RG4 或 SE1-SE4)
+        for (int i = 1; i <= 4; i++) {
+            String key = format + i;
+            JSONArray jsonArray = evaluations.optJSONArray(key);
+            if (jsonArray != null && jsonArray.length() > 0) {
+                // 检查该组是否所有题目都已完成
+                boolean allQuestionsCompleted = true;
+                for (int j = 0; j < jsonArray.length(); j++) {
+                    JSONObject object = jsonArray.optJSONObject(j);
+                    if (object == null || !object.has("time") || object.isNull("time")) {
+                        allQuestionsCompleted = false;
+                        break;
+                    }
+                }
+                if (allQuestionsCompleted) {
+                    hasCompletedAnyGroup = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasCompletedAnyGroup) {
+            Intent intent = new Intent(this, resultactivity.class);
+            intent.putExtra("fName", fName);
+            intent.putExtra("format", format);
+            startActivity(intent);
+        } else {
+            String typeName = "RG".equals(format) ? "句法理解" : "句法表达";
+            Toast.makeText(this, "请先完成至少一组" + typeName + "测试题目再查看报告", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void onOverallReportClick() {

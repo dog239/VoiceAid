@@ -94,6 +94,140 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             R.id.initial_q, R.id.initial_x, R.id.initial_zh, R.id.initial_ch,
             R.id.initial_sh, R.id.initial_r, R.id.initial_z, R.id.initial_c
     };
+
+    private String generateSyntaxSuggestion(String type, double overallAccuracy, int totalCorrect, int totalQuestions,
+                                            java.util.Map<String, Integer> pointTotal, java.util.Map<String, Integer> pointCorrect) {
+        String typeName = "RG".equals(type) ? "句法理解" : "句法表达";
+        String overallEvaluation;
+        
+        // 1. 总体评价
+        if (totalQuestions >= 15) {
+            if (totalCorrect >= 10) {
+                overallEvaluation = "从整体上来说，孩子的" + typeName + "能力较好，基本达标，符合该年龄段孩子语言发育水平。";
+            } else {
+                overallEvaluation = "从整体上来说，孩子的" + typeName + "能力还有待进一步发展，尚未达标。";
+            }
+        } else {
+            if (overallAccuracy >= 66.7) {
+                overallEvaluation = "从整体上来说，孩子的" + typeName + "能力较好，基本达标，符合该年龄段孩子语言发育水平。";
+            } else {
+                overallEvaluation = "从整体上来说，孩子的" + typeName + "能力还有待进一步发展，尚未达标。";
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("通过儿童").append(typeName).append("能力的评估，本次评估结果如下：\n\n");
+        sb.append("● ").append(overallEvaluation).append("\n\n");
+
+        // 2. 重点关注（正确率为0）
+        List<String> weaknessList = new ArrayList<>();
+        // 3. 不稳定（正确率约为33%）
+        List<String> unstableList = new ArrayList<>();
+
+        for (String point : pointTotal.keySet()) {
+            int total = pointTotal.get(point);
+            int correct = pointCorrect.getOrDefault(point, 0);
+            double accuracy = (double) correct / total;
+            
+            if (accuracy == 0) {
+                weaknessList.add(point);
+            } else if (Math.abs(accuracy - 0.33) < 0.1) { // 约等于1/3
+                unstableList.add(point);
+            }
+        }
+
+        sb.append("1. 需要重点关注的能力：\n");
+        if (!weaknessList.isEmpty()) {
+            for (int i = 0; i < weaknessList.size(); i++) {
+                sb.append("   ").append(i + 1).append(". ").append(weaknessList.get(i)).append("\n");
+            }
+        } else {
+            sb.append("   无\n");
+        }
+        sb.append("\n");
+
+        sb.append("2. 发展不稳定的能力：\n");
+        if (!unstableList.isEmpty()) {
+            for (int i = 0; i < unstableList.size(); i++) {
+                sb.append("   ").append(i + 1).append(". ").append(unstableList.get(i)).append("\n");
+            }
+        } else {
+            sb.append("   无\n");
+        }
+
+        return sb.toString();
+    }
+
+    private String getSyntaxTestPoint(String format, int group, int qNum) {
+        if ("RG".equals(format)) {
+            switch (group) {
+                case 1:
+                    if (qNum <= 3) return "主谓结构";
+                    if (qNum <= 6) return "动宾结构";
+                    if (qNum <= 9) return "主谓宾";
+                    if (qNum <= 12) return "否定句";
+                    if (qNum <= 15) return "一般疑问句";
+                    if (qNum <= 18) return "特殊疑问句";
+                    if (qNum <= 21) return "形容词+名词";
+                    break;
+                case 2:
+                    if (qNum <= 3) return "多重修饰";
+                    if (qNum <= 6) return "双宾结构";
+                    if (qNum <= 9) return "是不是问句";
+                    if (qNum <= 12) return "地点疑问句";
+                    if (qNum <= 15) return "副词都";
+                    if (qNum <= 18) return "语序";
+                    break;
+                case 3:
+                    if (qNum <= 3) return "被动句";
+                    if (qNum <= 6) return "比较句";
+                    if (qNum <= 9) return "了（完成体）";
+                    if (qNum <= 12) return "因果复句";
+                    if (qNum <= 15) return "转折句";
+                    if (qNum <= 18) return "时间顺序句";
+                    break;
+                case 4:
+                    if (qNum <= 3) return "着（持续体）";
+                    if (qNum <= 6) return "双重否定";
+                    if (qNum <= 9) return "条件句（排除）";
+                    if (qNum <= 15) return "篇章理解能力";
+                    break;
+            }
+        } else if ("SE".equals(format)) {
+            switch (group) {
+                case 1:
+                    if (qNum <= 3) return "主谓结构";
+                    if (qNum <= 6) return "动宾结构";
+                    if (qNum <= 9) return "形容词+名词";
+                    if (qNum <= 12) return "主谓宾";
+                    if (qNum <= 15) return "否定句";
+                    break;
+                case 2:
+                    if (qNum <= 3) return "双宾结构";
+                    if (qNum <= 6) return "一般疑问句";
+                    if (qNum <= 9) return "特殊疑问句";
+                    if (qNum <= 12) return "地点/方位";
+                    if (qNum <= 15) return "多重修饰";
+                    break;
+                case 3:
+                    if (qNum <= 3) return "被动句";
+                    if (qNum <= 6) return "了（完成体）";
+                    if (qNum <= 9) return "副词都";
+                    if (qNum <= 12) return "语序";
+                    if (qNum <= 15) return "时间顺序句";
+                    break;
+                case 4:
+                    if (qNum <= 3) return "因果复句";
+                    if (qNum <= 6) return "转折句";
+                    if (qNum <= 9) return "正在/在/着（进行体）";
+                    if (qNum <= 12) return "假设条件句";
+                    if (qNum <= 15) return "比较句";
+                    if (qNum == 16) return "看图讲故事";
+                    break;
+            }
+        }
+        return "";
+    }
     private final String[] initialLabels = new String[]{
             "b", "p", "m", "f",
             "d", "t", "n", "l",
@@ -569,135 +703,133 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 }
             }
         } else if(safeFormat.equals("RG")){
+            // 强制横屏显示
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             if (extraAResults != null) extraAResults.setVisibility(View.GONE);
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
-            double countre=0;
-            JSONArray jsonArray = null;
-            // 检查是否存在分组特定的 JSONArray（如 "RG1", "RG2" 等）
+            
+            // 统计数据容器
+            java.util.Map<String, Integer> pointTotal = new java.util.HashMap<>();
+            java.util.Map<String, Integer> pointCorrect = new java.util.HashMap<>();
+            int totalQ = 0;
+            int totalC = 0;
+            
+            evaluations.add(new rg(0,null,null,null,null,-1,null,null));//首行
+            
             JSONObject evaluationsObj = data.getJSONObject("evaluations");
+            // 按组遍历数据 (RG1 - RG4)
             for (int i = 1; i <= 4; i++) {
                 String rgKey = "RG" + i;
-                if (evaluationsObj.has(rgKey)) {
-                    JSONArray groupArray = evaluationsObj.getJSONArray(rgKey);
-                    if (groupArray.length() > 0) {
-                        if (jsonArray == null) {
-                            jsonArray = groupArray;
-                        } else {
-                            // 如果有多个分组数据，合并它们
-                            for (int j = 0; j < groupArray.length(); j++) {
-                                jsonArray.put(groupArray.get(j));
+                JSONArray groupArray = evaluationsObj.optJSONArray(rgKey);
+                if (groupArray != null && groupArray.length() > 0) {
+                    for(int j = 0; j < groupArray.length(); j++){
+                        JSONObject object = groupArray.getJSONObject(j);
+                        if(object.has("time") && !object.isNull("time")){
+                            // 1. 添加到列表显示
+                            boolean res = object.getBoolean("result");
+                            int score = object.has("score") && !object.isNull("score") ? object.getInt("score") : -1;
+                            int qNum = object.optInt("num", j + 1);
+                            
+                            if (object.has("audioPath") && !object.isNull("audioPath")) {
+                                evaluations.add(new rg(qNum, object.getString("question"), object.getString("right_option"), object.getString("answer"),
+                                        res, score, new audio(object.getString("audioPath")), object.getString("time")));
+                            } else {
+                                evaluations.add(new rg(qNum, object.getString("question"), object.getString("right_option"), object.getString("answer"),
+                                        res, score, null, object.getString("time")));
+                            }
+                            
+                            // 2. 统计正确率
+                            totalQ++;
+                            if (res) totalC++;
+                            
+                            // 3. 统计考查点
+                            String point = getSyntaxTestPoint("RG", i, qNum);
+                            if (!point.isEmpty()) {
+                                pointTotal.put(point, pointTotal.getOrDefault(point, 0) + 1);
+                                if (res) {
+                                    pointCorrect.put(point, pointCorrect.getOrDefault(point, 0) + 1);
+                                }
                             }
                         }
                     }
                 }
             }
-            // 如果没有找到分组特定的 JSONArray，则使用默认的 "RG" JSONArray
-            if (jsonArray == null) {
-                jsonArray = evaluationsObj.optJSONArray("RG");
-                if (jsonArray == null) {
-                    jsonArray = new JSONArray();
-                }
-            }
-            evaluations.add(new rg(0,null,null,null,null,-1,null,null));//首行
-            int completedCount = 0;
-            for(int i=0;i<jsonArray.length();i++){
-                JSONObject object = jsonArray.getJSONObject(i);
-                if(object.has("time")&&!object.isNull("time")){
-                    if(object.getBoolean("result")){
-                        countre++;
-                    }
-                    int score = object.has("score") && !object.isNull("score") ? object.getInt("score") : -1;
-                    if (object.has("audioPath") && !object.isNull("audioPath")) {
-                        evaluations.add(new rg(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
-                                object.getBoolean("result"),score,new audio(object.getString("audioPath")),object.getString("time")));
-                    } else {
-                        evaluations.add(new rg(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
-                                object.getBoolean("result"),score,null,object.getString("time")));
-                    }
-                    completedCount++;
-                }
-                // 只显示已经完成的题目，跳过未完成的题目
-            }
-            double lenthre = completedCount;
-            double scorere = lenthre > 0 ? (countre/lenthre)*100 : 0;
+
+            double scorere = totalQ > 0 ? ((double)totalC/totalQ)*100 : 0;
             String strre = String.format("%.2f%%",scorere);
             tv2.setText("本题正确率为："+strre);
 
-            // 添加评估建议
+            // 生成详细评估建议
             TextView tv3 = findViewById(R.id.tv_3);
             if (tv3 != null) {
                 tv3.setVisibility(View.VISIBLE);
-                if (scorere >= 66.7) {
-                    tv3.setText("评估建议：孩子的句法理解能力较好，基本达标，符合该年龄段孩子语言发育水平。");
-                } else {
-                    tv3.setText("评估建议：孩子的句法理解能力还有待进一步发展，尚未达标。");
-                }
+                String suggestion = generateSyntaxSuggestion("RG", scorere, totalC, totalQ, pointTotal, pointCorrect);
+                tv3.setText(suggestion);
             }
 
         } else if(safeFormat.equals("SE")){
+            // 强制横屏显示
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             if (extraAResults != null) extraAResults.setVisibility(View.GONE);
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
-            double countre=0;
-            JSONArray jsonArray = null;
-            // 检查是否存在分组特定的 JSONArray（如 "SE1", "SE2" 等）
+            
+            // 统计数据容器
+            java.util.Map<String, Integer> pointTotal = new java.util.HashMap<>();
+            java.util.Map<String, Integer> pointCorrect = new java.util.HashMap<>();
+            int totalQ = 0;
+            int totalC = 0;
+            
+            evaluations.add(new se(0,null,null,null,null,-1,null,null));//首行
+            
             JSONObject evaluationsObj = data.getJSONObject("evaluations");
+            // 按组遍历数据 (SE1 - SE4)
             for (int i = 1; i <= 4; i++) {
                 String seKey = "SE" + i;
-                if (evaluationsObj.has(seKey)) {
-                    JSONArray groupArray = evaluationsObj.getJSONArray(seKey);
-                    if (groupArray.length() > 0) {
-                        if (jsonArray == null) {
-                            jsonArray = groupArray;
-                        } else {
-                            // 如果有多个分组数据，合并它们
-                            for (int j = 0; j < groupArray.length(); j++) {
-                                jsonArray.put(groupArray.get(j));
+                JSONArray groupArray = evaluationsObj.optJSONArray(seKey);
+                if (groupArray != null && groupArray.length() > 0) {
+                    for(int j = 0; j < groupArray.length(); j++){
+                        JSONObject object = groupArray.getJSONObject(j);
+                        if(object.has("time") && !object.isNull("time")){
+                            // 1. 添加到列表显示
+                            boolean res = object.getBoolean("result");
+                            int score = object.has("score") && !object.isNull("score") ? object.getInt("score") : -1;
+                            int qNum = object.optInt("num", j + 1);
+                            
+                            if (object.has("audioPath") && !object.isNull("audioPath")) {
+                                evaluations.add(new se(qNum, object.getString("question"), object.getString("right_option"), object.getString("answer"),
+                                        res, score, new audio(object.getString("audioPath")), object.getString("time")));
+                            } else {
+                                evaluations.add(new se(qNum, object.getString("question"), object.getString("right_option"), object.getString("answer"),
+                                        res, score, null, object.getString("time")));
+                            }
+                            
+                            // 2. 统计正确率
+                            totalQ++;
+                            if (res) totalC++;
+                            
+                            // 3. 统计考查点
+                            String point = getSyntaxTestPoint("SE", i, qNum);
+                            if (!point.isEmpty()) {
+                                pointTotal.put(point, pointTotal.getOrDefault(point, 0) + 1);
+                                if (res) {
+                                    pointCorrect.put(point, pointCorrect.getOrDefault(point, 0) + 1);
+                                }
                             }
                         }
                     }
                 }
             }
-            // 如果没有找到分组特定的 JSONArray，则使用默认的 "SE" JSONArray
-            if (jsonArray == null) {
-                jsonArray = evaluationsObj.optJSONArray("SE");
-                if (jsonArray == null) {
-                    jsonArray = new JSONArray();
-                }
-            }
-            evaluations.add(new se(0,null,null,null,null,-1,null,null));//首行
-            int completedCount = 0;
-            for(int i=0;i<jsonArray.length();i++){
-                JSONObject object = jsonArray.getJSONObject(i);
-                if(object.has("time")&&!object.isNull("time")){
-                    if(object.getBoolean("result")){
-                        countre++;
-                    }
-                    int score = object.has("score") && !object.isNull("score") ? object.getInt("score") : -1;
-                    if (object.has("audioPath") && !object.isNull("audioPath")) {
-                        evaluations.add(new se(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
-                                object.getBoolean("result"),score,new audio(object.getString("audioPath")),object.getString("time")));
-                    } else {
-                        evaluations.add(new se(i+1,object.getString("question"),object.getString("right_option"),object.getString("answer"),
-                                object.getBoolean("result"),score,null,object.getString("time")));
-                    }
-                    completedCount++;
-                }
-                // 只显示已经完成的题目，跳过未完成的题目
-            }
-            double lenthre = completedCount;
-            double scorere = lenthre > 0 ? (countre/lenthre)*100 : 0;
+
+            double scorere = totalQ > 0 ? ((double)totalC/totalQ)*100 : 0;
             String strre = String.format("%.2f%%",scorere);
             tv2.setText("本题正确率为："+strre);
 
-            // 添加评估建议
+            // 生成详细评估建议
             TextView tv3 = findViewById(R.id.tv_3);
             if (tv3 != null) {
                 tv3.setVisibility(View.VISIBLE);
-                if (scorere >= 66.7) {
-                    tv3.setText("评估建议：孩子的句法表达能力较好，基本达标，符合该年龄段孩子语言发育水平。");
-                } else {
-                    tv3.setText("评估建议：孩子的句法表达能力还有待进一步发展，尚未达标。");
-                }
+                String suggestion = generateSyntaxSuggestion("SE", scorere, totalC, totalQ, pointTotal, pointCorrect);
+                tv3.setText(suggestion);
             }
 
         } else if(safeFormat.equals("S")){

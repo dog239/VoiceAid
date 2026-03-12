@@ -117,7 +117,7 @@ public class SyntaxExpressionGroupSelectActivity extends AppCompatActivity imple
             }
         } else if (v.getId() == R.id.btn_evaluation_report) {
             // 启动句法表达评估报告
-            Intent intent = new Intent(this, SyntaxResultActivity.class);
+            Intent intent = new Intent(this, resultactivity.class);
             intent.putExtra("fName", fName);
             intent.putExtra("format", "SE"); // 显示句法表达结果
             startActivity(intent);

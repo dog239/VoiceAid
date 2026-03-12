@@ -117,7 +117,7 @@ public class SyntaxComprehensionGroupSelectActivity extends AppCompatActivity im
             }
         } else if (v.getId() == R.id.btn_evaluation_report) {
             // 启动句法理解评估报告
-            Intent intent = new Intent(this, SyntaxResultActivity.class);
+            Intent intent = new Intent(this, resultactivity.class);
             intent.putExtra("fName", fName);
             intent.putExtra("format", "RG"); // 显示句法理解结果
             startActivity(intent);
