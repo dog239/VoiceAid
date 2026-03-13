@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/card_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="6dp">
+
+    <TextView
+        android:id="@+id/tv_bullet"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="6dp"
+        android:layout_gravity="top"
+        android:text="•"
+        android:textColor="@android:color/black"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/et_item_value"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:background="@null"
+        android:padding="8dp"
+        android:minHeight="48dp"
+        android:textColor="#333333"
+        android:hint="请输入内容"
+        android:inputType="textMultiLine"
+        android:minLines="1"
+        android:textSize="15sp" />
+
+    <ImageButton
+        android:id="@+id/btn_delete_row"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="6dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="删除"
+        android:scaleType="centerInside"
+        android:src="@drawable/delete_icon" />
+</LinearLayout>

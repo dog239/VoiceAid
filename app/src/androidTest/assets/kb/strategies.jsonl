@@ -1,0 +1,6 @@
+{"id":"1","module":"A","skill_tag":["error_type","pronunciation"],"title":"A1","level":"basic","text":"t1","do_not":"d1"}
+
+{"id":"2","module":"A","skill_tag":["error_type"],"title":"A2","level":"basic","text":"t2","do_not":"d2"}
+{"id":"3","module":"VOCAB","skill_tag":["EXPRESSION","semantic"],"title":"V1","level":"basic","text":"t3","do_not":"d3"}
+{"id":"4","module":"A","skill_tag":["error_type"],"title":"A3","level":"basic","text":"t4","do_not":"d4"}
+not-a-json-line
