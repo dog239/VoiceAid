@@ -4,8 +4,14 @@ import android.os.Bundle;
 import android.content.Intent;
 import android.net.Uri;
 import android.text.InputType;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.BulletSpan;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.Button;
 import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -22,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import utils.ArticulationPlanHelper;
+import utils.ModuleInterventionGuideSchema;
 import utils.ModuleReportHelper;
 import utils.dataManager;
 
@@ -72,12 +79,40 @@ public class TreatmentPlanActivity extends AppCompatActivity {
 
     private JSONObject mChildData;
 
+    private View overallContainer;
+    private View planActions;
+    private View rvPlan;
+    private Button btnLeft;
+    private Button btnRight;
+    private View btnOverallEdit;
+    private TextView tvTitle;
+    private TextView tvDate;
+    private TextView tvOverallSubtitle;
+    private TextView tvOverallStatus;
+
+    private boolean overallEditMode = false;
+    private final Map<String, ModuleBlock> moduleBlocks = new HashMap<>();
+    private final Map<String, JSONObject> cachedGuides = new HashMap<>();
+
+    private static final String[] OVERALL_MODULES = {"articulation", "syntax", "vocabulary", "social", "prelinguistic"};
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_treatment_plan);
 
         fName = getIntent().getStringExtra("fName");
+
+        tvTitle = findViewById(R.id.tv_title);
+        tvDate = findViewById(R.id.tv_date);
+        overallContainer = findViewById(R.id.overall_container);
+        planActions = findViewById(R.id.layout_plan_actions);
+        rvPlan = findViewById(R.id.rv_plan);
+        btnLeft = findViewById(R.id.btn_export_plan_pdf);
+        btnRight = findViewById(R.id.btn_save_plan);
+        btnOverallEdit = findViewById(R.id.btn_overall_edit);
+        tvOverallSubtitle = findViewById(R.id.tv_overall_subtitle);
+        tvOverallStatus = findViewById(R.id.tv_overall_status);
 
         String planJson = getIntent().getStringExtra("planJsonString");
         if (planJson == null || planJson.trim().isEmpty()) {
@@ -104,6 +139,11 @@ public class TreatmentPlanActivity extends AppCompatActivity {
             } catch (Exception ignored) {
             }
         }
+
+        if (shouldShowOverallIntervention(mChildData)) {
+            initOverallInterventionUi();
+            return;
+        }
         currentPlan = ArticulationPlanHelper.ensureArticulation(planObject, evaluationsA);
         if (mChildData != null) {
             ArticulationPlanHelper.applyArticulationReport(currentPlan, mChildData, evaluationsA);
@@ -122,6 +162,372 @@ public class TreatmentPlanActivity extends AppCompatActivity {
 
         Button saveButton = findViewById(R.id.btn_save_plan);
         saveButton.setOnClickListener(v -> savePlan());
+    }
+
+    private boolean shouldShowOverallIntervention(JSONObject childData) {
+        if (childData == null) {
+            return false;
+        }
+        for (String module : OVERALL_MODULES) {
+            JSONObject guide = ModuleReportHelper.loadModuleInterventionGuide(childData, module);
+            if (guide == null) {
+                return false;
+            }
+            String summary = guide.optString("overallSummary", "");
+            if (summary == null || summary.trim().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void initOverallInterventionUi() {
+        if (tvTitle != null) {
+            tvTitle.setText("总体干预报告");
+        }
+        if (tvDate != null) {
+            tvDate.setText(" ");
+        }
+        if (overallContainer != null) {
+            overallContainer.setVisibility(View.VISIBLE);
+        }
+        if (rvPlan != null) {
+            rvPlan.setVisibility(View.GONE);
+        }
+
+        bindOverallModuleBlocks();
+        loadOverallGuides();
+        bindOverallHeader();
+        bindOverallViews();
+        setOverallEditMode(false);
+
+        if (btnOverallEdit != null) {
+            btnOverallEdit.setOnClickListener(v -> setOverallEditMode(!overallEditMode));
+        }
+
+        if (planActions != null) {
+            planActions.setVisibility(View.VISIBLE);
+        }
+        if (btnLeft != null) {
+            btnLeft.setText("保存修改");
+            btnLeft.setOnClickListener(v -> saveOverallGuides(false));
+        }
+        if (btnRight != null) {
+            btnRight.setText("确认并保存");
+            btnRight.setOnClickListener(v -> saveOverallGuides(true));
+        }
+    }
+
+    private void bindOverallModuleBlocks() {
+        moduleBlocks.clear();
+        moduleBlocks.put("articulation", new ModuleBlock(
+                findViewById(R.id.tv_articulation_overall),
+                findViewById(R.id.tv_articulation_focus),
+                findViewById(R.id.tv_articulation_goal),
+                findViewById(R.id.tv_articulation_home),
+                findViewById(R.id.et_articulation_overall),
+                findViewById(R.id.et_articulation_focus),
+                findViewById(R.id.et_articulation_goal),
+                findViewById(R.id.et_articulation_home)
+        ));
+        moduleBlocks.put("syntax", new ModuleBlock(
+                findViewById(R.id.tv_syntax_overall),
+                findViewById(R.id.tv_syntax_focus),
+                findViewById(R.id.tv_syntax_goal),
+                findViewById(R.id.tv_syntax_home),
+                findViewById(R.id.et_syntax_overall),
+                findViewById(R.id.et_syntax_focus),
+                findViewById(R.id.et_syntax_goal),
+                findViewById(R.id.et_syntax_home)
+        ));
+        moduleBlocks.put("vocabulary", new ModuleBlock(
+                findViewById(R.id.tv_vocabulary_overall),
+                findViewById(R.id.tv_vocabulary_focus),
+                findViewById(R.id.tv_vocabulary_goal),
+                findViewById(R.id.tv_vocabulary_home),
+                findViewById(R.id.et_vocabulary_overall),
+                findViewById(R.id.et_vocabulary_focus),
+                findViewById(R.id.et_vocabulary_goal),
+                findViewById(R.id.et_vocabulary_home)
+        ));
+        moduleBlocks.put("social", new ModuleBlock(
+                findViewById(R.id.tv_social_overall),
+                findViewById(R.id.tv_social_focus),
+                findViewById(R.id.tv_social_goal),
+                findViewById(R.id.tv_social_home),
+                findViewById(R.id.et_social_overall),
+                findViewById(R.id.et_social_focus),
+                findViewById(R.id.et_social_goal),
+                findViewById(R.id.et_social_home)
+        ));
+        moduleBlocks.put("prelinguistic", new ModuleBlock(
+                findViewById(R.id.tv_prelinguistic_overall),
+                findViewById(R.id.tv_prelinguistic_focus),
+                findViewById(R.id.tv_prelinguistic_goal),
+                findViewById(R.id.tv_prelinguistic_home),
+                findViewById(R.id.et_prelinguistic_overall),
+                findViewById(R.id.et_prelinguistic_focus),
+                findViewById(R.id.et_prelinguistic_goal),
+                findViewById(R.id.et_prelinguistic_home)
+        ));
+    }
+
+    private void loadOverallGuides() {
+        cachedGuides.clear();
+        if (mChildData == null) {
+            return;
+        }
+        for (String module : OVERALL_MODULES) {
+            JSONObject guide = ModuleReportHelper.loadModuleInterventionGuide(mChildData, module);
+            try {
+                guide = ModuleInterventionGuideSchema.normalize(
+                        guide,
+                        module,
+                        ModuleReportHelper.moduleTitle(module),
+                        ModuleReportHelper.defaultSubtypes(module));
+            } catch (Exception e) {
+                guide = new JSONObject();
+            }
+            cachedGuides.put(module, guide);
+        }
+    }
+
+    private void bindOverallHeader() {
+        if (tvOverallSubtitle != null) {
+            tvOverallSubtitle.setText("包含模块：构音 / 句法 / 词汇 / 社交 / 前语言");
+        }
+        if (tvOverallStatus != null) {
+            tvOverallStatus.setText("阅读态可快速浏览要点；编辑后可逐模块保存。 ");
+        }
+    }
+
+    private void bindOverallViews() {
+        for (String module : OVERALL_MODULES) {
+            ModuleBlock block = moduleBlocks.get(module);
+            JSONObject guide = cachedGuides.get(module);
+            if (block == null || guide == null) {
+                continue;
+            }
+            String overall = guide.optString("overallSummary", "");
+            JSONArray focus = guide.optJSONArray("focus");
+            JSONObject smart = guide.optJSONObject("smartGoal");
+            String goal = smart == null ? "" : smart.optString("text", "");
+            JSONArray home = guide.optJSONArray("homeGuidance");
+
+            if (block.tvOverall != null) {
+                block.tvOverall.setText(safeOrPlaceholder(overall));
+            }
+            if (block.tvFocus != null) {
+                block.tvFocus.setText(formatBulletList(focus));
+            }
+            if (block.tvGoal != null) {
+                block.tvGoal.setText(safeOrPlaceholder(goal));
+            }
+            if (block.tvHome != null) {
+                block.tvHome.setText(formatBulletList(home));
+            }
+
+            if (block.etOverall != null) {
+                block.etOverall.setText(overall);
+            }
+            if (block.etFocus != null) {
+                block.etFocus.setText(joinLines(focus));
+            }
+            if (block.etGoal != null) {
+                block.etGoal.setText(goal);
+            }
+            if (block.etHome != null) {
+                block.etHome.setText(joinLines(home));
+            }
+        }
+    }
+
+    private void setOverallEditMode(boolean enable) {
+        overallEditMode = enable;
+        if (btnOverallEdit instanceof TextView) {
+            ((TextView) btnOverallEdit).setText(enable ? "取消" : "编辑");
+        }
+        for (String module : OVERALL_MODULES) {
+            ModuleBlock block = moduleBlocks.get(module);
+            if (block == null) {
+                continue;
+            }
+            block.setEditMode(enable);
+        }
+        if (!enable) {
+            bindOverallViews();
+        }
+    }
+
+    private void saveOverallGuides(boolean reviewed) {
+        if (mChildData == null || fName == null || fName.trim().isEmpty()) {
+            Toast.makeText(this, "未找到个案信息", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            for (String module : OVERALL_MODULES) {
+                JSONObject cached = cachedGuides.get(module);
+                ModuleBlock block = moduleBlocks.get(module);
+                if (cached == null || block == null) {
+                    continue;
+                }
+                JSONObject guide = new JSONObject(cached.toString());
+                guide.put("overallSummary", safeText(block.etOverall == null ? "" : block.etOverall.getText().toString()));
+                guide.put("focus", arrayFromText(block.etFocus == null ? "" : block.etFocus.getText().toString()));
+
+                JSONObject smart = guide.optJSONObject("smartGoal");
+                if (smart == null) {
+                    smart = new JSONObject();
+                }
+                smart.put("text", safeText(block.etGoal == null ? "" : block.etGoal.getText().toString()));
+                guide.put("smartGoal", smart);
+                guide.put("homeGuidance", arrayFromText(block.etHome == null ? "" : block.etHome.getText().toString()));
+
+                JSONObject meta = guide.optJSONObject("meta");
+                if (meta == null) {
+                    meta = new JSONObject();
+                    guide.put("meta", meta);
+                }
+                if (reviewed) {
+                    meta.put("reviewStatus", "reviewed");
+                    meta.put("reviewedByTherapist", true);
+                }
+
+                guide = ModuleInterventionGuideSchema.normalize(
+                        guide,
+                        module,
+                        ModuleReportHelper.moduleTitle(module),
+                        ModuleReportHelper.defaultSubtypes(module));
+
+                ModuleReportHelper.saveModuleInterventionGuide(mChildData, module, guide);
+                cachedGuides.put(module, guide);
+            }
+            dataManager.getInstance().saveChildJson(fName, mChildData);
+            setOverallEditMode(false);
+            Toast.makeText(this, reviewed ? "已确认并保存" : "已保存", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "保存失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private CharSequence formatBulletList(JSONArray array) {
+        if (array == null || array.length() == 0) {
+            return "—";
+        }
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+        int shown = 0;
+        for (int i = 0; i < array.length(); i++) {
+            String text = array.optString(i, "");
+            if (text == null) {
+                continue;
+            }
+            text = text.trim();
+            if (text.isEmpty()) {
+                continue;
+            }
+            int start = sb.length();
+            sb.append(text);
+            int end = sb.length();
+            sb.setSpan(new BulletSpan(24), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            sb.append('\n');
+            shown++;
+        }
+        if (shown == 0) {
+            return "—";
+        }
+        if (sb.length() > 0 && sb.charAt(sb.length() - 1) == '\n') {
+            sb.delete(sb.length() - 1, sb.length());
+        }
+        return sb;
+    }
+
+    private String joinLines(JSONArray array) {
+        if (array == null || array.length() == 0) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < array.length(); i++) {
+            String line = array.optString(i, "");
+            if (line == null) {
+                continue;
+            }
+            line = line.trim();
+            if (line.isEmpty()) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('\n');
+            }
+            sb.append(line);
+        }
+        return sb.toString();
+    }
+
+    private JSONArray arrayFromText(String text) {
+        JSONArray array = new JSONArray();
+        if (text == null || text.trim().isEmpty()) {
+            return array;
+        }
+        String[] lines = text.split("\\n");
+        for (String line : lines) {
+            if (line != null && !line.trim().isEmpty()) {
+                array.put(line.trim());
+            }
+        }
+        return array;
+    }
+
+    private String safeOrPlaceholder(String value) {
+        String text = value == null ? "" : value.trim();
+        return text.isEmpty() ? "—" : text;
+    }
+
+    private static final class ModuleBlock {
+        final TextView tvOverall;
+        final TextView tvFocus;
+        final TextView tvGoal;
+        final TextView tvHome;
+        final EditText etOverall;
+        final EditText etFocus;
+        final EditText etGoal;
+        final EditText etHome;
+
+        ModuleBlock(TextView tvOverall,
+                    TextView tvFocus,
+                    TextView tvGoal,
+                    TextView tvHome,
+                    EditText etOverall,
+                    EditText etFocus,
+                    EditText etGoal,
+                    EditText etHome) {
+            this.tvOverall = tvOverall;
+            this.tvFocus = tvFocus;
+            this.tvGoal = tvGoal;
+            this.tvHome = tvHome;
+            this.etOverall = etOverall;
+            this.etFocus = etFocus;
+            this.etGoal = etGoal;
+            this.etHome = etHome;
+        }
+
+        void setEditMode(boolean enable) {
+            setVisibility(tvOverall, !enable);
+            setVisibility(tvFocus, !enable);
+            setVisibility(tvGoal, !enable);
+            setVisibility(tvHome, !enable);
+
+            setVisibility(etOverall, enable);
+            setVisibility(etFocus, enable);
+            setVisibility(etGoal, enable);
+            setVisibility(etHome, enable);
+        }
+
+        private void setVisibility(View v, boolean visible) {
+            if (v == null) {
+                return;
+            }
+            v.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
     }
 
     private String loadPlanFromFile(String fName) {

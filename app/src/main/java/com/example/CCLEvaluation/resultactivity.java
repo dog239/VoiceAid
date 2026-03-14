@@ -16,6 +16,7 @@ import android.view.ViewParent;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -78,6 +79,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
     private LinearLayout plSuggestions;
     private RadioGroup plOptionGroup;
     private Button plSaveButton;
+    private View generatePlanButton;
+    private View viewPlanButton;
+    private String cachedPlanJsonString;
     private static final String FORMAT_PL = "11";
     private static final String MODULE_PL = "PL";
     private String plSummaryTextValue;
@@ -219,6 +223,18 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
     }
     // --- End: Articulation stat helpers and recompute logic ---
 
+    private JSONArray getEvaluationArray(JSONObject data, String key) {
+        if (data == null) {
+            return new JSONArray();
+        }
+        JSONObject evaluationsObject = data.optJSONObject("evaluations");
+        if (evaluationsObject == null) {
+            return new JSONArray();
+        }
+        JSONArray array = evaluationsObject.optJSONArray(key);
+        return array != null ? array : new JSONArray();
+    }
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -226,6 +242,18 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         setContentView(R.layout.activity_result11);
         recyclerView = findViewById(R.id.recyclerview);
         back = findViewById(R.id.back);
+        ImageView btnBackNew = findViewById(R.id.btn_back_new);
+        if (btnBackNew != null) {
+            btnBackNew.setOnClickListener(this);
+        }
+        generatePlanButton = findViewById(R.id.btn_generate_plan);
+        if (generatePlanButton != null) {
+            generatePlanButton.setOnClickListener(this);
+        }
+        viewPlanButton = findViewById(R.id.btn_view_plan);
+        if (viewPlanButton != null) {
+            viewPlanButton.setOnClickListener(this);
+        }
         tv2 = findViewById(R.id.tv_2);
         extraAResults = findViewById(R.id.extra_a_results);
         extraASuggestions = findViewById(R.id.extra_a_suggestions);
@@ -313,6 +341,33 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         isArticulationResult = isArticulation;
         boolean isSocial = "SOCIAL".equals(safeFormat);
         isSocialResult = isSocial;
+        
+        // 检查是否已有干预报告，如果有，启用查看按钮
+        String checkModuleType = safeFormat;
+        if (isPrelinguisticResult) {
+            checkModuleType = "prelinguistic";
+        } else if (isArticulationResult) {
+            checkModuleType = "articulation";
+        } else if (isSocialResult) {
+            checkModuleType = "social";
+        } else if ("E".equals(safeFormat) || "EV".equals(safeFormat)) {
+            checkModuleType = "vocabulary";
+        }
+        
+        if (viewPlanButton != null) {
+            JSONObject guide = utils.ModuleReportHelper.loadModuleInterventionGuide(data, checkModuleType);
+            if (guide != null && guide.length() > 0) {
+                viewPlanButton.setEnabled(true);
+                viewPlanButton.setAlpha(1f);
+            } else {
+                // 如果没有报告，也可以选择禁用按钮或者保持可点击但点击时提示
+                // 这里选择禁用以明确状态
+                // viewPlanButton.setEnabled(false);
+                // viewPlanButton.setAlpha(0.5f);
+                // 为了符合用户习惯，也可以不禁用，点击时提示“请先生成”，维持现状
+            }
+        }
+
         if(isArticulation){
             tv2.setVisibility(View.GONE);
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
@@ -361,11 +416,11 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             
             // 加载词汇表达（E）的结果
             double counte = 0;
-            JSONArray eArray = data.getJSONObject("evaluations").getJSONArray("E");
+            JSONArray eArray = getEvaluationArray(data, "E");
             
             // 加载词汇理解（EV）的结果
             double countev = 0;
-            JSONArray evArray = data.getJSONObject("evaluations").getJSONArray("EV");
+            JSONArray evArray = getEvaluationArray(data, "EV");
             
             // 计算各测试点的得分情况
             HashMap<String, Integer> eTestPointScores = new HashMap<>();
@@ -548,9 +603,11 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             
             // 生成评估建议
             StringBuilder suggestion = new StringBuilder();
+            double evAccuracy = evArray.length() > 0 ? (countev / evArray.length()) * 100 : 0;
+            double eAccuracy = eArray.length() > 0 ? (counte / eArray.length()) * 100 : 0;
             suggestion.append("（二）评估结果\n\n");
-            suggestion.append("词汇理解正确率：").append(String.format("%.2f%%", (countev / evArray.length()) * 100)).append("\n");
-            suggestion.append("词汇表达正确率：").append(String.format("%.2f%%", (counte / eArray.length()) * 100)).append("\n\n");
+            suggestion.append("词汇理解正确率：").append(String.format("%.2f%%", evAccuracy)).append("\n");
+            suggestion.append("词汇表达正确率：").append(String.format("%.2f%%", eAccuracy)).append("\n\n");
             suggestion.append("（三）评估建议\n\n");
             suggestion.append("词汇部分主要考察对语言基本概念的理解和表达，包含名词、动词、形容词和分类概念名词的表达，根据测评结果显示，孩子");
             if (!goodAt.isEmpty()) {
@@ -799,16 +856,21 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             if (extraASuggestions != null) extraASuggestions.setVisibility(View.GONE);
             if (plSuggestions != null) plSuggestions.setVisibility(View.VISIBLE);
 
-            JSONArray jsonArray = data.getJSONObject("evaluations").optJSONArray(MODULE_PL);
-            if (jsonArray == null) {
-                jsonArray = new JSONArray();
-            }
             evaluations.add(new pl(0, null, null, null, null, null, null));//首行
             List<pl> plItems = new ArrayList<>();
             JSONObject report = ModuleReportHelper.loadPrelinguisticReport(data);
             String scene = report != null ? report.optString("scene", "") : "";
             if (scene == null || scene.trim().isEmpty()) {
                 scene = "A";
+            }
+            JSONObject evaluationsObject = data.getJSONObject("evaluations");
+            String plKey = "PL_" + scene;
+            JSONArray jsonArray = evaluationsObject.optJSONArray(plKey);
+            if (jsonArray == null) {
+                jsonArray = evaluationsObject.optJSONArray(MODULE_PL);
+            }
+            if (jsonArray == null) {
+                jsonArray = new JSONArray();
             }
             String[] prompts = "B".equals(scene) ? ImageUrls.PL_PROMPTS_B : ImageUrls.PL_PROMPTS_A;
             String[] skills = ImageUrls.PL_SKILLS;
@@ -1058,6 +1120,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void onBackPressed() {
+        AudioPlayer.getInstance().setPlayPos(-1);
+        AudioPlayer.getInstance().stop();
         savePrelinguisticReport();
         saveArticulationReport();
         saveSocialReport();
@@ -1066,17 +1130,120 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void onClick(View v) {
-        if(v.getId() == R.id.back){
+        if(v.getId() == R.id.back || v.getId() == R.id.btn_back_new){
             AudioPlayer.getInstance().setPlayPos(-1);
             AudioPlayer.getInstance().stop();
             savePrelinguisticReport();
             saveArticulationReport();
             saveSocialReport();
             finish();
+        } else if (v.getId() == R.id.btn_generate_plan) {
+            generateTreatmentPlan();
+        } else if (v.getId() == R.id.btn_view_plan) {
+            openTreatmentPlanActivity();
         } else if (v.getId() == R.id.pl_save_button) {
             savePrelinguisticReport();
             finish();
         }
+    }
+
+    private void generateTreatmentPlan() {
+        if (fName == null || fName.trim().isEmpty()) {
+            Toast.makeText(this, "未找到评估数据", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // 解析当前模块
+        String format = getIntent().getStringExtra("format");
+        String moduleType = format;
+        if (isPrelinguisticResult) {
+            moduleType = "prelinguistic";
+        } else if (isArticulationResult) {
+            moduleType = "articulation";
+        } else if (isSocialResult) {
+            moduleType = "social";
+        } else if ("E".equals(format) || "EV".equals(format)) {
+            moduleType = "vocabulary";
+        }
+
+        JSONObject data;
+        try {
+            data = dataManager.getInstance().loadData(fName);
+        } catch (Exception e) {
+            Toast.makeText(this, "读取评估数据失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Toast.makeText(this, "正在生成单模块干预报告...", Toast.LENGTH_SHORT).show();
+        String finalModuleType = moduleType;
+        new utils.ModuleInterventionService().generate(data, finalModuleType, new utils.ModuleInterventionService.Callback() {
+            @Override
+            public void onSuccess(JSONObject interventionGuide) {
+                runOnUiThread(() -> {
+                    try {
+                        utils.ModuleReportHelper.saveModuleInterventionGuide(data, finalModuleType, interventionGuide);
+                        dataManager.getInstance().saveChildJson(fName, data);
+                        
+                        if (viewPlanButton != null) {
+                            viewPlanButton.setEnabled(true);
+                            viewPlanButton.setAlpha(1f);
+                        }
+                        
+                        Intent intent = new Intent(resultactivity.this, InterventionPlanActivity.class);
+                        intent.putExtra("fName", fName);
+                        intent.putExtra("moduleType", finalModuleType);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        Toast.makeText(resultactivity.this, "保存报告失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                runOnUiThread(() -> Toast.makeText(resultactivity.this,
+                        "生成失败: " + (errorMessage == null ? "" : errorMessage),
+                        Toast.LENGTH_LONG).show());
+            }
+        });
+    }
+
+    private void openTreatmentPlanActivity() {
+        if (fName == null || fName.trim().isEmpty()) {
+            Toast.makeText(this, "未找到评估数据", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        String format = getIntent().getStringExtra("format");
+        String moduleType = format;
+        if (isPrelinguisticResult) {
+            moduleType = "prelinguistic";
+        } else if (isArticulationResult) {
+            moduleType = "articulation";
+        } else if (isSocialResult) {
+            moduleType = "social";
+        } else if ("E".equals(format) || "EV".equals(format)) {
+            moduleType = "vocabulary";
+        }
+        
+        JSONObject data;
+        try {
+            data = dataManager.getInstance().loadData(fName);
+        } catch (Exception e) {
+            Toast.makeText(this, "读取评估数据失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        JSONObject guide = utils.ModuleReportHelper.loadModuleInterventionGuide(data, moduleType);
+        if (guide == null || guide.length() == 0) {
+            Toast.makeText(this, "请先生成干预报告", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Intent intent = new Intent(this, InterventionPlanActivity.class);
+        intent.putExtra("fName", fName);
+        intent.putExtra("moduleType", moduleType);
+        startActivity(intent);
     }
 
     private void savePrelinguisticReport() {
@@ -1454,7 +1621,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                                     View sibling = parentGroup.getChildAt(i);
                                     if (sibling != null) {
                                         // 检查是否是返回按钮
-                                        if (sibling.getId() == R.id.back) {
+                                        if (sibling.getId() == R.id.pl_suggestions || sibling.getId() == R.id.back) {
                                             break;
                                         }
                                         sibling.setVisibility(View.GONE);

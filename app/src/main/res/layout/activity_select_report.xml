@@ -75,6 +75,7 @@
         android:background="#FFFFFF"
         app:elevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:menu="@menu/menu_assessment" />
+        app:menu="@menu/menu_assessment"
+        tools:layout_editor_absoluteX="0dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

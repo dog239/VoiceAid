@@ -583,6 +583,20 @@
                 android:padding="12dp"
                 android:visibility="gone">
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="（三）干预建议"
+                    android:textColor="@color/black"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="8dp"
+                    android:background="@android:color/darker_gray" />
+
                 <RadioGroup
                     android:id="@+id/pl_option_group"
                     android:layout_width="match_parent"

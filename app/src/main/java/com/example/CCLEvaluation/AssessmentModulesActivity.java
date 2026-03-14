@@ -40,6 +40,8 @@ public class AssessmentModulesActivity extends AppCompatActivity {
     private TextView patientName;
     private TextView patientAge; // Reusing this for ID or Age
     private TextView patientId;
+    private String lastModuleJson;
+    private boolean isPrivateMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,7 +101,7 @@ public class AssessmentModulesActivity extends AppCompatActivity {
         fName = getIntent().getStringExtra("fName");
         uid = getIntent().getStringExtra("Uid");
         childUser = getIntent().getStringExtra("childID");
-        boolean isPrivate = getIntent().getBooleanExtra("private", false);
+        isPrivateMode = getIntent().getBooleanExtra("private", false);
 
         // Load data from file
         try {
@@ -110,13 +112,15 @@ public class AssessmentModulesActivity extends AppCompatActivity {
         }
 
         // Fetch permissions/modules from backend
-        if (isPrivate || uid == null || uid.isEmpty()) {
+        if (isPrivateMode || uid == null || uid.isEmpty()) {
             // Private mode or no UID: show all modules by default
+            lastModuleJson = null;
             updateModulesList(null); 
         } else {
             NetInteractUtils.getInstance(this).setModuleCallback(new NetInteractUtils.ModuleCallback() {
                 @Override
                 public void onModuleResult(String module) throws JSONException {
+                    lastModuleJson = module;
                     updateModulesList(module);
                 }
             });
@@ -157,7 +161,9 @@ public class AssessmentModulesActivity extends AppCompatActivity {
         // 2. 前语言 (PL)
         if ("1".equals(PL)) {
             AssessmentModule m = new AssessmentModule("PL", "前语言能力", "评估前语言沟通技能", "15 分钟", android.R.drawable.ic_menu_agenda);
-            m.setCompleted(checkCompletion("PL", 0)); 
+            int progressStatus = getModuleProgressStatus("PL", ImageUrls.PL_SKILLS.length);
+            m.setProgressStatus(progressStatus);
+            m.setCompleted(progressStatus == AssessmentModule.STATUS_COMPLETED);
             moduleList.add(m);
         }
 
@@ -195,9 +201,16 @@ public class AssessmentModulesActivity extends AppCompatActivity {
         JSONObject evaluations = data.optJSONObject("evaluations");
         if (evaluations == null) return AssessmentModule.STATUS_NOT_STARTED;
         if ("PL".equals(key)) {
-            JSONArray arr = evaluations.optJSONArray("PL");
-            if (arr == null || arr.length() == 0) return AssessmentModule.STATUS_NOT_STARTED;
-            return AssessmentModule.STATUS_COMPLETED;
+            int required = targetLength > 0 ? targetLength : ImageUrls.PL_SKILLS.length;
+            int bestAnswered = 0;
+            JSONArray legacy = evaluations.optJSONArray("PL");
+            bestAnswered = Math.max(bestAnswered, countAnsweredUniqueByNum(legacy, required));
+            JSONArray sceneA = evaluations.optJSONArray("PL_A");
+            bestAnswered = Math.max(bestAnswered, countAnsweredUniqueByNum(sceneA, required));
+            JSONArray sceneB = evaluations.optJSONArray("PL_B");
+            bestAnswered = Math.max(bestAnswered, countAnsweredUniqueByNum(sceneB, required));
+            if (bestAnswered >= required) return AssessmentModule.STATUS_COMPLETED;
+            return bestAnswered > 0 ? AssessmentModule.STATUS_IN_PROGRESS : AssessmentModule.STATUS_NOT_STARTED;
         }
         JSONArray array = evaluations.optJSONArray(key);
         if (array == null || array.length() == 0) return AssessmentModule.STATUS_NOT_STARTED;
@@ -237,6 +250,22 @@ public class AssessmentModulesActivity extends AppCompatActivity {
             return AssessmentModule.STATUS_COMPLETED;
         }
         return answered > 0 ? AssessmentModule.STATUS_IN_PROGRESS : AssessmentModule.STATUS_NOT_STARTED;
+    }
+
+    private int countAnsweredUniqueByNum(JSONArray array, int maxNum) {
+        if (array == null || array.length() == 0 || maxNum <= 0) return 0;
+        java.util.HashSet<Integer> answeredNums = new java.util.HashSet<>();
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject obj = array.optJSONObject(i);
+            if (obj == null || !obj.has("time") || obj.isNull("time")) {
+                continue;
+            }
+            int num = obj.optInt("num", -1);
+            if (num >= 1 && num <= maxNum) {
+                answeredNums.add(num);
+            }
+        }
+        return answeredNums.size();
     }
 
     private boolean checkCompletion(String key, int targetLength) {
@@ -289,12 +318,17 @@ public class AssessmentModulesActivity extends AppCompatActivity {
         try {
             if (fName != null) {
                 data = dataManager.getInstance().loadData(fName);
-                // Trigger list update again?
-                // NetInteractUtils.getModule might not need to be called again if permissions don't change, 
-                // but completion status might.
-                // We should re-run updateModulesList with cached module permission string if possible, 
-                // or just re-fetch. Re-fetching is safer.
-                NetInteractUtils.getInstance(this).getModule(uid);
+                updateModulesList(lastModuleJson);
+                if (!isPrivateMode && uid != null && !uid.isEmpty()) {
+                    NetInteractUtils.getInstance(this).setModuleCallback(new NetInteractUtils.ModuleCallback() {
+                        @Override
+                        public void onModuleResult(String module) throws JSONException {
+                            lastModuleJson = module;
+                            updateModulesList(module);
+                        }
+                    });
+                    NetInteractUtils.getInstance(this).getModule(uid);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

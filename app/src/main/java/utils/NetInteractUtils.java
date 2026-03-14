@@ -307,14 +307,18 @@ public class NetInteractUtils {
             public void onResponse(Call call, Response response) throws IOException {
                 try {
                     String responseData = response.body().string();
+                    if (responseData == null || responseData.trim().isEmpty()) {
+                        // 如果响应为空，忽略错误
+                        return;
+                    }
                     JSONObject jsonResponse = new JSONObject(responseData);
                     if (!response.isSuccessful()) {//失败
-                        String message = jsonResponse.getString("message");
+                        String message = jsonResponse.optString("message", "未知错误");
                         showToast(message);
                     }
                 } catch (JSONException e) {
                     // showToast("解析服务器数据错误！");
-                    e.printStackTrace();
+                    // 忽略JSON解析错误，避免干扰用户
                 }
                 uiThreadRefresh(false);
             }
@@ -352,8 +356,7 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    // showToast("解析服务器数据错误！");
-                    e.printStackTrace();
+                    showToast("解析服务器数据错误！");
                 }
                 uiThreadRefresh(false);
             }
@@ -396,8 +399,7 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    // showToast("解析服务器数据错误！");
-                    e.printStackTrace();
+                    showToast("解析服务器数据错误！");
                 }
                 uiThreadRefresh(false);
             }
@@ -421,21 +423,23 @@ public class NetInteractUtils {
             public void onResponse(Call call, Response response) throws IOException {
                 try {
                     String responseData = response.body().string();
+                    if (responseData == null || responseData.trim().isEmpty()) {
+                        return;
+                    }
                     JSONObject jsonResponse = new JSONObject(responseData);
                     if (response.isSuccessful()) {//返回码为200
-                        String evaluations = jsonResponse.getString("evaluations");
+                        String evaluations = jsonResponse.optString("evaluations");
                         if (evaluationsCallback != null) {
                             context.runOnUiThread(() -> {
                                 evaluationsCallback.onEvaluationsResult(evaluations);
                             });
                         }
                     } else {//返回码为其他，发生错误
-                        String message = jsonResponse.getString("message");
+                        String message = jsonResponse.optString("message", "未知错误");
                         showToast(message);
                     }
                 } catch (JSONException e) {
                     // showToast("解析服务器数据错误！");
-                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -476,8 +480,7 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    // showToast("解析服务器数据错误！");
-                    e.printStackTrace();
+                    showToast("解析服务器数据错误！");
                 }
                 uiThreadRefresh(false);
             }
@@ -518,8 +521,7 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    // showToast("解析服务器数据错误！");
-                    e.printStackTrace();
+                    showToast("解析服务器数据错误！");
                 }
                 uiThreadRefresh(false);
             }
@@ -544,9 +546,12 @@ public class NetInteractUtils {
             public void onResponse(Call call, Response response) throws IOException {
                 try {
                     String responseData = response.body().string();
+                    if (responseData == null || responseData.trim().isEmpty()) {
+                        return;
+                    }
                     JSONObject jsonResponse = new JSONObject(responseData);
                     if (response.isSuccessful()) {//返回码为200
-                        String userIDs = jsonResponse.getString("uids");
+                        String userIDs = jsonResponse.optString("uids");
                         if (userIDsCallback != null) {
                             context.runOnUiThread(() -> {
                                 try {
@@ -557,12 +562,11 @@ public class NetInteractUtils {
                             });
                         }
                     } else {//返回码为其他，发生错误
-                        String message = jsonResponse.getString("message");
+                        String message = jsonResponse.optString("message", "未知错误");
                         showToast(message);
                     }
                 } catch (JSONException e) {
                     // showToast("解析服务器数据错误！");
-                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -587,9 +591,12 @@ public class NetInteractUtils {
             public void onResponse(Call call, Response response) throws IOException {
                 try {
                     String responseData = response.body().string();
+                    if (responseData == null || responseData.trim().isEmpty()) {
+                        return;
+                    }
                     JSONObject jsonResponse = new JSONObject(responseData);
                     if (response.isSuccessful()) {//返回码为200
-                        String user = jsonResponse.getString("user");
+                        String user = jsonResponse.optString("user");
                         if (userInfoCallback != null) {
                             context.runOnUiThread(() -> {
                                 try {
@@ -600,12 +607,11 @@ public class NetInteractUtils {
                             });
                         }
                     } else {//返回码为其他，发生错误
-                        String message = jsonResponse.getString("message");
+                        String message = jsonResponse.optString("message", "未知错误");
                         showToast(message);
                     }
                 } catch (JSONException e) {
                     // showToast("解析服务器数据错误！");
-                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }
@@ -642,8 +648,7 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    // showToast("解析服务器数据错误！");
-                    e.printStackTrace();
+                    showToast("解析服务器数据错误！");
                 }
                 uiThreadRefresh(false);
             }
@@ -684,9 +689,8 @@ public class NetInteractUtils {
                         showToast(message);
                     }
                 } catch (JSONException e) {
-                    // showToast("解析服务器数据错误！");
+                    showToast("解析服务器数据错误！");
                     Log.d("NetInteractUtils", "JSON解析错误");
-                    e.printStackTrace();
                 }
                 uiThreadRefresh(false);
             }

@@ -77,26 +77,29 @@ public final class ModuleInterventionGuideSchema {
         meta.put("reviewedByTherapist", srcMeta.optBoolean("reviewedByTherapist", false));
         out.put("meta", meta);
 
-        // 处理模块特定的字段
-        JSONObject custom = new JSONObject();
-        // 尝试从 custom 字段获取，如果没有则尝试从根节点获取
         JSONObject srcCustom = src.optJSONObject("custom");
-        if (srcCustom == null) {
-            srcCustom = src;
-        }
+        if (srcCustom != null) {
+            JSONArray extraGuidance = new JSONArray();
 
-        if ("articulation".equals(moduleType)) {
-            // 构音模块：口肌训练建议
-            custom.put("oralMotorSuggestions", normalizeStringArray(srcCustom, "oralMotorSuggestions", "oral_motor_suggestions"));
-        } else if ("social".equals(moduleType)) {
-            // 社交模块：社交脚本
-            custom.put("socialScripts", normalizeStringArray(srcCustom, "socialScripts", "social_scripts"));
-        }
+            JSONArray oralMotor = normalizeStringArray(srcCustom, "oralMotorSuggestions", "oral_motor_suggestions");
+            for (int i = 0; i < oralMotor.length(); i++) {
+                extraGuidance.put("[口肌训练] " + oralMotor.optString(i));
+            }
 
-        if (custom.length() > 0) {
-            out.put("custom", custom);
-        }
+            JSONArray scripts = normalizeStringArray(srcCustom, "socialScripts", "social_scripts");
+            for (int i = 0; i < scripts.length(); i++) {
+                extraGuidance.put("[社交脚本] " + scripts.optString(i));
+            }
 
+            if (extraGuidance.length() > 0) {
+                JSONArray currentHome = out.optJSONArray("homeGuidance");
+                if (currentHome == null) currentHome = new JSONArray();
+                for (int i = 0; i < extraGuidance.length(); i++) {
+                    currentHome.put(extraGuidance.optString(i));
+                }
+                out.put("homeGuidance", currentHome);
+            }
+        }
         return out;
     }
 

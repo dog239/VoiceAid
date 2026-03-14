@@ -64,18 +64,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             if (fName != null) {
                 SharedPreferences preferences = getSharedPreferences("login_prefs_" + fName, MODE_PRIVATE);
                 SharedPreferences.Editor editor = preferences.edit();
-                // 根据当前模块类型清除对应的进度记录
-                String key = testactivity.this.resolvedKey;
-                if (key != null && (key.equals("RG") || key.equals("SE") || key.equals("SOCIAL") || key.equals("E") || key.equals("EV"))) {
-                    Integer groupNumber = testcontext.getInstance().getGroupNumber();
-                    if (groupNumber != null) {
-                        editor.remove("CurrentQuestion_" + key + groupNumber);
-                    } else {
-                        editor.remove("CurrentQuestion_" + key);
-                    }
-                } else {
-                    editor.remove("CurrentQuestion");
-                }
+                editor.remove("CurrentQuestion");
                 editor.apply();
             }
             performCleanup(true);
@@ -104,7 +93,6 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         exit.setOnClickListener(this);
 
 
-        // 先设置页面变化监听器
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             private int currentPage = 0;
 
@@ -143,15 +131,13 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                     // 其他模块使用原来的方式
                     counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
                 }
-                // 保存当前位置到 SharedPreferences，为每个模块使用不同的键
+                // 保存当前位置到 SharedPreferences，为每个组别使用不同的键
                 String currentQuestionKey = "CurrentQuestion";
-                // 如果是 RG、SE、SOCIAL、E或EV类型，添加模块信息到键中
-                if (key != null && (key.equals("RG") || key.equals("SE") || key.equals("SOCIAL") || key.equals("E") || key.equals("EV"))) {
+                // 如果是 RG、SE 或 SOCIAL 类型，添加组别信息到键中
+                if (key != null && (key.equals("RG") || key.equals("SE") || key.equals("SOCIAL"))) {
                     Integer groupNumber = testcontext.getInstance().getGroupNumber();
                     if (groupNumber != null) {
                         currentQuestionKey = "CurrentQuestion_" + key + groupNumber;
-                    } else {
-                        currentQuestionKey = "CurrentQuestion_" + key;
                     }
                 }
                 SharedPreferences preferences = getSharedPreferences("login_prefs_" + fName, MODE_PRIVATE);
@@ -385,8 +371,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
             // 从SharedPreferences读取之前的位置
             SharedPreferences preferences = getSharedPreferences("login_prefs_" + fName, MODE_PRIVATE);
-            String currentQuestionKey = "CurrentQuestion_E";
-            String savedPosition = preferences.getString(currentQuestionKey, null);
+            String savedPosition = preferences.getString("CurrentQuestion", null);
             // 检查是否是新的测评（没有保存的位置且没有完成的题目）
             if (savedPosition == null && testcontext.getInstance().getCount() == 0) {
                 // 新的测评，从第一题开始
@@ -466,8 +451,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             viewPager.setAdapter(adapter);
             // 从SharedPreferences读取之前的位置
             SharedPreferences preferences = getSharedPreferences("login_prefs_" + fName, MODE_PRIVATE);
-            String currentQuestionKey = "CurrentQuestion_EV";
-            String savedPosition = preferences.getString(currentQuestionKey, null);
+            String savedPosition = preferences.getString("CurrentQuestion", null);
             if (savedPosition != null) {
                 try {
                     int position = Integer.parseInt(savedPosition);
@@ -1544,14 +1528,26 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             adapter = new testpageradapter(R.layout.word_test1, null, Tb, evTemp, null, null, null, counter, timer);
             viewPager.setAdapter(adapter);
             
-            // 无论是否有保存的位置，都从第一题开始
-            viewPager.setCurrentItem(0);
-            
-            // 强制更新计数器显示，确保初始显示1/10
-            String key = testactivity.this.resolvedKey;
-            if (key != null && key.equals("SOCIAL")) {
-                int completedCount = 1; // 第一题
-                counter.setText(completedCount + "/" + groupLength);
+            // 从SharedPreferences读取之前的位置
+            SharedPreferences preferences = getSharedPreferences("login_prefs_" + fName, MODE_PRIVATE);
+            String currentQuestionKey = "CurrentQuestion_SOCIAL" + groupNumber;
+            String savedPosition = preferences.getString(currentQuestionKey, null);
+            if (savedPosition != null) {
+                try {
+                    int position = Integer.parseInt(savedPosition);
+                    if (position >= 0 && position < adapter.getCount()) {
+                        viewPager.setCurrentItem(position);
+                    } else {
+                        // 保存的位置无效，从第一题开始
+                        viewPager.setCurrentItem(0);
+                    }
+                } catch (NumberFormatException e) {
+                    // 保存的位置格式错误，从第一题开始
+                    viewPager.setCurrentItem(0);
+                }
+            } else {
+                // 没有保存的位置，从第一题开始
+                viewPager.setCurrentItem(0);
             }
 
         } else {
@@ -1694,12 +1690,12 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                 // 构音结果去重写入：每次完成A模块先清空再写回，避免重复append导致1-53重复。
                 if ("A".equals(key)) {
                     evaluations.put("A", new JSONArray());
+                } else if ("E".equals(key)) {
+                    evaluations.put("E", new JSONArray());
+                } else if ("EV".equals(key)) {
+                    evaluations.put("EV", new JSONArray());
                 }
-                // 对于E和EV模块，先清空数组再写入，确保数据正确
-                if (key.equals("E") || key.equals("EV")) {
-                    evaluations.put(key, new JSONArray());
-                }
-                // 写入数据
+                // 直接写入数据，不再清空数组，保留之前的进度
                 for(int i = 0; i< evTemp.size(); i++){
                     if (evTemp.get(i) != null) {
                         evTemp.get(i).toJson(evaluations);

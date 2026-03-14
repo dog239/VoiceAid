@@ -120,6 +120,16 @@
                         android:lineSpacingExtra="4dp"
                         android:minLines="3"
                         android:textColor="#475569"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_overall_summary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:lineSpacingExtra="6dp"
+                        android:minLines="3"
+                        android:textColor="#475569"
                         android:textSize="15sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -173,6 +183,17 @@
                         android:hint="暂无记录"
                         android:inputType="textMultiLine"
                         android:lineSpacingExtra="6dp"
+                        android:minLines="2"
+                        android:textColor="#065F46"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_mastered"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:lineSpacingExtra="8dp"
                         android:minLines="2"
                         android:textColor="#065F46"
                         android:textSize="15sp" />
@@ -230,6 +251,17 @@
                         android:lineSpacingExtra="4dp"
                         android:minLines="2"
                         android:textColor="#991B1B"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_not_mastered_overview"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:lineSpacingExtra="6dp"
+                        android:minLines="2"
+                        android:textColor="#991B1B"
                         android:textSize="15sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -271,6 +303,17 @@
                         android:lineSpacingExtra="6dp"
                         android:minLines="2"
                         android:textColor="#9A3412"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_focus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="8dp"
+                        android:minLines="2"
+                        android:textColor="#9A3412"
                         android:textSize="15sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -310,6 +353,17 @@
                         android:hint="暂无不稳定项"
                         android:inputType="textMultiLine"
                         android:lineSpacingExtra="6dp"
+                        android:minLines="2"
+                        android:textColor="#92400E"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_unstable"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="8dp"
                         android:minLines="2"
                         android:textColor="#92400E"
                         android:textSize="15sp" />
@@ -366,16 +420,29 @@
                         android:lineSpacingExtra="4dp"
                         android:minLines="2"
                         android:textColor="#475569"
-                        android:textSize="15sp" />
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_smart_goal_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="8dp"
+                        android:minLines="2"
+                        android:textColor="#0F172A"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
 
                     <LinearLayout
+                        android:id="@+id/layout_smart_meta"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:background="#F8FAFC"
                         android:orientation="horizontal"
-                        android:padding="12dp">
-
+                        android:padding="12dp"
+                        android:visibility="gone">
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -444,7 +511,25 @@
                         android:lineSpacingExtra="4dp"
                         android:minLines="2"
                         android:textColor="#475569"
-                        android:textSize="15sp" />
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_smart_meta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:textColor="#64748B"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tv_smart_goal_support"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="6dp"
+                        android:textColor="#475569"
+                        android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -499,6 +584,17 @@
                         android:lineSpacingExtra="6dp"
                         android:minLines="3"
                         android:textColor="#0369A1"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_home_guidance"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:lineSpacingExtra="10dp"
+                        android:minLines="3"
+                        android:textColor="#0369A1"
                         android:textSize="15sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -537,6 +633,17 @@
                         android:hint="添加备注..."
                         android:inputType="textMultiLine"
                         android:lineSpacingExtra="4dp"
+                        android:minLines="2"
+                        android:textColor="#475569"
+                        android:textSize="14sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_notes_for_therapist"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="6dp"
                         android:minLines="2"
                         android:textColor="#475569"
                         android:textSize="14sp" />

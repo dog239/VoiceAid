@@ -39,10 +39,6 @@ public class SelectReportActivity extends AppCompatActivity {
     private String childUser;
     private JSONObject data;
     private MaterialButton btnViewOverall;
-    
-    private final Handler planHandler = new Handler(Looper.getMainLooper());
-    private Runnable planHintRunnable;
-    private static final long PLAN_HINT_DELAY_MS = 45000L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,24 +134,39 @@ public class SelectReportActivity extends AppCompatActivity {
     }
 
     private void updateOverallButtonState() {
-        if (data == null) return;
+        if (data == null) {
+            disableOverallButton();
+            return;
+        }
         
-        boolean hasPlan = data.has("treatmentPlan");
-        if (hasPlan) {
+        boolean allGenerated = true;
+        String[] requiredModules = {"articulation", "syntax", "social", "prelinguistic", "vocabulary"};
+        
+        for (String module : requiredModules) {
+            JSONObject guide = utils.ModuleReportHelper.loadModuleInterventionGuide(data, module);
+            if (guide == null || guide.length() == 0 || !guide.has("overallSummary") || guide.optString("overallSummary", "").trim().isEmpty()) {
+                allGenerated = false;
+                break;
+            }
+        }
+        
+        if (allGenerated) {
             btnViewOverall.setText("查看总体干预报告");
-            btnViewOverall.setEnabled(true);
-            btnViewOverall.setBackgroundTintList(getColorStateList(R.color.teal_700)); // Active color
-            btnViewOverall.setTextColor(getColor(R.color.white));
-        } else {
-            btnViewOverall.setText("生成干预方案");
-            // Check if all required modules are completed?
-            // Original logic in evmenuactivity didn't explicitly disable btn_plan based on completion, 
-            // but usually plan generation requires data.
-            // Let's enable it by default if data exists, or we can add logic to check if at least one module is done.
             btnViewOverall.setEnabled(true);
             btnViewOverall.setBackgroundTintList(getColorStateList(R.color.teal_700));
             btnViewOverall.setTextColor(getColor(R.color.white));
+            btnViewOverall.setIconTint(getColorStateList(R.color.white));
+        } else {
+            disableOverallButton();
         }
+    }
+    
+    private void disableOverallButton() {
+        btnViewOverall.setText("查看总体干预报告");
+        btnViewOverall.setEnabled(false);
+        btnViewOverall.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#E2E8F0")));
+        btnViewOverall.setTextColor(android.graphics.Color.parseColor("#94A3B8"));
+        btnViewOverall.setIconTint(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#94A3B8")));
     }
 
     private void updateReportList(String moduleJson) {
@@ -185,7 +196,7 @@ public class SelectReportActivity extends AppCompatActivity {
         
         if ("1".equals(PL)) {
             AssessmentModule m = new AssessmentModule("PL", "前语言能力", "前语言沟通技能报告", "", android.R.drawable.ic_menu_agenda);
-            m.setCompleted(checkCompletion("PL", 0));
+            m.setCompleted(checkCompletion("PL", ImageUrls.PL_SKILLS.length));
             m.setLastTestDate(getTestDate("PL"));
             m.setReportGenerated(checkReportGenerated("PL"));
             reportList.add(m);
@@ -193,7 +204,7 @@ public class SelectReportActivity extends AppCompatActivity {
 
         if ("1".equals(E)) {
             AssessmentModule m = new AssessmentModule("E", "词汇能力", "词汇理解与表达报告", "", android.R.drawable.ic_menu_sort_by_size);
-            m.setCompleted(checkCompletion("E", 7));
+            m.setCompleted(isVocabularyReportReady());
             m.setLastTestDate(getTestDate("E"));
             m.setReportGenerated(checkReportGenerated("E"));
             reportList.add(m);
@@ -222,8 +233,12 @@ public class SelectReportActivity extends AppCompatActivity {
         if (evaluations == null) return false;
         
         if ("PL".equals(key)) {
-             JSONArray arr = evaluations.optJSONArray("PL");
-             return arr != null && arr.length() > 0;
+            int required = targetLength > 0 ? targetLength : ImageUrls.PL_SKILLS.length;
+            int bestAnswered = 0;
+            bestAnswered = Math.max(bestAnswered, countAnsweredUniqueByNum(evaluations.optJSONArray("PL"), required));
+            bestAnswered = Math.max(bestAnswered, countAnsweredUniqueByNum(evaluations.optJSONArray("PL_A"), required));
+            bestAnswered = Math.max(bestAnswered, countAnsweredUniqueByNum(evaluations.optJSONArray("PL_B"), required));
+            return bestAnswered >= required;
         }
 
         JSONArray array = evaluations.optJSONArray(key);
@@ -241,6 +256,22 @@ public class SelectReportActivity extends AppCompatActivity {
         return len >= targetLength;
     }
 
+    private int countAnsweredUniqueByNum(JSONArray array, int maxNum) {
+        if (array == null || array.length() == 0 || maxNum <= 0) return 0;
+        java.util.HashSet<Integer> answeredNums = new java.util.HashSet<>();
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject obj = array.optJSONObject(i);
+            if (obj == null || !obj.has("time") || obj.isNull("time")) {
+                continue;
+            }
+            int num = obj.optInt("num", -1);
+            if (num >= 1 && num <= maxNum) {
+                answeredNums.add(num);
+            }
+        }
+        return answeredNums.size();
+    }
+
     private String getTestDate(String key) {
         // Retrieve date from last item in array? Or from 'info' object?
         // evmenuactivity doesn't show date on buttons.
@@ -251,41 +282,30 @@ public class SelectReportActivity extends AppCompatActivity {
     }
     
     private boolean checkReportGenerated(String key) {
-        if (data == null || !data.has("treatmentPlan")) return false;
-        try {
-            JSONObject plan = data.getJSONObject("treatmentPlan");
-            JSONObject modulePlan = plan.optJSONObject("module_plan");
-            if (modulePlan == null) return false;
-
-            String jsonKey = "";
-            switch (key) {
-                case "A":
-                    jsonKey = "speech_sound";
-                    break;
-                case "PL":
-                    jsonKey = "prelinguistic";
-                    break;
-                case "E":
-                    jsonKey = "vocabulary";
-                    break;
-                case "RG":
-                    jsonKey = "syntax";
-                    break;
-                case "SOCIAL":
-                    jsonKey = "social_pragmatics";
-                    break;
-                default:
-                    return false;
-            }
-            return modulePlan.has(jsonKey) && !modulePlan.isNull(jsonKey);
-        } catch (JSONException e) {
-            return false;
+        if (data == null) return false;
+        
+        String moduleType = "";
+        switch (key) {
+            case "A": moduleType = "articulation"; break;
+            case "PL": moduleType = "prelinguistic"; break;
+            case "E": moduleType = "vocabulary"; break;
+            case "RG": moduleType = "syntax"; break;
+            case "SOCIAL": moduleType = "social"; break;
+            default: return false;
         }
+        
+        JSONObject guide = utils.ModuleReportHelper.loadModuleInterventionGuide(data, moduleType);
+        return guide != null && guide.length() > 0;
     }
 
     private void onReportClick(AssessmentModule module) {
         if ("RG".equals(module.getId())) {
             showSyntaxReportSelectionDialog();
+            return;
+        }
+
+        if ("E".equals(module.getId()) && !isVocabularyReportReady()) {
+            Toast.makeText(this, "请先完成词汇理解和词汇表达后再查看报告", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -353,63 +373,13 @@ public class SelectReportActivity extends AppCompatActivity {
     }
 
     private void onOverallReportClick() {
-        if (data != null && data.has("treatmentPlan")) {
-            // View existing plan
-            Intent intent = new Intent(this, TreatmentPlanActivity.class);
-            intent.putExtra("fName", fName);
-            startActivity(intent);
-        } else {
-            // Generate plan
-            generateTreatmentPlan();
-        }
+        Intent intent = new Intent(this, TreatmentPlanActivity.class);
+        intent.putExtra("fName", fName);
+        startActivity(intent);
     }
 
-    private void generateTreatmentPlan() {
-        // Show loading state (reuse evmenuactivity logic)
-        // Since I don't have the loading layout in activity_select_report.xml, 
-        // I should probably add a ProgressDialog or Toast for now as per instructions not to add new layout elements if possible.
-        // Or I can add a simple loading overlay to the layout dynamically or via updated XML.
-        // Given I updated XMLs earlier, I can assume I can add a ProgressBar.
-        // For now, using Toast as immediate feedback.
-        
-        Toast.makeText(this, "正在生成干预方案...", Toast.LENGTH_SHORT).show();
-        
-        schedulePlanHint();
-        new ReportPipeline(this).generateTreatmentPlan(fName, new ReportPipeline.Callback() {
-            @Override
-            public void onSuccess(JSONObject plan) {
-                runOnUiThread(() -> {
-                    clearPlanHint();
-                    refreshData(); // Refresh button state
-                    
-                    Intent intent = new Intent(SelectReportActivity.this, TreatmentPlanActivity.class);
-                    intent.putExtra("planJsonString", plan.toString());
-                    intent.putExtra("fName", fName);
-                    startActivity(intent);
-                });
-            }
-
-            @Override
-            public void onError(String errorMessage) {
-                runOnUiThread(() -> {
-                    clearPlanHint();
-                    Toast.makeText(SelectReportActivity.this, "生成失败: " + errorMessage, Toast.LENGTH_LONG).show();
-                });
-            }
-        });
-    }
-    
-    private void schedulePlanHint() {
-        clearPlanHint();
-        planHintRunnable = () -> Toast.makeText(this, "报告生成中，请稍候", Toast.LENGTH_LONG).show();
-        planHandler.postDelayed(planHintRunnable, PLAN_HINT_DELAY_MS);
-    }
-
-    private void clearPlanHint() {
-        if (planHintRunnable != null) {
-            planHandler.removeCallbacks(planHintRunnable);
-            planHintRunnable = null;
-        }
+    private boolean isVocabularyReportReady() {
+        return checkCompletion("E", 7) && checkCompletion("EV", 7);
     }
     
     @Override
