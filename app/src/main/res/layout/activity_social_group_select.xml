@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F8F8"
+    android:orientation="vertical"
+    android:paddingTop="20dp"
+    tools:context=".SocialGroupSelectActivity">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="10dp"
+        android:text="社交能力评估"
+        android:textColor="#0F172A"
+        android:textSize="27sp"
+        android:fontFamily="@font/zcool_kuaile" />
+
+    <TextView
+        android:id="@+id/tv_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="10dp"
+        android:paddingBottom="20dp"
+        android:text="请选择要进行的评估分组"
+        android:textColor="#64748B"
+        android:textSize="16sp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#FFFFFF"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="评估分组"
+                        android:textColor="#0F172A"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp" />
+
+                    <Button
+                        android:id="@+id/btn_group1"
+                        android:layout_width="match_parent"
+                        android:layout_height="75dp"
+                        android:layout_marginBottom="8dp"
+                        android:backgroundTint="#A4E2A0"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="第一组：基础社交互动能力"
+                        android:textColor="#0F172A"
+                        android:textSize="20sp"
+                        app:cornerRadius="12dp" />
+
+                    <Button
+                        android:id="@+id/btn_group2"
+                        android:layout_width="match_parent"
+                        android:layout_height="75dp"
+                        android:layout_marginBottom="8dp"
+                        android:backgroundTint="#F6DB8F"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="第二组：社交沟通能力"
+                        android:textColor="#0F172A"
+                        android:textSize="20sp"
+                        app:cornerRadius="12dp" />
+
+                    <Button
+                        android:id="@+id/btn_group3"
+                        android:layout_width="match_parent"
+                        android:layout_height="75dp"
+                        android:layout_marginBottom="8dp"
+                        android:backgroundTint="#FAD0A8"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="第三组：同伴互动能力"
+                        android:textColor="#0F172A"
+                        android:textSize="20sp"
+                        app:cornerRadius="12dp" />
+
+                    <Button
+                        android:id="@+id/btn_group4"
+                        android:layout_width="match_parent"
+                        android:layout_height="75dp"
+                        android:layout_marginBottom="8dp"
+                        android:backgroundTint="#FDC1C1"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="第四组：复杂社交能力"
+                        android:textColor="#0F172A"
+                        android:textSize="20sp"
+                        app:cornerRadius="12dp" />
+
+                    <Button
+                        android:id="@+id/btn_group5"
+                        android:layout_width="match_parent"
+                        android:layout_height="75dp"
+                        android:layout_marginBottom="8dp"
+                        android:backgroundTint="#AFDEF6"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="第五组：高级社交能力"
+                        android:textColor="#0F172A"
+                        android:textSize="20sp"
+                        app:cornerRadius="12dp" />
+
+                    <Button
+                        android:id="@+id/btn_group6"
+                        android:layout_width="match_parent"
+                        android:layout_height="75dp"
+                        android:backgroundTint="#D0BFED"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="第六组：社交责任感"
+                        android:textColor="#0F172A"
+                        android:textSize="20sp"
+                        app:cornerRadius="12dp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

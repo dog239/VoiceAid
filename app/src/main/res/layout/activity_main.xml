@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F8F8"
+    android:orientation="horizontal"
+    android:paddingBottom="20dp"
+    tools:context=".login.Loginactivity">
+
+    <!-- 标题 -->
+    <TextView
+        android:id="@+id/tv_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/zcool_kuaile"
+        android:gravity="center"
+        android:paddingTop="30dp"
+        android:paddingBottom="20dp"
+        android:text="学龄前儿童言语语言能力评估系统"
+        android:textColor="#0F172A"
+        android:textSize="28sp"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- 功能菜单卡片 -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="10dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="1dp"
+        app:strokeColor="#E2E8F0"
+        app:strokeWidth="1dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_1">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 新评测 -->
+                <LinearLayout
+                    android:id="@+id/btn_new1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_stat_card"
+                    android:padding="4dp">
+
+                    <TextView
+                        android:id="@+id/new1_no"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:gravity="center"
+                        android:text="1"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:background="@drawable/blue_button"
+                        android:backgroundTint="#008A7C" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="3"
+                        android:gravity="center|start"
+                        android:paddingStart="16dp"
+                        android:text="新评测"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <!-- 本机评测 -->
+                <LinearLayout
+                    android:id="@+id/btn_old1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_stat_card"
+                    android:padding="4dp">
+
+                    <TextView
+                        android:id="@+id/old1_no"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:gravity="center"
+                        android:text="1"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:background="@drawable/blue_button"
+                        android:backgroundTint="#008A7C" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="3"
+                        android:gravity="center|start"
+                        android:paddingStart="16dp"
+                        android:text="本机评测"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <!-- 个人评测 -->
+                <LinearLayout
+                    android:id="@+id/btn_old2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_stat_card"
+                    android:padding="4dp">
+
+                    <TextView
+                        android:id="@+id/old2_no"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:gravity="center"
+                        android:text="1"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:background="@drawable/blue_button"
+                        android:backgroundTint="#008A7C" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="3"
+                        android:gravity="center|start"
+                        android:paddingStart="16dp"
+                        android:text="个人评测"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <!-- 所有测评 -->
+                <LinearLayout
+                    android:id="@+id/btn_all"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_stat_card"
+                    android:padding="4dp">
+
+                    <TextView
+                        android:id="@+id/all_no"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:gravity="center"
+                        android:text="1"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:background="@drawable/blue_button"
+                        android:backgroundTint="#008A7C" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="3"
+                        android:gravity="center|start"
+                        android:paddingStart="16dp"
+                        android:text="所有评测"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <!-- 试音 -->
+                <LinearLayout
+                    android:id="@+id/btn_record"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_stat_card"
+                    android:padding="4dp">
+
+                    <TextView
+                        android:id="@+id/record_no"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:gravity="center"
+                        android:text="1"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:background="@drawable/blue_button"
+                        android:backgroundTint="#008A7C" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="3"
+                        android:gravity="center|start"
+                        android:paddingStart="16dp"
+                        android:text="试音"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <!-- 评测模块修改 -->
+                <LinearLayout
+                    android:id="@+id/btn_changeModule"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_stat_card"
+                    android:padding="4dp">
+
+                    <TextView
+                        android:id="@+id/changeModule_no"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:gravity="center"
+                        android:text="1"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:background="@drawable/blue_button"
+                        android:backgroundTint="#008A7C" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="3"
+                        android:gravity="center|start"
+                        android:paddingStart="16dp"
+                        android:text="评测模块修改"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <!-- 退出登录 -->
+                <LinearLayout
+                    android:id="@+id/btn_logout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_stat_card"
+                    android:padding="4dp">
+
+                    <TextView
+                        android:id="@+id/logout_no"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:gravity="center"
+                        android:text="1"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:background="@drawable/blue_button"
+                        android:backgroundTint="#008A7C" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="3"
+                        android:gravity="center|start"
+                        android:paddingStart="16dp"
+                        android:text="退出登录"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <!-- 注销用户 -->
+                <LinearLayout
+                    android:id="@+id/btn_delete"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_stat_card"
+                    android:padding="4dp">
+
+                    <TextView
+                        android:id="@+id/delete_no"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:gravity="center"
+                        android:text="1"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:background="@drawable/blue_button"
+                        android:backgroundTint="#008A7C" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="3"
+                        android:gravity="center|start"
+                        android:paddingStart="16dp"
+                        android:text="注销用户"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

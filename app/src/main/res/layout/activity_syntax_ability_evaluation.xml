@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F8F8"
+    android:orientation="vertical"
+    android:gravity="center"
+    tools:context=".SyntaxAbilityEvaluationActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="20dp"
+        android:paddingBottom="30dp"
+        android:text="句法能力评估"
+        android:textColor="#0F172A"
+        android:textSize="27sp"
+        android:fontFamily="@font/zcool_kuaile" />
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="30dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="#FFFFFF"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="选择评估类型"
+                android:textColor="#64748B"
+                android:textSize="14sp"
+                android:layout_marginBottom="20dp" />
+
+            <Button
+                android:id="@+id/btn_syntax_comprehension"
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#A4E2A0"
+                android:fontFamily="@font/zcool_kuaile"
+                android:text="句法理解"
+                android:textColor="#0F172A"
+                android:textSize="20sp"
+                app:cornerRadius="12dp" />
+
+            <Button
+                android:id="@+id/btn_syntax_expression"
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:backgroundTint="#98E6F6"
+                android:fontFamily="@font/zcool_kuaile"
+                android:text="句法表达"
+                android:textColor="#0F172A"
+                android:textSize="20sp"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</LinearLayout>

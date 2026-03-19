@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_plan_card_middle"
+    android:orientation="horizontal"
+    android:paddingTop="10dp"
+    tools:context="login.Loginactivity">
+
+    <LinearLayout
+        android:id="@+id/llm"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginTop="100dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_1"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:fontFamily="@font/zcool_kuaile"
+            android:gravity="center"
+            android:text="请听录音"
+            android:textColor="@color/black"
+            android:textSize="34sp" />
+
+        <ProgressBar
+            android:id="@+id/progressBar2"
+            android:layout_width="match_parent"
+            android:layout_height="15dp"
+            android:layout_margin="20dp"
+            android:layout_marginTop="2dp"
+            android:indeterminateOnly="false"
+            android:progressDrawable="@drawable/common_progress_bg" />
+
+        <Button
+            android:id="@+id/btnPlay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginRight="1dp"
+            android:background="@drawable/btn_left"
+            android:fontFamily="@font/zcool_kuaile"
+            android:text="播放"
+            android:textColor="#64A386"
+            android:textSize="24sp"
+            app:backgroundTint="#C6E8B1" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+
+            android:padding="20dp">
+
+            <Button
+                android:id="@+id/btnSatisfied"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginRight="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_left"
+                android:fontFamily="@font/zcool_kuaile"
+                android:text="满意"
+                android:textColor="#64A386"
+                android:textSize="24sp"
+                app:backgroundTint="#C6E8B1" />
+
+            <Button
+                android:id="@+id/btnNotSatisfied"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/btn_right"
+                android:fontFamily="@font/zcool_kuaile"
+                android:text="重新录音"
+                android:textColor="#64A386"
+                android:textSize="24sp"
+                app:backgroundTint="#C6E8B1" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
+
+
+
+

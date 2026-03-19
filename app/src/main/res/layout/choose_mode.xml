@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background">
+
+    <LinearLayout
+        android:layout_width="200dp"
+        android:layout_height="540dp"
+        android:layout_marginHorizontal="30dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/linearLayout5"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0">
+
+        <Button
+            android:id="@+id/btn_group1_right"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginBottom="15dp"
+            android:background="@drawable/blue_button"
+            android:text="前语言"
+            android:textSize="30sp"
+            app:backgroundTint="#9EDFF6" />
+
+        <Button
+            android:id="@+id/btn_group2_right"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginBottom="15dp"
+            android:background="@drawable/blue_button"
+            android:text="语法"
+            android:textSize="30sp"
+            app:backgroundTint="#FBCCA8" />
+
+        <Button
+            android:id="@+id/btn_group3_right"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginBottom="15dp"
+            android:background="@drawable/blue_button"
+            android:text="测评报告与干预方案"
+            android:textSize="30sp"
+            app:backgroundTint="#D0BFF8" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linearLayout5"
+        android:layout_width="200dp"
+        android:layout_height="540dp"
+        android:layout_marginHorizontal="30dp"
+        android:layout_marginStart="1dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0">
+
+        <Button
+            android:id="@+id/btn_group1_left"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginBottom="15dp"
+            android:background="@drawable/blue_button"
+            android:text="语音"
+            android:textSize="30sp"
+            app:backgroundTint="#B3EBAF" />
+
+        <Button
+            android:id="@+id/btn_group2_left"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginBottom="15dp"
+            android:background="@drawable/blue_button"
+            android:text="词汇"
+            android:textSize="30sp"
+            app:backgroundTint="#FAE799" />
+
+        <Button
+            android:id="@+id/btn_group3_left"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginBottom="15dp"
+            android:background="@drawable/blue_button"
+            android:text="社交"
+            android:textSize="30sp"
+            app:backgroundTint="#FBCED8" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="模式选择"
+        android:textSize="34sp"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayout5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

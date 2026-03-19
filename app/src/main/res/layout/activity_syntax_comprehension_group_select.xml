@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F8F8"
+    android:orientation="vertical"
+    android:paddingTop="20dp"
+    tools:context=".SyntaxComprehensionGroupSelectActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:text="句法理解 - 选择组别"
+        android:textColor="#0F172A"
+        android:textSize="27sp"
+        android:fontFamily="@font/zcool_kuaile" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 组别卡片 -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:strokeColor="#E2E8F0"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="20dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginEnd="8dp"
+                            android:src="@android:drawable/ic_menu_manage"
+                            app:tint="#008A7C" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="请选择评估组别"
+                            android:textColor="#0F172A"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- 第一组 -->
+
+                    <!-- 第二组 -->
+                    <Button
+                        android:id="@+id/btn_group1"
+                        android:layout_width="match_parent"
+                        android:layout_height="75dp"
+                        android:layout_marginBottom="10dp"
+                        android:backgroundTint="#B3EBAF"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="第一组"
+                        android:textColor="#0F172A"
+                        android:textSize="20sp"
+                        app:cornerRadius="12dp" />
+
+                    <Button
+                        android:id="@+id/btn_group2"
+                        android:layout_width="match_parent"
+                        android:layout_height="75dp"
+                        android:layout_marginBottom="10dp"
+                        android:backgroundTint="#FAE799"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="第二组"
+                        android:textColor="#0F172A"
+                        android:textSize="20sp"
+                        app:cornerRadius="12dp" />
+
+                    <!-- 第三组 -->
+                    <Button
+                        android:id="@+id/btn_group3"
+                        android:layout_width="match_parent"
+                        android:layout_height="75dp"
+                        android:layout_marginBottom="10dp"
+                        android:backgroundTint="#FBCED8"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="第三组"
+                        android:textColor="#0F172A"
+                        android:textSize="20sp"
+                        app:cornerRadius="12dp" />
+
+                    <!-- 第四组 -->
+                    <Button
+                        android:id="@+id/btn_group4"
+                        android:layout_width="match_parent"
+                        android:layout_height="75dp"
+                        android:layout_marginBottom="5dp"
+                        android:backgroundTint="#ADEEFF"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="第四组"
+                        android:textColor="#0F172A"
+                        android:textSize="20sp"
+                        app:cornerRadius="12dp" />
+
+                    <!-- 评估报告按钮 -->
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

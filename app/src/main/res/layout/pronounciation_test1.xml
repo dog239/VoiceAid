@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="@dimen/articulation_screen_padding_top"
+    tools:context="login.Loginactivity">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/articulation_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/space"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/cl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:scaleType="fitCenter"
+                android:layout_centerHorizontal="true"
+                android:visibility="invisible"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/tv_2"
+                app:layout_constraintDimensionRatio="1:1"
+                app:layout_constraintWidth_max="@dimen/articulation_image_max"
+                app:layout_constraintWidth_min="@dimen/articulation_image_min" />
+
+            <TextView
+                android:id="@+id/tv_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/zcool_kuaile"
+                android:gravity="center"
+                android:paddingHorizontal="@dimen/articulation_question_padding_h"
+                android:paddingVertical="@dimen/articulation_question_padding_v"
+                android:rotation="0"
+                android:text="第一题：图片画的是什么？"
+                android:textColor="@color/black"
+                android:textSize="@dimen/articulation_question_text"
+                app:layout_constraintBottom_toTopOf="@id/ll1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/imageView" />
+
+            <LinearLayout
+                android:id="@+id/ll1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/articulation_panel_padding"
+                android:paddingBottom="@dimen/articulation_panel_padding"
+                android:paddingTop="@dimen/articulation_panel_padding_top"
+                android:layout_centerHorizontal="true"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_2"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <TextView
+                    android:id="@+id/tv_ans"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:textColor="@color/black"
+                    android:text="飞机"
+                    android:visibility="gone"
+                    android:textSize="@dimen/articulation_answer_text"
+                    android:paddingVertical="@dimen/articulation_answer_padding_v"
+                    android:layout_marginBottom="@dimen/articulation_section_gap" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="0dp"
+                    >
+
+                    <RadioGroup
+                        android:id="@+id/radioGroup"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="2"
+                        android:orientation="horizontal">
+
+                        <RadioButton
+                            android:id="@+id/rb1"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="match_parent"
+                            android:text="自发"
+                            android:textSize="20sp"
+                            android:visibility="invisible"
+                            android:clickable="true"
+                            />
+
+                        <RadioButton
+                            android:id="@+id/rb2"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="match_parent"
+                            android:text="仿说"
+                            android:textSize="20sp"
+                            android:visibility="invisible"
+                            android:clickable="true"
+                            />
+
+
+                    </RadioGroup>
+
+
+                    <CheckBox
+                        android:id="@+id/cb1"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="match_parent"
+                        android:text="嘎ga1"
+                        android:textSize="20sp"
+                        android:visibility="invisible"
+                        android:clickable="true"
+                        />
+
+                    <CheckBox
+                        android:id="@+id/cb2"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="match_parent"
+                        android:text="嘎ga1"
+                        android:textSize="20sp"
+                        android:visibility="invisible"
+                        android:clickable="true"
+                        />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/ll_phonology_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="@dimen/articulation_table_top_gap">
+
+                    <LinearLayout
+                        android:id="@+id/ll_phonology_container"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="5"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/articulation_cell_size"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:padding="0dp"
+                                android:background="@drawable/table"
+                                android:text="汉字"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/articulation_cell_size"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:padding="0dp"
+                                android:background="@drawable/table"
+                                android:text="声母" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/articulation_cell_size"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:padding="0dp"
+                                android:background="@drawable/table"
+                                android:text="韵头" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/articulation_cell_size"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:padding="0dp"
+                                android:background="@drawable/table"
+                                android:text="韵腹" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/articulation_cell_size"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:includeFontPadding="false"
+                                android:padding="0dp"
+                                android:background="@drawable/table"
+                                android:text="韵尾" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/ll_inducible_panel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="6dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/articulation_cell_size"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:padding="0dp"
+                            android:background="@drawable/table"
+                            android:text="可诱发" />
+
+                        <LinearLayout
+                            android:id="@+id/ll_inducible_container"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/ll_error_type"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="@dimen/articulation_section_gap"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="错误类型："
+                        android:textColor="@color/black"
+                        android:textSize="16sp" />
+
+                    <Spinner
+                        android:id="@+id/sp_error_type"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/ll_phonology_process"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="@dimen/articulation_field_gap"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="音系历程："
+                        android:textColor="@color/black"
+                        android:textSize="16sp" />
+
+                    <Spinner
+                        android:id="@+id/sp_phonology_process"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="@dimen/articulation_button_gap">
+
+                    <Button
+                        android:id="@+id/btn_start"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginRight="1dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/btn_left"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="开始"
+                        android:textColor="#64A386"
+                        android:textSize="24sp"
+                        app:backgroundTint="#C6E8B1" />
+
+                    <Button
+                        android:id="@+id/btn_next"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginLeft="1dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/btn_right"
+                        android:fontFamily="@font/zcool_kuaile"
+                        android:text="下一题"
+                        android:textColor="#64A386"
+                        android:textSize="24sp"
+                        app:backgroundTint="#C6E8B1" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <Space
+        android:id="@+id/space"
+        android:layout_width="match_parent"
+        android:layout_height="60sp"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
