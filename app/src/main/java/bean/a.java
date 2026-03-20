@@ -682,7 +682,6 @@ public class a extends evaluation {
         Button startButton = view.findViewById(R.id.btn_start);
         Button nextButton = view.findViewById(R.id.btn_next);
         Spinner spError = view.findViewById(R.id.sp_error_type);
-        Spinner spPhonologyProcess = view.findViewById(R.id.sp_phonology_process);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(view.getContext(), android.R.layout.simple_spinner_dropdown_item, ERROR_TYPE_OPTIONS);
         spError.setAdapter(adapter);
@@ -698,19 +697,6 @@ public class a extends evaluation {
         spError.setSelection(defIndex);
         final boolean[] firstSelect = new boolean[]{true};
 
-        ArrayAdapter<String> processAdapter = new ArrayAdapter<>(view.getContext(), android.R.layout.simple_spinner_dropdown_item, PHONOLOGY_PROCESS_OPTIONS);
-        spPhonologyProcess.setAdapter(processAdapter);
-        int defProcessIndex = 0;
-        if (phonologyProcess != null) {
-            for (int i = 0; i < PHONOLOGY_PROCESS_OPTIONS.length; i++) {
-                if (PHONOLOGY_PROCESS_OPTIONS[i].equals(phonologyProcess)) {
-                    defProcessIndex = i;
-                    break;
-                }
-            }
-            spPhonologyProcess.setSelection(defProcessIndex);
-        }
-
         spError.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -723,17 +709,6 @@ public class a extends evaluation {
                 if (errorType != null && errorType.isEmpty()) errorType = null;
             }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
-
-        spPhonologyProcess.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                phonologyProcess = PHONOLOGY_PROCESS_OPTIONS[pos];
-                if (phonologyProcess != null && phonologyProcess.isEmpty()) phonologyProcess = null;
-            }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
