@@ -333,7 +333,7 @@ public class e extends evaluation {
                 AudioRecorder.getInstance().setOnRefreshUIThreadListener(listener);
                 AudioRecorder.getInstance().startRecorder();
                 audio = new audio(AudioRecorder.getInstance().getOutputFilePath());
-                testcontext.getInstance().incrementCount();
+                // 移除这里的incrementCount()调用，因为题目还没有完成
                 counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
 
             } catch (IOException e) {
@@ -349,6 +349,9 @@ public class e extends evaluation {
                 AudioRecorder.getInstance().stopRecorder();
                 result = new Boolean(true);
             }
+            // 增加完成题目的计数
+            testcontext.getInstance().incrementCount();
+            counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
             nextPage(position, testcontext.getInstance().getCount(), testcontext.getInstance().getLengths());
             testcontext.getInstance().setAllowSwipe(true);
 
@@ -361,6 +364,9 @@ public class e extends evaluation {
                 AudioRecorder.getInstance().stopRecorder();
                 result = new Boolean(false);
             }
+            // 增加完成题目的计数
+            testcontext.getInstance().incrementCount();
+            counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
             nextPage(position, testcontext.getInstance().getCount(), testcontext.getInstance().getLengths());
             testcontext.getInstance().setAllowSwipe(true);
         });
@@ -380,7 +386,7 @@ public class e extends evaluation {
         else {
             object.put("result",JSONObject.NULL);
             object.put("audioPath",JSONObject.NULL);
-            object.put("time",JSONObject.NULL);
+            object.put("time",time != null ? time : JSONObject.NULL);
         }
         evaluations.getJSONArray("E").put(object);
     }
@@ -389,13 +395,11 @@ public class e extends evaluation {
         int nP = position + 1;
         if (count >= lengths) {
             Toast.makeText(testcontext.getInstance().getContext(), "已完成测评题目！", Toast.LENGTH_SHORT).show();
-            //com.example.CCLEvaluation.testactivity.performCleanup();
 
             if (listener != null) {
                 listener.onAllQuestionComplete();
             }
-            // 直接返回菜单界面
-            testcontext.getInstance().getContext().finish();
+            // 不再直接finish()，而是由listener.onAllQuestionComplete()调用performCleanup
             return;
         }
         if(nP >= lengths){

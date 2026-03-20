@@ -16,14 +16,13 @@ public class AudioRecorder {
     private MediaRecorder recorder;
     private volatile boolean isAlive;
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HH_mm_ss");
-    private SimpleDateFormat calSdf = new SimpleDateFormat("mm:ss");
     private String outputFilePath;
-    private static Thread currentThread;
-
-    private long startTime;
-
+    private Thread currentThread;
+    private Thread timerThread;
+    private volatile boolean isTimerAlive;
 
     private long time;//录音计时器
+    private long timerTime;//独立计时器
 
     //单例模式
     private AudioRecorder() {}
@@ -64,41 +63,31 @@ public class AudioRecorder {
      * 只启动计时器，不启动录音
      */
     public void startTimer() {
-        // 先停止之前的计时器线程
-        if (currentThread != null && currentThread.isAlive()) {
-            currentThread.interrupt(); // 中断之前的线程
-            try {
-                currentThread.join(500); // 等待线程完成，最多等待500ms
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            // 确保线程已经终止
-            if (currentThread.isAlive()) {
-                currentThread = null;
-            }
-        }
+        // 先停止之前的独立计时器线程
+        stopTimer();
         
-        // 重置所有状态
-        if (recorder != null) {
-            try {
-                recorder.stop();
-            } catch (Exception e) {
-                // 捕获可能的异常
-            }
-            recorder.release();
-            recorder = null;
-        }
-        isAlive = false;
-        time = 0;
+        // 重置独立计时器状态
+        isTimerAlive = true;
+        timerTime = 0;
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);
         }
         
-        // 只启动计时器，不启动录音
-        isAlive = true;
-        time = 0;
-        currentThread = createTimerThread();
-        currentThread.start();
+        // 只启动独立计时器，不启动录音
+        timerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (isTimerAlive) {
+                    handler.sendEmptyMessage(1);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        isTimerAlive = false;
+                    }
+                }
+            }
+        });
+        timerThread.start();
     }
 
     /**
@@ -108,12 +97,12 @@ public class AudioRecorder {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while (isAlive) {
+                while (isTimerAlive) {
                     handler.sendEmptyMessage(1); // 使用不同的消息类型
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        isAlive = false;
+                        isTimerAlive = false;
                     }
                 }
             }
@@ -215,7 +204,7 @@ public class AudioRecorder {
         }
         isAlive = false;
         time = 0;
-        onRefreshUIThreadListener = null;
+        // 不要重置onRefreshUIThreadListener，保留之前设置的监听器
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);
         }
@@ -259,19 +248,22 @@ public class AudioRecorder {
     Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(@NonNull Message message) {
-            if (!isAlive) {
-                return false;
-            }
             // 处理消息类型1：只计时不录音
             if (message.what == 1) {
-                time += 1000;
+                if (!isTimerAlive) {
+                    return false;
+                }
+                timerTime += 1000;
                 if (onRefreshUIThreadListener != null) {
-                    String times = calTime(time);
+                    String times = calTime(timerTime);
                     onRefreshUIThreadListener.onRefresh(times);
                 }
                 return false;
             }
             // 处理消息类型0：录音并计时
+            if (!isAlive) {
+                return false;
+            }
             time += 1000;
             if (onRefreshUIThreadListener != null) {
                 String times = calTime(time);
@@ -329,10 +321,27 @@ public class AudioRecorder {
     }
 
     /**
-     * 停止计时器（与stopRecorder功能相同，为了API一致性）
+     * 停止独立计时器
      */
     public void stopTimer() {
-        stopRecorder();
+        // 停止独立计时器线程
+        isTimerAlive = false;
+        if (timerThread != null) {
+            timerThread.interrupt(); // 中断线程
+            try {
+                timerThread.join(500); // 等待线程完成，最多等待500ms
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            timerThread = null;
+        }
+        // 重置独立计时器
+        timerTime = 0;
+        // 清除handler中的所有消息，防止计时器继续运行
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
+        }
+        // 不要重置监听器，保留之前设置的监听器
     }
 
     /**
@@ -346,20 +355,23 @@ public class AudioRecorder {
 
     /**
      * 暂停录音，适用于安卓7.0以上，否则结束录音
-     * thread.join() 将阻塞当前线程，直到目标线程 thread 终止
      */
-    public void pauseRecorder() throws InterruptedException {
+    public void pauseRecorder() {
         if (isAlive) {
+            // 不使用join()，避免阻塞主线程
+            isAlive = false;//停止线程
             if (currentThread != null) {
-                currentThread.join();
+                currentThread.interrupt();
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                recorder.pause();
+                try {
+                    recorder.pause();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             } else {
                 stopRecorder();
             }
-            isAlive = false;//停止线程
-
         }
     }
 
@@ -369,7 +381,11 @@ public class AudioRecorder {
     public void resumeRecorder() throws IOException {
         if (!isAlive) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                recorder.resume();
+                try {
+                    recorder.resume();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             } else {
                 resetRecorder();
             }
