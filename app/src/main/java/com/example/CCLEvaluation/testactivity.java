@@ -103,8 +103,8 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void run() {
                         if (finalSuccess) {
-                            // 检查是否是社交模块，如果是则隐藏计时器
-                            if (testactivity.this.resolvedKey != null && testactivity.this.resolvedKey.equals("SOCIAL")) {
+                            // 检查是否是社交模块或前语言模块，如果是则隐藏计时器
+                            if (testactivity.this.resolvedKey != null && (testactivity.this.resolvedKey.equals("SOCIAL") || MODULE_PL.equals(testactivity.this.resolvedKey) || FORMAT_PL.equals(testactivity.this.resolvedKey) || FORMAT_PL.equals(format))) {
                                 if (timer != null) {
                                     timer.setVisibility(View.GONE);
                                 }
@@ -131,18 +131,56 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onPageSelected(int position) {
+                // 先更新当前页面位置
                 if(adapter.getAllowSwipe())
                     currentPage = position;
                 Log.d("zhxj7034",String.valueOf(currentPage));
                 // 停止当前计时器
                 AudioRecorder.getInstance().stopRecorder();
-                // 停止当前题目的计时器（如果是词汇理解模块）
-                if (testcontext.getInstance().getEvaluations() != null && currentPage < testcontext.getInstance().getEvaluations().size()) {
-                    evaluation currentEval = testcontext.getInstance().getEvaluations().get(currentPage);
+                // 停止当前题目的计时器
+                if (testcontext.getInstance().getEvaluations() != null && position < testcontext.getInstance().getEvaluations().size()) {
+                    evaluation currentEval = testcontext.getInstance().getEvaluations().get(position);
                     currentEval.stopTimer();
                 }
                 // 重置计时器为0，确保每一题都从0开始计时
                 timer.setText("00:00");
+                // 对于词汇理解（EV）模块，重新启动计时器
+                if (testactivity.this.resolvedKey != null && testactivity.this.resolvedKey.equals("EV")) {
+                    // 由于ViewPager预加载机制，需要确保计时器在页面实际显示时重新启动
+                    // 这里我们通过延迟执行来确保计时器在页面完全显示后启动
+                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            // 重新创建计时器并启动
+                            if (testcontext.getInstance().getEvaluations() != null && position < testcontext.getInstance().getEvaluations().size()) {
+                                evaluation currentEval = testcontext.getInstance().getEvaluations().get(position);
+                                // 这里我们需要重新启动计时器
+                                // 由于ev类的计时器是在test方法中启动的，我们需要确保它在页面显示时重新启动
+                                // 但由于test方法已经执行过，我们需要通过其他方式启动计时器
+                                // 这里我们直接在Activity中启动一个临时计时器
+                                final Handler tempHandler = new Handler();
+                                final long startTime = System.currentTimeMillis();
+                                tempHandler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        long currentTime = System.currentTimeMillis();
+                                        long elapsedTime = currentTime - startTime;
+                                        int minutes = (int) (elapsedTime / 60000);
+                                        int seconds = (int) ((elapsedTime % 60000) / 1000);
+                                        String timeString = String.format("%02d:%02d", minutes, seconds);
+                                        timer.setText(timeString);
+                                        // 检查页面是否仍然是当前页面
+                                        if (viewPager.getCurrentItem() == position) {
+                                            tempHandler.postDelayed(this, 1000);
+                                        } else {
+                                            tempHandler.removeCallbacks(this);
+                                        }
+                                    }
+                                }, 1000);
+                            }
+                        }
+                    }, 100);
+                }
                 // 更新进度显示
                 String key = testactivity.this.resolvedKey;
                 if (key != null && key.equals("SOCIAL")) {
@@ -1713,31 +1751,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                     editor.apply();
                     performCleanup(false);
                     
-                    // 检查是否是PL模块
-                    boolean isPrelinguistic = MODULE_PL.equals(key) || FORMAT_PL.equals(key) || FORMAT_PL.equals(format);
-                    if (isPrelinguistic) {
-                        // 没做完题，退到场景选择界面
-                        Intent intent = new Intent(this, PrelinguisticSceneSelectActivity.class);
-                        intent.putExtra("fName", fName);
-                        startActivity(intent);
-                    } else if (key != null && key.equals("RG")) {
-                        // 没做完题，退到句法理解组别选择界面
-                        Intent intent = new Intent(this, SyntaxComprehensionGroupSelectActivity.class);
-                        intent.putExtra("fName", fName);
-                        startActivity(intent);
-                    } else if (key != null && key.equals("SE")) {
-                        // 没做完题，退到句法表达组别选择界面
-                        Intent intent = new Intent(this, SyntaxExpressionGroupSelectActivity.class);
-                        intent.putExtra("fName", fName);
-                        startActivity(intent);
-                    } else if (key != null && key.equals("SOCIAL")) {
-                        // 没做完题，退到社交能力评估选择界面
-                        Intent intent = new Intent(this, SocialGroupSelectActivity.class);
-                        intent.putExtra("fName", fName);
-                        intent.putExtra("Uid", getIntent().getStringExtra("Uid"));
-                        intent.putExtra("childID", getIntent().getStringExtra("childID"));
-                        startActivity(intent);
-                    }
+                    // 直接使用finish()返回上一个Activity，遵循正常的返回栈顺序
                     finish();
                 }, "否", null);
         else {
@@ -1798,31 +1812,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                     editor.apply();
                     performCleanup(false);
                     
-                    // 检查是否是PL模块
-                    boolean isPrelinguistic = MODULE_PL.equals(key) || FORMAT_PL.equals(key) || FORMAT_PL.equals(format);
-                    if (isPrelinguistic) {
-                        // 没做完题，退到场景选择界面
-                        Intent intent = new Intent(this, PrelinguisticSceneSelectActivity.class);
-                        intent.putExtra("fName", fName);
-                        startActivity(intent);
-                    } else if (key != null && key.equals("RG")) {
-                        // 没做完题，退到句法理解组别选择界面
-                        Intent intent = new Intent(this, SyntaxComprehensionGroupSelectActivity.class);
-                        intent.putExtra("fName", fName);
-                        startActivity(intent);
-                    } else if (key != null && key.equals("SE")) {
-                        // 没做完题，退到句法表达组别选择界面
-                        Intent intent = new Intent(this, SyntaxExpressionGroupSelectActivity.class);
-                        intent.putExtra("fName", fName);
-                        startActivity(intent);
-                    } else if (key != null && key.equals("SOCIAL")) {
-                        // 没做完题，退到社交能力评估选择界面
-                        Intent intent = new Intent(this, SocialGroupSelectActivity.class);
-                        intent.putExtra("fName", fName);
-                        intent.putExtra("Uid", getIntent().getStringExtra("Uid"));
-                        intent.putExtra("childID", getIntent().getStringExtra("childID"));
-                        startActivity(intent);
-                    }
+                    // 直接使用finish()返回上一个Activity，遵循正常的返回栈顺序
                     finish();
                 }, "否", null);
             else {

@@ -61,10 +61,10 @@ public class AssessmentModulesActivity extends AppCompatActivity {
 
         ImageView btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> {
-            Intent intent = new Intent(AssessmentModulesActivity.this, history.showchildinformation.class);
-            intent.putExtra("fName", fName);
-            intent.putExtra("Uid", uid);
-            intent.putExtra("childID", childUser);
+            // 直接回到图二（startActivity），无论前面有多少个界面
+            Intent intent = new Intent(AssessmentModulesActivity.this, startActivity.class);
+            // 清除所有之前的Activity，确保直接回到主界面
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
             finish();
         });

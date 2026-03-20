@@ -449,7 +449,7 @@ public class SelectReportActivity extends AppCompatActivity {
                 int completedCount = 0;
                 for (int i = 0; i < groupArray.length(); i++) {
                     JSONObject obj = groupArray.optJSONObject(i);
-                    if (obj != null && obj.has("result") && !obj.isNull("result")) {
+                    if (obj != null && obj.has("time") && !obj.isNull("time")) {
                         completedCount++;
                     }
                 }
@@ -467,7 +467,7 @@ public class SelectReportActivity extends AppCompatActivity {
                 int completedCount = 0;
                 for (int i = 0; i < groupArray.length(); i++) {
                     JSONObject obj = groupArray.optJSONObject(i);
-                    if (obj != null && obj.has("result") && !obj.isNull("result")) {
+                    if (obj != null && obj.has("time") && !obj.isNull("time")) {
                         completedCount++;
                     }
                 }
