@@ -484,7 +484,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             for (int i = 0; i < eArray.length(); i++) {
                 JSONObject object = eArray.getJSONObject(i);
                 if (object.has("result") && !object.isNull("result")) {
-                    if (object.getBoolean("result")) {
+                    if (object.optBoolean("result", false)) {
                         counte++;
                         // 根据题目编号确定测试点
                         String testPoint = "";
@@ -515,7 +515,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             for (int i = 0; i < evArray.length(); i++) {
                 JSONObject object = evArray.getJSONObject(i);
                 if (object.has("result") && !object.isNull("result")) {
-                    if (object.getBoolean("result")) {
+                    if (object.optBoolean("result", false)) {
                         countev++;
                         // 根据题目编号确定测试点
                         String testPoint = "";
@@ -623,7 +623,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             for (int i = 0; i < evArray.length(); i++) {
                 JSONObject object = evArray.getJSONObject(i);
                 if (object.has("result") && !object.isNull("result")) {
-                    evaluations.add(new ev(i + 1, object.getString("target"), object.getBoolean("result"), object.getString("time")));
+                    evaluations.add(new ev(i + 1, object.getString("target"), object.optBoolean("result", false), object.getString("time")));
                 } else {
                     evaluations.add(new ev(i + 1, object.getString("target"), null, null));
                 }
@@ -636,7 +636,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             for (int i = 0; i < eArray.length(); i++) {
                 JSONObject object = eArray.getJSONObject(i);
                 if (object.has("result") && !object.isNull("result")) {
-                    evaluations.add(new e(i + 1, object.getString("target"), object.getBoolean("result"), new audio(object.getString("audioPath")), object.getString("time")));
+                    evaluations.add(new e(i + 1, object.getString("target"), object.optBoolean("result", false), new audio(object.getString("audioPath")), object.getString("time")));
                 } else {
                     evaluations.add(new e(i + 1, object.getString("target"), null, null, null));
                 }
@@ -738,12 +738,12 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             for(int i=0;i<jsonArray.length();i++){
                 JSONObject object = jsonArray.getJSONObject(i);
                 if(object.has("time")&&!object.isNull("time")){
-                    if(object.getBoolean("result")){
+                    if(object.optBoolean("result", false)){
                         countre++;
                     }
                     evaluations.add(new re(i+1,object.getString("target"),object.getString("targetC"),
                             object.getString("select"),
-                            object.getInt("select_num"),object.getBoolean("result"),new audio(object.getString("audioPath")),object.getString("time")));
+                            object.getInt("select_num"),object.optBoolean("result", false),new audio(object.getString("audioPath")),object.getString("time")));
                 }
                 else {
                     evaluations.add(new re(i+1,object.getString("target"),object.getString("targetC"),null,-1,null,null,null));
@@ -920,7 +920,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     for (int i = 0; i < groupArray.length(); i++) {
                         JSONObject object = groupArray.getJSONObject(i);
                         if(object.has("time")&&!object.isNull("time")){
-                            boolean result = object.getBoolean("result");
+                            boolean result = object.optBoolean("result", false);
                             if(result){
                                 countre++;
                             }
@@ -1472,7 +1472,7 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     for (int i = 0; i < groupArray.length(); i++) {
                         JSONObject object = groupArray.getJSONObject(i);
                         if(object.has("time")&&!object.isNull("time")){
-                            boolean result = object.getBoolean("result");
+                            boolean result = object.optBoolean("result", false);
                             if(result){
                                 countre++;
                             }
@@ -1661,12 +1661,49 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                     }
                     
                     if (questions != null && grammarPoints != null) {
+                        // 初始化题目计数器，用于实际测试题目的编号
+                        int questionCount = 1;
+                        
+                        // 存储该组的所有题目数据，方便查找
+                        ArrayList<JSONObject> groupItems = new ArrayList<>();
+                        for (int j = 0; j < groupArray.length(); j++) {
+                            Object arrayItem = groupArray.opt(j);
+                            if (arrayItem instanceof JSONObject) {
+                                groupItems.add((JSONObject) arrayItem);
+                            }
+                        }
+                        
                         for (int i = 0; i < questions.length; i++) {
+                            // 查找当前题目的数据
+                            JSONObject itemObj = null;
+                            for (JSONObject tempObj : groupItems) {
+                                int itemNum = tempObj.optInt("num", 0);
+                                if (itemNum == (i + 1)) {
+                                    itemObj = tempObj;
+                                    break;
+                                }
+                            }
+                            
+                            // 检查是否为示例题目
+                            boolean isExample = false;
+                            if (itemObj != null) {
+                                String questionNum = itemObj.optString("questionNum", "");
+                                // 只有当questionNum为"示例"时才认为是示例题目
+                                // 有题号的都是真实题目，应该被导入
+                                isExample = "示例".equals(questionNum);
+                            }
+                            
+                            // 即使是示例题目，如果有数据也应该导入，因为用户说有题号的都是真实题目
+                            // 只有当明确标记为"示例"时才跳过
+                            if (isExample) {
+                                continue;
+                            }
+                            
                             String questionText = questions[i];
                             String grammarPoint = grammarPoints[i];
                             
-                            // 计算题目编号，按照1-16的顺序显示
-                            int questionNumber = i + 1;
+                            // 使用实际的题目计数器作为题号，与测试过程中的编号保持一致
+                            int questionNumber = questionCount;
                             
                             // 尝试从分组数组中加载数据
                             boolean result = false;
@@ -1675,42 +1712,41 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                             String selectedOption = "";
                             String time = "";
                             
-                            // 搜索分组数组中对应题号的记录
-                            JSONObject itemObj = null;
-                            for (int j = 0; j < groupArray.length(); j++) {
-                                Object arrayItem = groupArray.opt(j);
-                                if (arrayItem instanceof JSONObject) {
-                                    itemObj = (JSONObject) arrayItem;
-                                    int itemNum = itemObj.optInt("num", 0);
-                                    // 匹配题号
-                                    if (itemNum == (i + 1)) {
-                                        hasData = true;
-                                        // 尝试从right_option字段获取正确选项
-                                        correctOption = itemObj.optString("right_option", "");
-                                        // 尝试从answer字段获取被选选项
-                                        selectedOption = itemObj.optString("answer", "");
-                                        time = itemObj.optString("time", "");
-                                        
-                                        // 计算结果：如果被选选项与正确选项相同，则为正确
-                                        if (!correctOption.isEmpty() && !selectedOption.isEmpty()) {
-                                            // 处理RIGHT/WRONG类型的正确选项
-                                            if (correctOption.equals("RIGHT")) {
-                                                // 正确按钮的题目，被选选项为RIGHT则正确
-                                                result = selectedOption.equals("RIGHT");
-                                            } else if (correctOption.equals("WRONG")) {
-                                                // 错误按钮的题目，被选选项为WRONG则正确
-                                                result = selectedOption.equals("WRONG");
-                                            } else {
-                                                // 其他类型的题目，直接比较选项
-                                                result = correctOption.equals(selectedOption);
+                            if (itemObj != null) {
+                                hasData = true;
+                                // 对于句法表达，正确选项只有RIGHT和WRONG两种，显示为"正确"或"错误"
+                                correctOption = "正确"; // 句法表达的正确选项默认是正确，因为用户判断对错
+                                // 尝试从answer字段获取被选选项
+                                selectedOption = itemObj.optString("answer", "");
+                                // 处理JSONObject.NULL值，参考audioPath的处理方式
+                                if ("null".equals(selectedOption) || selectedOption.isEmpty()) {
+                                    // 尝试直接获取answer字段
+                                    if (itemObj.has("answer") && !itemObj.isNull("answer")) {
+                                        try {
+                                            Object answerObj = itemObj.get("answer");
+                                            if (answerObj instanceof String) {
+                                                selectedOption = (String) answerObj;
                                             }
-                                        } else {
-                                            // 如果没有正确选项或被选选项，使用原始result字段
-                                            result = itemObj.optBoolean("result", false);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
                                         }
-                                        break;
                                     }
                                 }
+                                // 将RIGHT/WRONG转换为中文显示
+                                if ("RIGHT".equals(selectedOption)) {
+                                    selectedOption = "正确";
+                                } else if ("WRONG".equals(selectedOption)) {
+                                    selectedOption = "错误";
+                                }
+                                // 尝试从time字段获取答题时间
+                                time = itemObj.optString("time", "");
+                                // 处理JSONObject.NULL值
+                                if ("null".equals(time)) {
+                                    time = "";
+                                }
+                                
+                                // 计算结果：使用原始result字段
+                                result = itemObj.optBoolean("result", false);
                             }
                             
                             // 如果没有找到正确选项，尝试根据题目编号和组别设置默认正确选项
@@ -1722,7 +1758,8 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                             bean.audio audio = null;
                             if (hasData && itemObj != null) {
                                 String audioPath = itemObj.optString("audioPath", "");
-                                if (!audioPath.isEmpty()) {
+                                // 处理JSONObject.NULL值
+                                if (!"null".equals(audioPath) && !audioPath.isEmpty()) {
                                     audio = new bean.audio(audioPath);
                                 }
                             }
@@ -1731,6 +1768,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                             evaluations.add(new se(i + 1, String.valueOf(group), String.valueOf(questionNumber), 
                                     questionText, correctOption, selectedOption, 
                                     hasData ? (result ? "正确" : "错误") : "", null, audio, time, grammarPoint));
+                            
+                            // 增加题目计数器
+                            questionCount++;
                         }
                     }
                 }
@@ -1748,10 +1788,10 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             for(int i=0;i<jsonArray.length();i++){
                 JSONObject object = jsonArray.getJSONObject(i);
                 if(object.has("result")&&!object.isNull("result")){
-                    if(object.getBoolean("result")){
+                    if(object.optBoolean("result", false)){
                         countre++;
                     }
-                    evaluations.add(new s(i+1,object.getString("question"),object.getString("answer"),object.getBoolean("result"),new audio(object.getString("audioPath")),object.getString("time")));
+                    evaluations.add(new s(i+1,object.getString("question"),object.getString("answer"),object.optBoolean("result", false),new audio(object.getString("audioPath")),object.getString("time")));
                 }
                 else {
                     evaluations.add(new s(i+1,object.getString("question"),object.getString("answer"),null,null,null));

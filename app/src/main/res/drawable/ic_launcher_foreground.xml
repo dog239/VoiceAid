@@ -1,30 +1,97 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
+    <!-- 头部和耳机 -->
+    <path
+        android:fillColor="#4FC3F7"
+        android:pathData="M54,10C40,10,28,22,28,36C28,38,29,40,30,41.5C25,43,22,48,22,54C22,60,25,65,30,67C29,68.5,28,70,28,72C28,86,40,98,54,98C68,98,80,86,80,72C80,70,79,68.5,78,67C83,65,86,60,86,54C86,48,83,43,78,41.5C79,40,80,38,80,36C80,22,68,10,54,10Z" />
+    <path
+        android:fillColor="#29B6F6"
+        android:pathData="M54,5C45,5,34,13,28,24C24,29,22,36,22,44C22,50,25,55,30,57C29,59,28,61,28,64C28,75,34,85,44,91C50,94,58,94,64,91C74,85,80,75,80,64C80,61,79,59,78,57C83,55,86,50,86,44C86,36,84,29,80,24C74,13,63,5,54,5Z" />
+    
+    <!-- 耳朵 -->
     <path
         android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+        android:pathData="M78,34C84,34,88,39,88,44C88,49,84,54,78,54C76,54,74,53,73,52C74,47,74,42,73,37C74,35,76,34,78,34Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,34C22,34,24,35,25,37C24,42,24,47,25,52C24,53,22,54,20,54C14,54,10,49,10,44C10,39,14,34,20,34Z" />
+    
+    <!-- 脸部 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,44C40,40,43,37,47,37C50,37,53,40,53,44C53,48,50,51,47,51C43,51,40,48,40,44Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M61,44C61,40,64,37,68,37C71,37,74,40,74,44C74,48,71,51,68,51C64,51,61,48,61,44Z" />
+    
+    <!-- 眼睛 -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M44,40C46,40,47,42,47,44C47,46,46,48,44,48C42,48,41,46,41,44C41,42,42,40,44,40Z" />
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M66,40C68,40,69,42,69,44C69,46,68,48,66,48C64,48,63,46,63,44C63,42,64,40,66,40Z" />
+    
+    <!-- 嘴巴 -->
+    <path
+        android:fillColor="#FF5252"
+        android:pathData="M50,48C50,48,51,54,57,54C63,54,64,48,64,48C64,52,62,56,57,56C52,56,50,52,50,48Z" />
+    
+    <!-- 腮红 -->
+    <path
+        android:fillColor="#FFCDD2"
+        android:pathData="M38,46C38,46,39,49,41,49C43,49,44,46,44,46C44,48,42,50,41,50C40,50,38,48,38,46Z" />
+    <path
+        android:fillColor="#FFCDD2"
+        android:pathData="M68,46C68,46,69,49,71,49C73,49,74,46,74,46C74,48,72,50,71,50C70,50,68,48,68,46Z" />
+    
+    <!-- 音波 -->
+    <path
+        android:fillColor="#4FC3F7"
+        android:pathData="M18,54C18,54,19,48,22,45C25,42,28,40,32,40C32,40,32,44,29,47C26,50,23,52,18,54Z" />
+    <path
+        android:fillColor="#4FC3F7"
+        android:pathData="M14,54C14,54,15,46,19,42C23,38,27,36,32,36C32,36,32,40,28,43C24,46,20,49,14,54Z" />
+    <path
+        android:fillColor="#4FC3F7"
+        android:pathData="M10,54C10,54,11,44,16,39C21,34,26,32,32,32C32,32,32,36,27,39C22,42,17,46,10,54Z" />
+    
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M90,54C90,54,89,48,86,45C83,42,80,40,76,40C76,40,76,44,79,47C82,50,85,52,90,54Z" />
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M94,54C94,54,93,46,89,42C85,38,81,36,76,36C76,36,76,40,80,43C84,46,88,49,94,54Z" />
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M98,54C98,54,97,44,92,39C87,34,82,32,76,32C76,32,76,36,81,39C86,42,91,46,98,54Z" />
+    
+    <!-- 对话框 -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M36,76C36,72,40,69,44,69C52,69,58,73,58,79C58,85,52,89,44,89C40,89,36,86,36,82C36,82,34,82,34,79C34,76,36,76,36,76Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,74C42,74,42,74,42,74C42,74,42,74,42,74Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,74C48,74,48,74,48,74C48,74,48,74,48,74Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,74C54,74,54,74,54,74C54,74,54,74,54,74Z" />
+    <path
+        android:fillColor="#F06292"
+        android:pathData="M60,76C60,72,64,69,68,69C76,69,82,73,82,79C82,85,76,89,68,89C64,89,60,86,60,82C60,82,58,82,58,79C58,76,60,76,60,76Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M66,74C66,74,70,74,70,74C70,74,74,74,74,74C74,74,74,74,74,74Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M66,78C66,78,70,78,70,78C70,78,74,78,74,78C74,78,74,78,74,78Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M66,82C66,82,70,82,70,82C70,82,74,82,74,82C74,82,74,82,74,82Z" />
 </vector>

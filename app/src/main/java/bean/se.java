@@ -56,6 +56,10 @@ public class se extends evaluation {
         this.score = score;
         this.audio = audio;
         this.time = time;
+        // 初始化新增字段
+        this.group = "";
+        this.questionNum = String.valueOf(num);
+        this.grammarPoint = "";
     }
     
     // 新构造函数，支持分组、题目编号、正确选项、被选选项、答题时间和语法点
@@ -247,11 +251,12 @@ public class se extends evaluation {
 
        // 检查是否为示例题目
        int groupNumber = testcontext.getInstance().getGroupNumber();
-       boolean isExample = isExampleQuestion(position, groupNumber);
+       boolean isExample = isExampleQuestion(position, groupNumber) || "示例".equals(questionNum);
        if (isExample) {
            numberTextView.setText("示例");
        } else {
-           numberTextView.setText("第"+TabString[position]+"题");
+           // 使用questionNum作为题号，而不是TabString[position]
+           numberTextView.setText("第"+questionNum+"题");
        }
        hintTextView.setText(Hint[position]);
        counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
@@ -284,6 +289,17 @@ public class se extends evaluation {
        };
        startButton.setOnClickListener(v -> {
            try {
+               // 检查是否为示例题目
+               boolean isExampleCheck = isExampleQuestion(position, groupNumber) || "示例".equals(questionNum);
+               
+               if (isExampleCheck) {
+                   // 显示示范提醒
+                   Toast.makeText(testcontext.getInstance().getContext(), "这是示范，示范完请按下一题", Toast.LENGTH_LONG).show();
+                   // 显示示例题目的图片
+                   showQuestionInterface(view, questionNumber, isAnswered);
+                   return;
+               }
+               
                testcontext.getInstance().getViewPager().setPagingEnabled(false);
                startButton.setEnabled(false);
                result = false;
@@ -314,13 +330,8 @@ public class se extends evaluation {
                if(yesButton != null) yesButton.setEnabled(false);
                if(noButton != null) noButton.setEnabled(false);
 
-               if(result != null && answer.equals(right_option)){
-                   AudioRecorder.getInstance().stopRecorder();
-                   result = new Boolean(true);
-               }else{
-                   AudioRecorder.getInstance().stopRecorder();
-                   result = new Boolean(false);
-               }
+               // 停止录音
+               AudioRecorder.getInstance().stopRecorder();
 
            }
            
@@ -359,13 +370,13 @@ public class se extends evaluation {
        // 判断当前题目是否为示例题目
        if (groupNumber == 1) {
            // 第一组示例题目位置
-           return questionNumber == 0 || questionNumber == 4 || questionNumber == 10;
+           return questionNumber == 0 || questionNumber == 4 || questionNumber == 11;
        } else if (groupNumber == 2) {
            // 第二组示例题目位置
            return questionNumber == 3 || questionNumber == 7 || questionNumber == 11;
        } else if (groupNumber == 4) {
            // 第四组示例题目位置
-           return questionNumber == 3 || questionNumber == 7 || questionNumber == 11 || questionNumber == 16;
+           return questionNumber == 3 || questionNumber == 7 || questionNumber == 11 || questionNumber == 15;
        }
        return false;
    }
@@ -469,7 +480,7 @@ public class se extends evaluation {
        }
 
        // 检查是否为示例题目
-       boolean isExample = isExampleQuestion(questionNumber - 1, groupNumber);
+       boolean isExample = isExampleQuestion(questionNumber - 1, groupNumber) || "示例".equals(questionNum);
 
        // 显示判断对错按钮（示例题目不显示）
        if(yesButton != null && noButton != null) {
@@ -701,16 +712,22 @@ public class se extends evaluation {
    @Override
    public void toJson(JSONObject evaluations) throws JSONException {
        // 检查是否为示例题目，如果是则不保存到JSON中
-       int groupNumber = testcontext.getInstance().getGroupNumber();
-       boolean isExample = isExampleQuestion(num - 1, groupNumber);
+       // 示例题目没有题号，所以如果questionNum为"示例"则不保存
+       boolean isExample = "示例".equals(questionNum);
        if (isExample) {
            return; // 示例题目不保存
        }
+       
+       // 获取当前组别
+       int groupNumber = testcontext.getInstance().getGroupNumber();
        
        JSONObject object = new JSONObject();
        object.put("question",question);
        object.put("num",num);
        object.put("right_option",right_option);
+       object.put("group", group != null ? group : "第" + groupNumber + "组");
+       object.put("questionNum", questionNum != null ? questionNum : String.valueOf(num));
+       object.put("grammarPoint", grammarPoint != null ? grammarPoint : "");
        if(time!=null){
            object.put("result",result);
            object.put("answer",answer);
@@ -736,20 +753,7 @@ public class se extends evaluation {
            evaluations.put(seKey, new JSONArray());
        }
        JSONArray seArray = evaluations.getJSONArray(seKey);
-       // 检查是否已经存在相同题号的记录
-       boolean found = false;
-       for (int i = 0; i < seArray.length(); i++) {
-           JSONObject item = seArray.getJSONObject(i);
-           if (item.getInt("num") == num) {
-               // 更新现有记录
-               seArray.put(i, object);
-               found = true;
-               break;
-           }
-       }
-       if (!found) {
-           // 添加新记录
-           seArray.put(object);
-       }
+       // 直接添加新记录，因为在performCleanup中已经清空了数组
+       seArray.put(object);
    }
 }

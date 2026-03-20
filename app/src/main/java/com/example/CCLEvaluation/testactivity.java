@@ -7,6 +7,8 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -78,23 +80,42 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
         viewPager = findViewById(R.id.viewpager);
+        // 减少预加载页面数量，只预加载相邻的一个页面
+        viewPager.setOffscreenPageLimit(1);
         exit = findViewById(R.id.btn_exit);
         counter = findViewById(R.id.counter);
         timer = findViewById(R.id.timer);
 
         //必须加载数据
-          try {
-              initData();
-              // 检查是否是社交模块，如果是则隐藏计时器
-              if (this.resolvedKey != null && this.resolvedKey.equals("SOCIAL")) {
-                  if (timer != null) {
-                      timer.setVisibility(View.GONE);
-                  }
-              }
-          } catch (Exception e) {
-              Toast.makeText(this,"数据加载失败！",Toast.LENGTH_SHORT).show();
-              e.printStackTrace();
-          }
+        final Handler handler = new Handler(Looper.getMainLooper());
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean success = false;
+                try {
+                    initData();
+                    success = true;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                final boolean finalSuccess = success;
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (finalSuccess) {
+                            // 检查是否是社交模块，如果是则隐藏计时器
+                            if (testactivity.this.resolvedKey != null && testactivity.this.resolvedKey.equals("SOCIAL")) {
+                                if (timer != null) {
+                                    timer.setVisibility(View.GONE);
+                                }
+                            }
+                        } else {
+                            Toast.makeText(testactivity.this, "数据加载失败！", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            }
+        }).start();
 
         exit.setOnClickListener(this);
 
@@ -115,6 +136,11 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                 Log.d("zhxj7034",String.valueOf(currentPage));
                 // 停止当前计时器
                 AudioRecorder.getInstance().stopRecorder();
+                // 停止当前题目的计时器（如果是词汇理解模块）
+                if (testcontext.getInstance().getEvaluations() != null && currentPage < testcontext.getInstance().getEvaluations().size()) {
+                    evaluation currentEval = testcontext.getInstance().getEvaluations().get(currentPage);
+                    currentEval.stopTimer();
+                }
                 // 重置计时器为0，确保每一题都从0开始计时
                 timer.setText("00:00");
                 // 更新进度显示
@@ -139,10 +165,14 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                     currentQuestionKey = "CurrentQuestion_" + key;
                 }
             }
+                // 只在位置变化时保存，减少IO操作
                 SharedPreferences preferences = getSharedPreferences("login_prefs_" + fName, MODE_PRIVATE);
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putString(currentQuestionKey, String.valueOf(position));
-                editor.apply();
+                String lastSavedPosition = preferences.getString(currentQuestionKey, null);
+                if (lastSavedPosition == null || !lastSavedPosition.equals(String.valueOf(position))) {
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString(currentQuestionKey, String.valueOf(position));
+                    editor.apply(); // 使用apply()异步保存，避免阻塞主线程
+                }
             }
 
             @Override
@@ -976,10 +1006,34 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                 R_id = new ArrayList<Integer>(lenth);
                 Tb = Chinesenumbers.generateChineseNumbersArray(lenth);
 
+                // 初始化题目计数器，用于实际测试题目的编号
+                int questionCount = 1;
+                
                 if (SE.length()==0){//SE为空，即尚未答题
                     for (int i = 1; i <= lenth; i++) {
                         if (i - 1 < hints.length && i - 1 < answers.length && i - 1 < images.length) {
-                            se se1 = new se(i, hints[i - 1], answers[i - 1], null, null, -1, null, null);
+                            // 检查是否为示例题目
+                            boolean isExample = false;
+                            if (groupNumber == 1) {
+                                // 第一组示例题目位置
+                                // 示例题目应该是位置0、4、11（对应questionNumber 1、5、12）
+                                // 但根据用户的要求，这些题目应该是真实题目，所以不标记为示例
+                                isExample = false;
+                            } else if (groupNumber == 2) {
+                                // 第二组示例题目位置
+                                isExample = (i == 4 || i == 8 || i == 12);
+                            } else if (groupNumber == 4) {
+                                // 第四组示例题目位置
+                                isExample = (i == 4 || i == 8 || i == 12 || i == 16);
+                            }
+                            
+                            // 为实际测试题目分配题号，示例题目不占用题号
+                            String questionNum = isExample ? "示例" : String.valueOf(questionCount);
+                            if (!isExample) {
+                                questionCount++;
+                            }
+                            
+                            se se1 = new se(i, "第" + groupNumber + "组", questionNum, hints[i - 1], answers[i - 1], null, null, -1, null, null, "");
                             se1.setAllQuestionListener(allquestioncallback);
                             evTemp.add(se1);
                             
@@ -999,8 +1053,34 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                     Boolean result;
                     audio audio;
                     String time;
+                    String group;
+                    String questionNum;
+                    String grammarPoint;
                     for (int i = 1; i <= lenth; i++) {
                         if (i - 1 < hints.length && i - 1 < answers.length && i - 1 < images.length) {
+                            // 检查是否为示例题目
+                            boolean isExample = false;
+                            if (groupNumber == 1) {
+                                // 第一组示例题目位置
+                                // 示例题目应该是位置0、4、11（对应questionNumber 1、5、12）
+                                // 但根据用户的要求，这些题目应该是真实题目，所以不标记为示例
+                                isExample = false;
+                            } else if (groupNumber == 2) {
+                                // 第二组示例题目位置
+                                isExample = (i == 4 || i == 8 || i == 12);
+                            } else if (groupNumber == 4) {
+                                // 第四组示例题目位置
+                                isExample = (i == 4 || i == 8 || i == 12 || i == 16);
+                            }
+                            
+                            // 为实际测试题目分配题号，示例题目不占用题号
+                            if (!isExample) {
+                                questionNum = String.valueOf(questionCount);
+                                questionCount++;
+                            } else {
+                                questionNum = "示例";
+                            }
+                            
                             if (i - 1 < SE.length() && SE.getJSONObject(i-1).has("result") && !SE.getJSONObject(i-1).isNull("result")) {
                                 result = SE.getJSONObject(i-1).getBoolean("result");
                                 answer = SE.getJSONObject(i-1).getString("answer");
@@ -1010,14 +1090,21 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                                     audio = null;
                                 }
                                 time = SE.getJSONObject(i-1).getString("time");
+                                // 读取新增的字段
+                                group = SE.getJSONObject(i-1).optString("group", "第" + groupNumber + "组");
+                                // 使用计算出的questionNum，而不是从JSON中读取
+                                grammarPoint = SE.getJSONObject(i-1).optString("grammarPoint", "");
                             }
                             else{
                                 answer = null;
                                 result = null;
                                 audio = null;
                                 time = null;
+                                group = "第" + groupNumber + "组";
+                                // 使用计算出的questionNum
+                                grammarPoint = "";
                             }
-                            se se2 = new se(i, hints[i - 1], answers[i - 1], answer, result, -1, audio, time);
+                            se se2 = new se(i, group, questionNum, hints[i - 1], answers[i - 1], answer, result != null ? (result ? "正确" : "错误") : null, -1, audio, time, grammarPoint);
                             se2.setAllQuestionListener(allquestioncallback);
                             evTemp.add(se2);
                             
@@ -1664,33 +1751,29 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
     protected void onDestroy() {
         //录音未结束，中断录音
         if(AudioRecorder.getInstance().getAlive()){
-            int i = viewPager.getCurrentItem();
-            SharedPreferences preferences = getSharedPreferences("login_prefs_" + fName, MODE_PRIVATE);
-            String CurrentQuestion = preferences.getString("CurrentQuestion", null);
-            int CurrentQustionNumber = preferences.getInt("CurrentQustionNumber",-1);
-            if(CurrentQuestion != null && CurrentQustionNumber != -1){
-                JSONObject data = null;
-                try {
-                    data = dataManager.getInstance().loadData(fName);
-                    JSONObject evaluations = data.getJSONObject("evaluations");
-                    if (evaluations.has(CurrentQuestion)) {
-                        JSONArray jsonArray = evaluations.getJSONArray(CurrentQuestion);
-                        if (CurrentQustionNumber >= 0 && CurrentQustionNumber < jsonArray.length()) {
-                            jsonArray.get(CurrentQustionNumber);
-                        }
-                    }
-                } catch (Exception e) {
-                    // 捕获异常，防止闪退
-                    e.printStackTrace();
-                }
-
-
-            }
             AudioRecorder.getInstance().interruptRecorder();
         }
 
-        //释放单例
+        // 清理ViewPager相关资源
+        if (viewPager != null) {
+            viewPager.setAdapter(null);
+            viewPager.clearOnPageChangeListeners();
+        }
+
+        // 清理适配器资源
+        if (adapter != null) {
+            adapter = null;
+        }
+
+        // 清理数据集合
+        if (evTemp != null) {
+            evTemp.clear();
+            evTemp = null;
+        }
+
+        // 释放单例
         testcontext.getInstance().release();
+        
         super.onDestroy();
     }
 
@@ -1754,152 +1837,202 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         // 清理资源
         AudioRecorder.getInstance().stopRecorder();
         
-        //结果写入内存
-        boolean saveSuccess = false;
-        String key = this.resolvedKey != null ? this.resolvedKey : (moduleKey != null ? moduleKey : format);
-        int totalScore = 0;
-        int currentGroup = 1;
-        Integer groupNumber = testcontext.getInstance().getGroupNumber();
-        if (groupNumber != null) {
-            currentGroup = groupNumber;
-        }
+        final String key = this.resolvedKey != null ? this.resolvedKey : (moduleKey != null ? moduleKey : format);
+        final int currentGroup = testcontext.getInstance().getGroupNumber() != null ? testcontext.getInstance().getGroupNumber() : 1;
+        final boolean finalShouldNavigate = shouldNavigate;
+        final ArrayList<evaluation> finalEvTemp = evTemp;
+        final String finalFName = fName;
         
-        try {
-            if (fName == null) {
-                Toast.makeText(this, "数据加载失败！", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            
-            // 加载数据，添加异常处理
-            JSONObject data = null;
-            try {
-                data = dataManager.getInstance().loadData(fName);
-                if (data == null) {
-                    Toast.makeText(this, "加载数据失败！", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            } catch (Exception e) {
-                Toast.makeText(this, "加载数据失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                e.printStackTrace();
-                return;
-            }
-            
-            JSONObject evaluations = data.optJSONObject("evaluations");
-            if (evaluations == null) {
-                evaluations = new JSONObject();
-                data.put("evaluations", evaluations);
-            }
-
-            boolean isPrelinguistic = MODULE_PL.equals(key) || FORMAT_PL.equals(key) || FORMAT_PL.equals(format);
-            if(key!=null && evTemp != null && !evTemp.isEmpty()){
-                // 构音结果去重写入：每次完成A模块先清空再写回，避免重复append导致1-53重复。
-                if ("A".equals(key)) {
-                    evaluations.put("A", new JSONArray());
-                } else if ("E".equals(key)) {
-                    evaluations.put("E", new JSONArray());
-                } else if ("EV".equals(key)) {
-                    evaluations.put("EV", new JSONArray());
-                }
+        final Handler handler = new Handler(Looper.getMainLooper());
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int totalScore = 0;
+                boolean saveSuccess = false;
+                int resultCode = -4;
                 
-                // 直接写入数据，不再清空数组，保留之前的进度
-                for(int i = 0; i< evTemp.size(); i++){
-                    try {
-                        if (evTemp.get(i) != null) {
-                            evTemp.get(i).toJson(evaluations);
-                        }
-                    } catch (Exception e) {
-                        // 忽略单个题目写入错误，继续处理其他题目
-                        e.printStackTrace();
-                    }
-                }
-                
-                // 保存数据，确保在计算总分之前数据已经保存
                 try {
-                    dataManager.getInstance().saveData(fName, data);
-                } catch (Exception e) {
-                    Toast.makeText(this, "保存数据失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    e.printStackTrace();
-                }
-                
-                // 计算当前组的总分（仅适用于SOCIAL）
-                if (key.equals("SOCIAL")) {
-                    for (evaluation evaluation : evTemp) {
+                    if (finalFName == null) {
+                        resultCode = -1;
+                    } else {
+                        // 加载数据，添加异常处理
+                        JSONObject data = null;
                         try {
-                            if (evaluation == null || !(evaluation instanceof social)) {
-                                continue;
+                            data = dataManager.getInstance().loadData(finalFName);
+                            if (data == null) {
+                                resultCode = -2;
                             }
-                            social item = (social) evaluation;
-                            int score = item.getScore() == null ? 0 : item.getScore();
-                            totalScore += score;
                         } catch (Exception e) {
-                            // 忽略单个题目分数计算错误，继续处理其他题目
                             e.printStackTrace();
+                            resultCode = -3;
+                        }
+                        
+                        if (resultCode == -4 && data != null) {
+                            JSONObject evaluations = data.optJSONObject("evaluations");
+                            if (evaluations == null) {
+                                evaluations = new JSONObject();
+                                data.put("evaluations", evaluations);
+                            }
+
+                            boolean isPrelinguistic = MODULE_PL.equals(key) || FORMAT_PL.equals(key) || FORMAT_PL.equals(format);
+                            if(key!=null && finalEvTemp != null && !finalEvTemp.isEmpty()){
+                                // 构音结果去重写入：每次完成模块先清空再写回，避免重复append导致结果重复或丢失。
+                                if ("A".equals(key)) {
+                                    evaluations.put("A", new JSONArray());
+                                } else if ("E".equals(key)) {
+                                    evaluations.put("E", new JSONArray());
+                                } else if ("EV".equals(key)) {
+                                    evaluations.put("EV", new JSONArray());
+                                } else if ("SE".equals(key)) {
+                                    // 对于SE模块，清空对应组的JSONArray
+                                    String seKey = "SE" + currentGroup;
+                                    evaluations.put(seKey, new JSONArray());
+                                }
+                                
+                                // 直接写入数据，不再清空数组，保留之前的进度
+                                for(int i = 0; i< finalEvTemp.size(); i++){
+                                    try {
+                                        if (finalEvTemp.get(i) != null) {
+                                            finalEvTemp.get(i).toJson(evaluations);
+                                        }
+                                    } catch (Exception e) {
+                                        // 忽略单个题目写入错误，继续处理其他题目
+                                        e.printStackTrace();
+                                    }
+                                }
+                                
+                                // 保存数据，确保在计算总分之前数据已经保存
+                                try {
+                                    dataManager.getInstance().saveData(finalFName, data);
+                                    saveSuccess = true;
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    saveSuccess = false;
+                                }
+                                
+                                // 计算当前组的总分（仅适用于SOCIAL）
+                                if (key.equals("SOCIAL")) {
+                                    for (evaluation evaluation : finalEvTemp) {
+                                        try {
+                                            if (evaluation == null || !(evaluation instanceof social)) {
+                                                continue;
+                                            }
+                                            social item = (social) evaluation;
+                                            int score = item.getScore() == null ? 0 : item.getScore();
+                                            totalScore += score;
+                                        } catch (Exception e) {
+                                            // 忽略单个题目分数计算错误，继续处理其他题目
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                                
+                                // 确保总分计算正确，至少为0
+                                if (totalScore < 0) {
+                                    totalScore = 0;
+                                }
+                            }
+                            resultCode = saveSuccess ? totalScore : -5;
                         }
                     }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    resultCode = -4;
                 }
                 
-                // 确保总分计算正确，至少为0
-                if (totalScore < 0) {
-                    totalScore = 0;
-                }
+                final int finalResult = resultCode;
+                final int finalTotalScore = totalScore;
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (finalResult == -1) {
+                            Toast.makeText(testactivity.this, "数据加载失败！", Toast.LENGTH_SHORT).show();
+                            return;
+                        } else if (finalResult == -2) {
+                            Toast.makeText(testactivity.this, "加载数据失败！", Toast.LENGTH_SHORT).show();
+                            return;
+                        } else if (finalResult == -3) {
+                            Toast.makeText(testactivity.this, "加载数据失败！", Toast.LENGTH_SHORT).show();
+                            return;
+                        } else if (finalResult == -4 || finalResult == -5) {
+                            Toast.makeText(testactivity.this, "保存数据失败！", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        // 所有题目完成后，生成模块报告
+                        if (finalShouldNavigate) {
+                            if (key.equals("SOCIAL")) {
+                                // 社交能力评估的特殊逻辑
+                                if (finalTotalScore < 12 && currentGroup != 1) {
+                                    // 总分小于12且不是第一组，跳转到社交能力评估选择界面，限制只能选上一组
+                                    Intent intent = new Intent(testactivity.this, SocialGroupSelectActivity.class);
+                                    intent.putExtra("fName", finalFName);
+                                    intent.putExtra("Uid", getIntent().getStringExtra("Uid"));
+                                    intent.putExtra("childID", getIntent().getStringExtra("childID"));
+                                    intent.putExtra("currentGroup", currentGroup);
+                                    startActivity(intent);
+                                } else {
+                                    // 总分大于等于12，或者是第一组，跳转到评估模块选择界面
+                                    Intent intent = new Intent(testactivity.this, AssessmentModulesActivity.class);
+                                    intent.putExtra("fName", finalFName);
+                                    startActivity(intent);
+                                }
+                            } else {
+                                // 其他模块的跳转逻辑
+                                generateModuleReport();
+                            }
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void generateModuleReport() {
+        try {
+            // 检查模块的完成情况
+            boolean isRGCompleted = checkModuleCompletion("RG");
+            boolean isSECompleted = checkModuleCompletion("SE");
+            boolean isECompleted = checkModuleCompletion("E");
+            boolean isEVCompleted = checkModuleCompletion("EV");
+            
+            // 对于词汇表达（E）和词汇理解（EV）模块，直接跳转到评估模块选择界面
+            if ("E".equals(resolvedKey) || "EV".equals(resolvedKey)) {
+                Intent intent = new Intent(this, AssessmentModulesActivity.class);
+                intent.putExtra("fName", fName);
+                startActivity(intent);
+                return;
             }
             
-            // 所有题目完成后，生成模块报告
-            if (shouldNavigate) {
-                if (key.equals("SOCIAL")) {
-                    // 社交能力评估的特殊逻辑
-                    if (totalScore < 12) {
-                        // 总分小于12，跳转到社交能力评估选择界面，限制只能选上一组
-                        Intent intent = new Intent(this, SocialGroupSelectActivity.class);
-                        intent.putExtra("fName", fName);
-                        intent.putExtra("Uid", getIntent().getStringExtra("Uid"));
-                        intent.putExtra("childID", getIntent().getStringExtra("childID"));
-                        intent.putExtra("currentGroup", currentGroup);
-                        startActivity(intent);
-                    } else {
-                        // 总分大于等于12，跳转到评估模块选择界面
-                        Intent intent = new Intent(this, AssessmentModulesActivity.class);
-                        intent.putExtra("fName", fName);
-                        startActivity(intent);
-                    }
-                } else {
-                    // 其他模块的跳转逻辑
-                    generateModuleReport();
+            // 根据完成情况决定跳转目标
+            if (isRGCompleted && isSECompleted) {
+                // 两个模块都完成了，跳转到图三（评估模块选择界面）
+                Intent intent = new Intent(this, AssessmentModulesActivity.class);
+                intent.putExtra("fName", fName);
+                startActivity(intent);
+            } else if (isRGCompleted || isSECompleted) {
+                // 只有一个模块完成了，跳转到图二（句法能力评估选择界面）
+                Intent intent = new Intent(this, SyntaxAbilityEvaluationActivity.class);
+                intent.putExtra("fName", fName);
+                startActivity(intent);
+            } else {
+                // 两个模块都没完成，跳转到对应模块的组别选择界面
+                if ("RG".equals(resolvedKey)) {
+                    Intent intent = new Intent(this, SyntaxComprehensionGroupSelectActivity.class);
+                    intent.putExtra("fName", fName);
+                    startActivity(intent);
+                } else if ("SE".equals(resolvedKey)) {
+                    Intent intent = new Intent(this, SyntaxExpressionGroupSelectActivity.class);
+                    intent.putExtra("fName", fName);
+                    startActivity(intent);
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "保存数据失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void generateModuleReport() {
-        // 检查两个模块的完成情况
-        boolean isRGCompleted = checkModuleCompletion("RG");
-        boolean isSECompleted = checkModuleCompletion("SE");
-        
-        // 根据完成情况决定跳转目标
-        if (isRGCompleted && isSECompleted) {
-            // 两个模块都完成了，跳转到图三（评估模块选择界面）
+            // 异常发生时，跳转到评估模块选择界面
             Intent intent = new Intent(this, AssessmentModulesActivity.class);
             intent.putExtra("fName", fName);
             startActivity(intent);
-        } else if (isRGCompleted || isSECompleted) {
-            // 只有一个模块完成了，跳转到图二（句法能力评估选择界面）
-            Intent intent = new Intent(this, SyntaxAbilityEvaluationActivity.class);
-            intent.putExtra("fName", fName);
-            startActivity(intent);
-        } else {
-            // 两个模块都没完成，跳转到对应模块的组别选择界面
-            if ("RG".equals(resolvedKey)) {
-                Intent intent = new Intent(this, SyntaxComprehensionGroupSelectActivity.class);
-                intent.putExtra("fName", fName);
-                startActivity(intent);
-            } else if ("SE".equals(resolvedKey)) {
-                Intent intent = new Intent(this, SyntaxExpressionGroupSelectActivity.class);
-                intent.putExtra("fName", fName);
-                startActivity(intent);
-            }
         }
     }
     
@@ -1908,20 +2041,61 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             JSONObject data = dataManager.getInstance().loadData(fName);
             if (data != null && data.has("evaluations")) {
                 JSONObject evaluations = data.getJSONObject("evaluations");
-                for (int i = 1; i <= 4; i++) {
-                    JSONArray moduleArray = evaluations.optJSONArray(moduleKey + i);
+                
+                // 对于词汇表达（E）和词汇理解（EV）模块，直接检查对应的JSONArray
+                if ("E".equals(moduleKey) || "EV".equals(moduleKey)) {
+                    JSONArray moduleArray = evaluations.optJSONArray(moduleKey);
                     if (moduleArray != null && moduleArray.length() > 0) {
-                        // 检查该组是否所有题目都已完成
-                        boolean groupCompleted = true;
+                        // 检查该模块是否所有题目都已完成
+                        boolean moduleCompleted = true;
                         for (int j = 0; j < moduleArray.length(); j++) {
-                            JSONObject item = moduleArray.getJSONObject(j);
-                            if (!item.has("time") || item.isNull("time")) {
-                                groupCompleted = false;
+                            try {
+                                JSONObject item = moduleArray.getJSONObject(j);
+                                if (!item.has("time") || item.isNull("time")) {
+                                    moduleCompleted = false;
+                                    break;
+                                }
+                            } catch (Exception e) {
+                                // 单个题目检查失败，继续检查下一个
+                                e.printStackTrace();
+                                moduleCompleted = false;
                                 break;
                             }
                         }
-                        if (groupCompleted) {
+                        if (moduleCompleted) {
                             return true;
+                        }
+                    }
+                } else {
+                    // 对于其他模块（如RG、SE），检查每个组
+                    for (int i = 1; i <= 4; i++) {
+                        try {
+                            JSONArray moduleArray = evaluations.optJSONArray(moduleKey + i);
+                            if (moduleArray != null && moduleArray.length() > 0) {
+                                // 检查该组是否所有题目都已完成
+                                boolean groupCompleted = true;
+                                for (int j = 0; j < moduleArray.length(); j++) {
+                                    try {
+                                        JSONObject item = moduleArray.getJSONObject(j);
+                                        if (!item.has("time") || item.isNull("time")) {
+                                            groupCompleted = false;
+                                            break;
+                                        }
+                                    } catch (Exception e) {
+                                        // 单个题目检查失败，继续检查下一个
+                                        e.printStackTrace();
+                                        groupCompleted = false;
+                                        break;
+                                    }
+                                }
+                                if (groupCompleted) {
+                                    return true;
+                                }
+                            }
+                        } catch (Exception e) {
+                            // 单个组检查失败，继续检查下一个组
+                            e.printStackTrace();
+                            continue;
                         }
                     }
                 }

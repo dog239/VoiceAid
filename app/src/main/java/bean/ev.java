@@ -24,6 +24,9 @@ public class ev extends evaluation {
     private String target;
     private Boolean result;
     private String time;
+    // 计时器相关变量
+    private android.os.Handler handler;
+    private Runnable runnable;
 
     private final String colum1 = "序号";
     private final String colum2 = "测试点";
@@ -73,6 +76,13 @@ public class ev extends evaluation {
 
     public void setTime(String time) {
         this.time = time;
+    }
+    
+    @Override
+    public void stopTimer() {
+        if (handler != null && runnable != null) {
+            handler.removeCallbacks(runnable);
+        }
     }
 
     @Override
@@ -179,17 +189,29 @@ public class ev extends evaluation {
         testcontext.getInstance().searchOne();
         counter.setText(testcontext.getInstance().getCount() + "/" + testcontext.getInstance().getLengths());
 
-        // 初始化并启动时间统计
-        if (timer != null) {
-            timer.setText("00:00");
-            // 使用AudioRecorder的startTimer方法来启动计时器，不需要录音功能
-            AudioRecorder.OnRefreshUIThreadListener listener = time -> {
-                this.time = time;
-                timer.setText(time);
-            };
-            AudioRecorder.getInstance().setOnRefreshUIThreadListener(listener);
-            AudioRecorder.getInstance().startTimer();
-        }
+        // 初始化计时器变量
+        handler = new android.os.Handler();
+        
+        // 重置计时器为0
+        timer.setText("00:00");
+        
+        // 重新创建runnable对象，确保每次都使用新的开始时间
+        runnable = new Runnable() {
+            long startTime = System.currentTimeMillis();
+            @Override
+            public void run() {
+                long currentTime = System.currentTimeMillis();
+                long elapsedTime = currentTime - startTime;
+                int minutes = (int) (elapsedTime / 60000);
+                int seconds = (int) ((elapsedTime % 60000) / 1000);
+                String timeString = String.format("%02d:%02d", minutes, seconds);
+                timer.setText(timeString);
+                handler.postDelayed(this, 1000);
+            }
+        };
+        
+        // 开始时间统计
+        handler.post(runnable);
 
         // 显示网格布局
         gridLayout.setVisibility(View.VISIBLE);
@@ -269,7 +291,7 @@ public class ev extends evaluation {
                 result = (finalI == correctIndex);
                 
                 // 停止计时器
-                AudioRecorder.getInstance().stopTimer();
+                handler.removeCallbacks(runnable);
                 
                 // 记录答题时长
                 if (timer != null) {
@@ -280,6 +302,8 @@ public class ev extends evaluation {
                 
                 // 增加计数器
                 testcontext.getInstance().incrementCount();
+                // 更新计数显示
+                counter.setText(testcontext.getInstance().getCount() + "/" + testcontext.getInstance().getLengths());
                 
                 // 进入下一题
                 nextPage(position, testcontext.getInstance().getCount(), testcontext.getInstance().getLengths());

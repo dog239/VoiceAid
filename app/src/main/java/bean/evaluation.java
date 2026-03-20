@@ -69,4 +69,11 @@ public abstract class evaluation {
     public int getNum() {
         return num;
     }
+    
+    /**
+     * 停止计时器
+     */
+    public void stopTimer() {
+        // 默认实现，子类可以重写
+    }
 }
