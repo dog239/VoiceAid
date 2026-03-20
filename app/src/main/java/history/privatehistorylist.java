@@ -188,7 +188,6 @@ public class privatehistorylist extends AppCompatActivity {
     }
 
     private void showLogoutConfirmationDialog(String fname,String childID,int position, String Uid) {
-        Toast.makeText(privatehistorylist.this,fname+"__childID:"+childID,Toast.LENGTH_SHORT).show();
         dialogUtils.showDialog(privatehistorylist.this, "提示信息", "您确定要删除该学生的全部信息和答题记录吗？",
                 "确认", () -> {
                     try {
@@ -256,8 +255,8 @@ public class privatehistorylist extends AppCompatActivity {
                 JSONObject info = child.getJSONObject("info");
                 String currentDate = info.optString("testDate", "未提供");
                 String name = info.optString("name", "未提供");
-                String tester = info.optString("examiner", "未提供");
-                news.title = "时间：" + currentDate + " 儿童：" + name + " 测试员：" + tester;
+                String examiner = info.optString("examiner", "未提供");
+                news.title = "时间：" + currentDate + "\n姓名：" + name + "\n测评人：" + examiner;
                 news.fname = String.valueOf(intArray[i]) + "_" + Uid + ".json";
                 news.childID = child.getString("ID");
                 mNewsList.add(news);

@@ -68,8 +68,8 @@ public class historylist extends AppCompatActivity {
                         if (info != null) {
                             String currentDate = info.optString("testDate", "未提供");
                             String name = info.optString("name", "未提供");
-                            String tester = info.optString("examiner", "未提供");
-                            news.title = "时间：" + currentDate + "儿童：" + name + " 测试员：" + tester;
+                            String examiner = info.optString("examiner", "未提供");
+                            news.title = "时间：" + currentDate + "\n姓名：" + name + "\n测评人：" + examiner;
                             news.fname = fname;
                             mNewsList.add(news);
                         } else {
