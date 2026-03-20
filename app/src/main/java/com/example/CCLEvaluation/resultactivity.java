@@ -2455,6 +2455,21 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         }
         try {
             data.put("evaluations", evaluations);
+
+            // 同步构音记录表：用当前可编辑结果覆盖持久化数组，避免旧数据未更新。
+            JSONArray aArray = new JSONArray();
+            evaluations.put("A", aArray);
+            if (this.evaluations != null) {
+                for (evaluation eval : this.evaluations) {
+                    if (eval instanceof a) {
+                        a item = (a) eval;
+                        if (item.getNum() > 0) {
+                            item.toJson(evaluations);
+                        }
+                    }
+                }
+            }
+
             String intelligibility = safeText(getEditTextValue(speechClarity));
             if (intelligibility.isEmpty()) {
                 intelligibility = safeText(evaluations.optString("speech_intelligibility", ""));
