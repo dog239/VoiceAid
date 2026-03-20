@@ -62,21 +62,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="1dp"
                 android:layout_weight="1"
-                android:background="@drawable/table"
-                android:gravity="center"
-                android:text="结果"
-                android:textColor="@color/black"
-                android:textSize="30sp" />
-
-            <TextView
-                android:id="@+id/tv_w1_14"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="1dp"
-                android:layout_weight="1"
                 android:background="@drawable/table_topright"
                 android:gravity="center"
-                android:text="录音"
+                android:text="结果"
                 android:textColor="@color/black"
                 android:textSize="30sp" />
         </LinearLayout>

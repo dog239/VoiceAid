@@ -632,18 +632,18 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             evaluations.add(new ev(-1, "词汇理解结果", null, String.valueOf((int) countev) + "/" + String.valueOf(evArray.length())));
             
             // 添加词汇表达表格的表头行
-            evaluations.add(new e(0, "序号", "测试点", "目标词", "结果", "答题时长", "录音"));//首行
+            evaluations.add(new e(0, "序号", "测试点", "目标词", "结果", "答题时长"));//首行
             for (int i = 0; i < eArray.length(); i++) {
                 JSONObject object = eArray.getJSONObject(i);
                 if (object.has("result") && !object.isNull("result")) {
-                    evaluations.add(new e(i + 1, object.getString("target"), object.optBoolean("result", false), new audio(object.getString("audioPath")), object.getString("time")));
+                    evaluations.add(new e(i + 1, object.getString("target"), object.optBoolean("result", false), object.getString("time")));
                 } else {
-                    evaluations.add(new e(i + 1, object.getString("target"), null, null, null));
+                    evaluations.add(new e(i + 1, object.getString("target"), null, null));
                 }
             }
             // 添加词汇表达结果总分
-            evaluations.add(new e(-1, "词汇表达结果", null, null, String.valueOf((int) counte) + "/" + String.valueOf(eArray.length())));
-            
+            evaluations.add(new e(-1, "词汇表达结果", null, String.valueOf((int) counte) + "/" + String.valueOf(eArray.length())));
+
             // 生成评估建议
             StringBuilder suggestion = new StringBuilder();
             double evAccuracy = evArray.length() > 0 ? (countev / evArray.length()) * 100 : 0;

@@ -12,11 +12,8 @@ import com.example.CCLEvaluation.R;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.util.List;
 
-import utils.AudioPlayer;
-import utils.AudioRecorder;
 import utils.ResultContext;
 import utils.testcontext;
 
@@ -26,28 +23,31 @@ import utils.testcontext;
 public class e extends evaluation {
     private String target;
     private Boolean result;
-    private bean.audio audio;
     private String time;
+    private android.os.Handler handler;
+    private Runnable runnable;
 
-    private final String colum1 = "序号";
-    private final String colum2 = "测试点";
-    private final String colum3 = "目标词";
-    private final String colum4 = "结果";
-    private final String colum5 = "答题时长";
-    private final String colum6 = "录音";
-    public e(int num, String target, Boolean result, bean.audio audio, String time) {
+    private String colum1 = "序号";
+    private String colum2 = "测试点";
+    private String colum3 = "目标词";
+    private String colum4 = "结果";
+    private String colum5 = "答题时长";
+    public e(int num, String target, Boolean result, String time) {
         super(num);
         this.target = target;
         this.result = result;
-        this.audio = audio;
         this.time = time;
     }
     
-    public e(int num, String colum1, String colum2, String colum3, String colum4, String colum5, String colum6) {
+    public e(int num, String colum1, String colum2, String colum3, String colum4, String colum5) {
         super(num);
+        this.colum1 = colum1;
+        this.colum2 = colum2;
+        this.colum3 = colum3;
+        this.colum4 = colum4;
+        this.colum5 = colum5;
         this.target = colum1;
         this.result = null;
-        this.audio = null;
         this.time = colum5;
     }
 
@@ -82,13 +82,6 @@ public class e extends evaluation {
         this.result = result;
     }
 
-    public bean.audio getAudio() {
-        return audio;
-    }
-
-    public void setAudio(bean.audio audio) {
-        this.audio = audio;
-    }
     @Override
     public String getTime() {
         return time;
@@ -99,8 +92,15 @@ public class e extends evaluation {
     }
 
     @Override
+    public void stopTimer() {
+        if (handler != null && runnable != null) {
+            handler.removeCallbacks(runnable);
+        }
+    }
+
+    @Override
     public int handle(View[] views, int position) {
-        for(int i=0;i<6;i++)
+        for(int i=0;i<5;i++)
             views[i].setVisibility(View.VISIBLE);
         if(num == 0){
             // 处理表头行
@@ -111,7 +111,6 @@ public class e extends evaluation {
                 ((TextView)views[2]).setText("目标词");
                 ((TextView)views[3]).setText("结果");
                 ((TextView)views[4]).setText("答题时长");
-                ((TextView)views[5]).setText("录音");
             } else {
                 // 使用默认表头文本
                 ((TextView)views[0]).setText(colum1);
@@ -119,7 +118,6 @@ public class e extends evaluation {
                 ((TextView)views[2]).setText(colum3);
                 ((TextView)views[3]).setText(colum4);
                 ((TextView)views[4]).setText(colum5);
-                ((TextView)views[5]).setText(colum6);
             }
         }
         else if(num == -1) {
@@ -129,7 +127,6 @@ public class e extends evaluation {
             ((TextView)views[2]).setText(target);
             ((TextView)views[3]).setText(result != null ? result.toString() : "");
             ((TextView)views[4]).setText(time != null ? time : "");
-            ((TextView)views[5]).setText("");
         }
         else {
             ((TextView)views[0]).setText(String.valueOf(num));
@@ -169,16 +166,11 @@ public class e extends evaluation {
             if(result!=null)
                 ((TextView)views[3]).setText(result? ResultContext.getInstance().getContext().getResources().getString(R.string.right) :
                         ResultContext.getInstance().getContext().getResources().getString(R.string.wrong));
-            if(audio!=null){
+            if(time!=null){
                 ((TextView)views[4]).setText(time);
-                ((TextView)views[5]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
-                ((TextView)views[5]).setText(ResultContext.getInstance().getContext().getResources().getString(R.string.audio));
-                AudioPlayer.getInstance().addIcon((TextView)views[5]);
-                views[5].setOnClickListener(v -> AudioPlayer.getInstance().play(audio.getPath(),position-1));
             }
-
         }
-        return 5;
+        return 4;
     }
 
     @Override
@@ -275,15 +267,10 @@ public class e extends evaluation {
                 wrong.setEnabled(false);
                 correct.setEnabled(true);
             }
+            if (time != null) {
+                timer.setText(time);
+            }
         }
-
-
-        AudioRecorder.OnRefreshUIThreadListener listener = time -> {
-            this.time = time;
-            timer.setText(time);
-        };
-
-
 
         start.setOnClickListener(v -> {
             try {
@@ -330,14 +317,29 @@ public class e extends evaluation {
                         image2.setImageResource(ImageIdList.get(9));
                     }
                 }
-                AudioRecorder.getInstance().setOnRefreshUIThreadListener(listener);
-                AudioRecorder.getInstance().startRecorder();
-                audio = new audio(AudioRecorder.getInstance().getOutputFilePath());
+
+                handler = new android.os.Handler();
+                runnable = new Runnable() {
+                    long startTime = System.currentTimeMillis();
+                    @Override
+                    public void run() {
+                        long currentTime = System.currentTimeMillis();
+                        long elapsedTime = currentTime - startTime;
+                        int minutes = (int) (elapsedTime / 60000);
+                        int seconds = (int) ((elapsedTime % 60000) / 1000);
+                        String timeString = String.format("%02d:%02d", minutes, seconds);
+                        timer.setText(timeString);
+                        time = timeString;
+                        handler.postDelayed(this, 1000);
+                    }
+                };
+                handler.post(runnable);
+
                 // 移除这里的incrementCount()调用，因为题目还没有完成
                 counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
 
-            } catch (IOException e) {
-                Toast.makeText(testcontext.getInstance().getContext(), "录制失败！", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Toast.makeText(testcontext.getInstance().getContext(), "启动失败！", Toast.LENGTH_SHORT).show();
                 throw new RuntimeException(e);
             }
         });
@@ -345,10 +347,8 @@ public class e extends evaluation {
             testcontext.getInstance().getViewPager().setPagingEnabled(true);
             correct.setEnabled(false);
             wrong.setEnabled(true);
-            if(audio!=null){
-                AudioRecorder.getInstance().stopRecorder();
-                result = new Boolean(true);
-            }
+            stopTimer();
+            result = new Boolean(true);
             // 增加完成题目的计数
             testcontext.getInstance().incrementCount();
             counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
@@ -360,10 +360,8 @@ public class e extends evaluation {
             testcontext.getInstance().getViewPager().setPagingEnabled(true);
             correct.setEnabled(true);
             wrong.setEnabled(false);
-            if(audio!=null){
-                AudioRecorder.getInstance().stopRecorder();
-                result = new Boolean(false);
-            }
+            stopTimer();
+            result = new Boolean(false);
             // 增加完成题目的计数
             testcontext.getInstance().incrementCount();
             counter.setText(testcontext.getInstance().getCount()+"/"+ testcontext.getInstance().getLengths());
@@ -380,12 +378,10 @@ public class e extends evaluation {
         object.put("target",target);
         if(result!=null){
             object.put("result",result);
-            object.put("audioPath",audio.getPath());
             object.put("time",time);
         }
         else {
             object.put("result",JSONObject.NULL);
-            object.put("audioPath",JSONObject.NULL);
             object.put("time",time != null ? time : JSONObject.NULL);
         }
         evaluations.getJSONArray("E").put(object);
