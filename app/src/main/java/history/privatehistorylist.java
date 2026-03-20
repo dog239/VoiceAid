@@ -196,12 +196,32 @@ public class privatehistorylist extends AppCompatActivity {
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                    Buttontext itemToRemove = mNewsList.get(position);
-                    mNewsList.remove(itemToRemove);
-                    mMyAdapter.notifyItemRemoved(position);
-                    ChildNumber.setText("共测评"+(number-1)+"名儿童");
-                    number = number-1;
+                    int removeIndex = resolveRemoveIndex(fname, childID, position);
+                    if (removeIndex != RecyclerView.NO_POSITION) {
+                        mNewsList.remove(removeIndex);
+                        mMyAdapter.notifyItemRemoved(removeIndex);
+                    }
+                    number = Math.max(0, number - 1);
+                    ChildNumber.setText("共测评" + number + "名儿童");
                 }, "取消", null);
+    }
+
+    private int resolveRemoveIndex(String fname, String childID, int fallbackPosition) {
+        if (mNewsList == null || mNewsList.isEmpty()) {
+            return RecyclerView.NO_POSITION;
+        }
+        for (int i = 0; i < mNewsList.size(); i++) {
+            Buttontext item = mNewsList.get(i);
+            if (item == null) continue;
+            if ((fname != null && fname.equals(item.fname))
+                    || (childID != null && childID.equals(item.childID))) {
+                return i;
+            }
+        }
+        if (fallbackPosition >= 0 && fallbackPosition < mNewsList.size()) {
+            return fallbackPosition;
+        }
+        return RecyclerView.NO_POSITION;
     }
     private void  clearStudentInfoAudio(String fname, int position, String Uid) throws Exception {
         dataManager.getInstance().deleteData(fname);

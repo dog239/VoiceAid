@@ -117,9 +117,15 @@ public class a extends evaluation {
             "卷舌化"
     };
 
+    private static final String[] INDUCIBLE_OPTIONS = new String[]{
+            "",
+            "✔"
+    };
+
     // 结果表音系历程下拉的复用标记
     private static final int TAG_PHONOLOGY_PROCESS_LISTENER = R.id.tag_phonology_process_listener;
     private static final int TAG_ERROR_TYPE_LISTENER = R.id.tag_error_type_listener;
+    private static final int TAG_INDUCIBLE_LISTENER = R.id.tag_inducible_listener;
 
     public a(int num, String target, String progress, String target_tone1, String target_tone2, bean.audio audio, String time) {
         super(num);
@@ -682,7 +688,6 @@ public class a extends evaluation {
         Button startButton = view.findViewById(R.id.btn_start);
         Button nextButton = view.findViewById(R.id.btn_next);
         Spinner spError = view.findViewById(R.id.sp_error_type);
-        Spinner spPhonologyProcess = view.findViewById(R.id.sp_phonology_process);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(view.getContext(), android.R.layout.simple_spinner_dropdown_item, ERROR_TYPE_OPTIONS);
         spError.setAdapter(adapter);
@@ -698,19 +703,6 @@ public class a extends evaluation {
         spError.setSelection(defIndex);
         final boolean[] firstSelect = new boolean[]{true};
 
-        ArrayAdapter<String> processAdapter = new ArrayAdapter<>(view.getContext(), android.R.layout.simple_spinner_dropdown_item, PHONOLOGY_PROCESS_OPTIONS);
-        spPhonologyProcess.setAdapter(processAdapter);
-        int defProcessIndex = 0;
-        if (phonologyProcess != null) {
-            for (int i = 0; i < PHONOLOGY_PROCESS_OPTIONS.length; i++) {
-                if (PHONOLOGY_PROCESS_OPTIONS[i].equals(phonologyProcess)) {
-                    defProcessIndex = i;
-                    break;
-                }
-            }
-            spPhonologyProcess.setSelection(defProcessIndex);
-        }
-
         spError.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -723,17 +715,6 @@ public class a extends evaluation {
                 if (errorType != null && errorType.isEmpty()) errorType = null;
             }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
-
-        spPhonologyProcess.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                phonologyProcess = PHONOLOGY_PROCESS_OPTIONS[pos];
-                if (phonologyProcess != null && phonologyProcess.isEmpty()) phonologyProcess = null;
-            }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
@@ -1044,6 +1025,16 @@ public class a extends evaluation {
         spinner.setTag(TAG_ERROR_TYPE_LISTENER, listener);
     }
 
+    private static void attachInducibleSpinnerListener(Spinner spinner, AdapterView.OnItemSelectedListener listener) {
+        if (spinner == null) return;
+        Object old = spinner.getTag(TAG_INDUCIBLE_LISTENER);
+        if (old instanceof AdapterView.OnItemSelectedListener) {
+            spinner.setOnItemSelectedListener(null);
+        }
+        spinner.setOnItemSelectedListener(listener);
+        spinner.setTag(TAG_INDUCIBLE_LISTENER, listener);
+    }
+
     public void bindEditable(View[] views, int position, adapter.resultadapter.ResultUpdateListener updateListener, boolean editable, int cellIndex) {
         if (views == null || views.length < 11) return;
         if (position == 0) {
@@ -1060,7 +1051,7 @@ public class a extends evaluation {
                 || !(views[6] instanceof EditText)
                 || !(views[7] instanceof Spinner)
                 || !(views[8] instanceof Spinner)
-                || !(views[9] instanceof EditText)) {
+                || !(views[9] instanceof Spinner)) {
             return;
         }
 
@@ -1070,9 +1061,9 @@ public class a extends evaluation {
         EditText etCoda = (EditText) views[6];
         Spinner spError = (Spinner) views[7];
         Spinner spProcess = (Spinner) views[8];
-        EditText etInducible = (EditText) views[9];
+        Spinner spInducible = (Spinner) views[9];
 
-        EditText[] cells = new EditText[]{etInitial, etMedial, etNucleus, etCoda, null, null, etInducible};
+        EditText[] cells = new EditText[]{etInitial, etMedial, etNucleus, etCoda, null, null, null};
         PartType[] partMap = new PartType[]{PartType.INITIAL, PartType.MEDIAL, PartType.NUCLEUS, PartType.CODA, null, null, null};
 
         for (EditText cell : cells) {
@@ -1083,12 +1074,13 @@ public class a extends evaluation {
         spError.setOnItemSelectedListener(null);
         spProcess.setEnabled(false);
         spProcess.setOnItemSelectedListener(null);
+        spInducible.setEnabled(false);
+        spInducible.setOnItemSelectedListener(null);
 
         setTextIfChanged(etInitial, getCachedJoinedParts(PartType.INITIAL));
         setTextIfChanged(etMedial, getCachedJoinedParts(PartType.MEDIAL));
         setTextIfChanged(etNucleus, getCachedJoinedParts(PartType.NUCLEUS));
         setTextIfChanged(etCoda, getCachedJoinedParts(PartType.CODA));
-        setTextIfChanged(etInducible, getCachedInducible());
 
         ArrayAdapter<String> errorAdapter = (ArrayAdapter<String>) spError.getAdapter();
         if (errorAdapter == null) {
@@ -1110,6 +1102,16 @@ public class a extends evaluation {
             spProcess.setSelection(processIndex, false);
         }
 
+        ArrayAdapter<String> inducibleAdapter = (ArrayAdapter<String>) spInducible.getAdapter();
+        if (inducibleAdapter == null) {
+            inducibleAdapter = new ArrayAdapter<>(spInducible.getContext(), android.R.layout.simple_spinner_dropdown_item, INDUCIBLE_OPTIONS);
+            spInducible.setAdapter(inducibleAdapter);
+        }
+        int inducibleIndex = areAllInducible() ? 1 : 0;
+        if (spInducible.getSelectedItemPosition() != inducibleIndex) {
+            spInducible.setSelection(inducibleIndex, false);
+        }
+
         if (!editable) {
             return;
         }
@@ -1122,9 +1124,10 @@ public class a extends evaluation {
         }
         spError.setEnabled(true);
         spProcess.setEnabled(true);
+        spInducible.setEnabled(true);
 
         int localIndex = cellIndex - 3;
-        if (localIndex < 0 || localIndex >= cells.length) {
+        if (localIndex < 0 || localIndex >= cells.length + 1) {
             return;
         }
 
@@ -1166,6 +1169,24 @@ public class a extends evaluation {
             return;
         }
 
+        if (cellIndex == 9) {
+            // 中文注释：是否可诱发使用下拉单选，编辑态只允许当前单元格交互
+            attachInducibleSpinnerListener(spInducible, new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                    setAllInducible(pos == 1);
+                    notifyArticulationChanged(updateListener);
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
+            });
+            // 中文注释：切换到该单元格时自动展开下拉选项
+            spInducible.post(spInducible::performClick);
+            return;
+        }
+
         EditText active = cells[localIndex];
         // 中文注释：明确激活当前单元格，保证可输入
         setEditable(active, true);
@@ -1178,12 +1199,6 @@ public class a extends evaluation {
                 notifyArticulationChanged(updateListener);
             }));
             return;
-        }
-        if (active == etInducible) {
-            attachWatcher(active, new SimpleTextWatcher(text -> {
-                updateInducibleFromLines(text);
-                notifyArticulationChanged(updateListener);
-            }));
         }
     }
 
@@ -1229,6 +1244,28 @@ public class a extends evaluation {
             cp.phonology.isInducible = parseInducible(lines[i]);
         }
         invalidateAnswerCache();
+    }
+
+    private void setAllInducible(boolean value) {
+        ensureAnswerSizeFromTarget();
+        if (answerPhonology == null) return;
+        for (CharacterPhonology cp : answerPhonology) {
+            if (cp == null) continue;
+            if (cp.phonology == null) cp.phonology = new PhonologyPart();
+            cp.phonology.isInducible = value;
+        }
+        invalidateAnswerCache();
+    }
+
+    private boolean areAllInducible() {
+        ensureAnswerSizeFromTarget();
+        if (answerPhonology == null || answerPhonology.isEmpty()) return false;
+        for (CharacterPhonology cp : answerPhonology) {
+            if (cp == null || cp.phonology == null || !cp.phonology.isInducible) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean parseInducible(String value) {

@@ -269,30 +269,6 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/ll_phonology_process"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="@dimen/articulation_field_gap"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="音系历程："
-                        android:textColor="@color/black"
-                        android:textSize="16sp" />
-
-                    <Spinner
-                        android:id="@+id/sp_phonology_process"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:spinnerMode="dropdown" />
-                </LinearLayout>
-
-
-                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"

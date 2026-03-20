@@ -197,15 +197,39 @@ public class historylist extends AppCompatActivity {
                             JSONObject index = dataManager.getInstance().loadData("Index.json");
                             if(index.has("number")){
                                 number = index.getInt("number");
-                                ChildNumber.setText("共测评"+number+"名儿童");
+                            } else {
+                                number = 0;
                             }
+                            ChildNumber.setText("共测评" + number + "名儿童");
+                        } else {
+                            number = 0;
+                            ChildNumber.setText("共测评" + number + "名儿童");
                         }
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                    Buttontext itemToRemove = mNewsList.get(position);
-                    mNewsList.remove(itemToRemove);
-                    mMyAdapter.notifyItemRemoved(position);
+                    int removeIndex = resolveRemoveIndex(fname, position);
+                    if (removeIndex != RecyclerView.NO_POSITION) {
+                        mNewsList.remove(removeIndex);
+                        mMyAdapter.notifyItemRemoved(removeIndex);
+                    }
                 }, "取消", null);
+    }
+
+    private int resolveRemoveIndex(String fname, int fallbackPosition) {
+        if (mNewsList == null || mNewsList.isEmpty()) {
+            return RecyclerView.NO_POSITION;
+        }
+        for (int i = 0; i < mNewsList.size(); i++) {
+            Buttontext item = mNewsList.get(i);
+            if (item == null) continue;
+            if (fname != null && fname.equals(item.fname)) {
+                return i;
+            }
+        }
+        if (fallbackPosition >= 0 && fallbackPosition < mNewsList.size()) {
+            return fallbackPosition;
+        }
+        return RecyclerView.NO_POSITION;
     }
 }
