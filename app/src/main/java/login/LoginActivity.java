@@ -58,6 +58,7 @@ public class LoginActivity extends AppCompatActivity{
                 SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putString("Uid", uid);
+                editor.putString("Username", username);
                 editor.putBoolean("isLoggedIn", true);
                 editor.apply();
                 startActivity(intent);
@@ -105,6 +106,7 @@ public class LoginActivity extends AppCompatActivity{
                     Intent intent = new Intent(LoginActivity.this, startActivity.class);
                     SharedPreferences.Editor editor = preferences.edit();
                     editor.putString("Uid", "local_user_001");
+                    editor.putString("Username", username);
                     editor.putBoolean("isLoggedIn", true);
                     editor.apply();
                     startActivity(intent);

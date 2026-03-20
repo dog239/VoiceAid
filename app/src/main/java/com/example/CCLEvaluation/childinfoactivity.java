@@ -3,6 +3,7 @@ package com.example.CCLEvaluation;
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -39,6 +40,7 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
     private RecyclerView familyRecyclerView;
     private FamilyMemberAdapter familyMemberAdapter;
     private SimpleDateFormat dateFormat;
+    private String examinerName;
 
 
     @SuppressLint("MissingInflatedId")
@@ -67,6 +69,24 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
         familyMemberAdapter = new FamilyMemberAdapter(createDefaultMembers(), this::handleDeleteMember);
         familyRecyclerView.setAdapter(familyMemberAdapter);
 
+        SharedPreferences prefs = getSharedPreferences("login_prefs", MODE_PRIVATE);
+        examinerName = prefs.getString("Username", "");
+        String uid = getIntent().getStringExtra("Uid");
+        if ((examinerName == null || examinerName.trim().isEmpty()) && uid != null && !uid.isEmpty()) {
+            NetInteractUtils.getInstance(this).setUserInfoCallback(user -> {
+                try {
+                    org.json.JSONObject obj = new org.json.JSONObject(user);
+                    String username = obj.optString("Username", "");
+                    if (!username.trim().isEmpty()) {
+                        prefs.edit().putString("Username", username).apply();
+                        examinerName = username;
+                    }
+                } catch (Exception ignored) {
+                }
+            });
+            NetInteractUtils.getInstance(this).getUserInfo(uid);
+        }
+
         buttonSave.setOnClickListener(this);
         buttonDelete.setOnClickListener(this);
         buttonAddMember.setOnClickListener(v ->
@@ -92,6 +112,11 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
                 info.put("phone", tPhone);
                 info.put("familyMembers", FamilyMemberAdapter.toJsonArray(familyMemberAdapter.getMembers()));
                 info.put("testDate", tTestDate.isEmpty() ? dateFormat.format(new Date()) : tTestDate);
+
+                SharedPreferences prefs = getSharedPreferences("login_prefs", MODE_PRIVATE);
+                String cachedName = prefs.getString("Username", "");
+                String examiner = (cachedName == null || cachedName.trim().isEmpty()) ? examinerName : cachedName;
+                info.put("examiner", examiner == null ? "" : examiner);
 
                 JSONObject data = dataManager.getInstance().createData(info);
                 String baseName = tNa.isEmpty() ? "child" : tNa;
