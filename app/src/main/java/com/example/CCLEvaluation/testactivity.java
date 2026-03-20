@@ -364,29 +364,26 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                 for (int i = 1; i <= lenth; i++) {
                     // 确保索引不越界
                     String target = (i - 1 < imageUrlsC.length) ? imageUrlsC[i - 1] : "";
-                    e e1 = new e(i, target, null, null, null);
+                    e e1 = new e(i, target, null, null);
                     e1.setAllQuestionListener(allquestioncallback);
                     evTemp.add(e1);
                 }
             }
             else {//非空，则完成了部分题目
                 Boolean result;
-                audio audio;
                 String time;
                 for (int i = 1; i <= lenth; i++) {
                     if (i - 1 < E.length() && E.getJSONObject(i-1).has("result") && !E.getJSONObject(i-1).isNull("result")) {
                         result = E.getJSONObject(i-1).getBoolean("result");
-                        audio = new audio(E.getJSONObject(i-1).getString("audioPath"));
                         time = E.getJSONObject(i-1).getString("time");
                     }
                     else{
                         result = null;
-                        audio = null;
                         time = null;
                     }
                     // 确保索引不越界
                     String target = (i - 1 < imageUrlsC.length) ? imageUrlsC[i - 1] : "";
-                    e e2 = new e(i, target, result, audio, time);
+                    e e2 = new e(i, target, result, time);
                     e2.setAllQuestionListener(allquestioncallback);
                     evTemp.add(e2);
                 }
@@ -2082,7 +2079,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                                             break;
                                         }
                                     } catch (Exception e) {
-                                        // 单个题目检查失败，继续检查下一个
+                                        // 单个题目检查失败，继续检查下一个组
                                         e.printStackTrace();
                                         groupCompleted = false;
                                         break;
