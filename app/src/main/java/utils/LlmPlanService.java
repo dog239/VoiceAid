@@ -56,6 +56,10 @@ public class LlmPlanService {
     public interface PlanCallback {
         void onSuccess(JSONObject plan);
 
+        default void onPartialSuccess(JSONObject partialPlan, String errorMessage) {
+            onError(errorMessage);
+        }
+
         void onError(String errorMessage);
     }
 
@@ -93,6 +97,9 @@ public class LlmPlanService {
 
         final int totalTasks = promptMap.size();
         final AtomicInteger completedCount = new AtomicInteger(0);
+        final AtomicInteger successCount = new AtomicInteger(0);
+        final AtomicInteger failureCount = new AtomicInteger(0);
+        final List<String> failedTasks = new ArrayList<>();
         final long startTime = System.currentTimeMillis();
         Log.i(TAG, "\u5f00\u59cb\u5e76\u53d1\u751f\u6210\uff0c\u603b\u4efb\u52a1\u6570: " + totalTasks);
 
@@ -108,14 +115,20 @@ public class LlmPlanService {
                     synchronized (finalResult) {
                         mergeJson(finalResult, partialPlan);
                     }
-                    checkAndCallback(totalTasks, completedCount, finalResult, callback, startTime);
+                    successCount.incrementAndGet();
+                    checkAndCallback(totalTasks, completedCount, successCount, failureCount,
+                            finalResult, failedTasks, callback, startTime);
                 }
 
                 @Override
                 public void onError(String errorMessage) {
                     Log.e(TAG, "\u4efb\u52a1\u5931\u8d25: " + taskName + " | " + errorMessage);
-                    // even if failed, still increment to avoid hanging
-                    checkAndCallback(totalTasks, completedCount, finalResult, callback, startTime);
+                    failureCount.incrementAndGet();
+                    synchronized (failedTasks) {
+                        failedTasks.add(taskName + ": " + safeMessage(errorMessage));
+                    }
+                    checkAndCallback(totalTasks, completedCount, successCount, failureCount,
+                            finalResult, failedTasks, callback, startTime);
                 }
             }, 0, DEFAULT_TEMPERATURE);
         }
@@ -509,15 +522,122 @@ public class LlmPlanService {
         return content.substring(0, maxChars);
     }
 
-    private void checkAndCallback(int total, AtomicInteger current, JSONObject result, PlanCallback callback, long startMs) {
+    private void checkAndCallback(int total,
+                                  AtomicInteger current,
+                                  AtomicInteger successCount,
+                                  AtomicInteger failureCount,
+                                  JSONObject result,
+                                  List<String> failedTasks,
+                                  PlanCallback callback,
+                                  long startMs) {
         if (current.incrementAndGet() == total) {
             long duration = System.currentTimeMillis() - startMs;
             Log.i(TAG, "\u6240\u6709\u5e76\u53d1\u4efb\u52a1\u7ed3\u675f\uff0c\u603b\u8017\u65f6: " + duration + "ms");
-            ensureModuleGuides(result);
-            if (callback != null) {
+            int success = successCount.get();
+            int failure = failureCount.get();
+            Log.i(TAG, "并发结果汇总 success=" + success + " failure=" + failure + " total=" + total);
+            if (callback == null) {
+                return;
+            }
+            if (failure <= 0) {
+                ensureModuleGuides(result);
+                attachGenerationMetadata(result, false, null, failedTasks);
                 callback.onSuccess(result);
+                return;
+            }
+            String errorSummary = buildConcurrentErrorMessage(total, success, failure, failedTasks);
+            if (success <= 0) {
+                callback.onError(errorSummary);
+                return;
+            }
+            ensureModuleGuides(result);
+            attachGenerationMetadata(result, true, errorSummary, failedTasks);
+            callback.onPartialSuccess(result, errorSummary);
+        }
+    }
+
+    private String buildConcurrentErrorMessage(int total, int success, int failure, List<String> failedTasks) {
+        StringBuilder sb = new StringBuilder();
+        if (success > 0 && failure > 0) {
+            sb.append("部分模块生成失败");
+        } else {
+            sb.append("生成失败");
+        }
+        sb.append("（成功").append(success)
+                .append("个，失败").append(failure)
+                .append("个，共").append(total).append("个）");
+        List<String> snapshot;
+        synchronized (failedTasks) {
+            snapshot = new ArrayList<>(failedTasks);
+        }
+        if (!snapshot.isEmpty()) {
+            sb.append(": ").append(joinMessages(snapshot, 3));
+        }
+        return sb.toString();
+    }
+
+    private String joinMessages(List<String> messages, int maxItems) {
+        if (messages == null || messages.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        int limit = Math.min(messages.size(), Math.max(maxItems, 1));
+        for (int i = 0; i < limit; i++) {
+            if (i > 0) {
+                sb.append("; ");
+            }
+            sb.append(messages.get(i));
+        }
+        if (messages.size() > limit) {
+            sb.append(" 等").append(messages.size()).append("项");
+        }
+        return sb.toString();
+    }
+
+    private String safeMessage(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return "unknown error";
+        }
+        return message.trim();
+    }
+
+    private void attachGenerationMetadata(JSONObject result,
+                                          boolean partial,
+                                          String warningMessage,
+                                          List<String> failedTasks) {
+        if (result == null) {
+            return;
+        }
+        try {
+            result.put("partial", partial);
+            result.put("warningMessage", partial ? safeMessage(warningMessage) : "");
+            result.put("failedModules", extractFailedModules(failedTasks));
+            result.put("generatedAt", System.currentTimeMillis());
+        } catch (JSONException e) {
+            Log.w(TAG, "attachGenerationMetadata failed", e);
+        }
+    }
+
+    private JSONArray extractFailedModules(List<String> failedTasks) {
+        JSONArray failedModules = new JSONArray();
+        if (failedTasks == null || failedTasks.isEmpty()) {
+            return failedModules;
+        }
+        for (String task : failedTasks) {
+            String moduleName = task;
+            if (moduleName == null) {
+                continue;
+            }
+            int separatorIndex = moduleName.indexOf(':');
+            if (separatorIndex > 0) {
+                moduleName = moduleName.substring(0, separatorIndex);
+            }
+            moduleName = moduleName.trim();
+            if (!moduleName.isEmpty()) {
+                failedModules.put(moduleName);
             }
         }
+        return failedModules;
     }
 
     private void mergeJson(JSONObject target, JSONObject source) {

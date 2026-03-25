@@ -37,6 +37,10 @@ public class ReportPipeline {
     public interface Callback {
         void onSuccess(JSONObject plan);
 
+        default void onPartialSuccess(JSONObject partialPlan, String errorMessage) {
+            onError(errorMessage);
+        }
+
         void onError(String errorMessage);
     }
 
@@ -91,7 +95,14 @@ public class ReportPipeline {
                 @Override
                 public void onSuccess(JSONObject plan) {
                     if (cb != null) {
-                        cb.onSuccess(plan);
+                        cb.onSuccess(preparePlanForDelivery(plan, false, null));
+                    }
+                }
+
+                @Override
+                public void onPartialSuccess(JSONObject partialPlan, String errorMessage) {
+                    if (cb != null) {
+                        cb.onPartialSuccess(preparePlanForDelivery(partialPlan, true, errorMessage), errorMessage);
                     }
                 }
 
@@ -149,10 +160,19 @@ public class ReportPipeline {
             service.generateTreatmentPlanConcurrent(ragPrompts, new LlmPlanService.PlanCallback() {
                 @Override
                 public void onSuccess(JSONObject plan) {
-                    JSONObject output = plan != null ? plan : new JSONObject();
+                    JSONObject output = preparePlanForDelivery(plan, false, null);
                     attachRagFields(output, ragResult);
                     if (cb != null) {
                         cb.onSuccess(output);
+                    }
+                }
+
+                @Override
+                public void onPartialSuccess(JSONObject partialPlan, String errorMessage) {
+                    JSONObject output = preparePlanForDelivery(partialPlan, true, errorMessage);
+                    attachRagFields(output, ragResult);
+                    if (cb != null) {
+                        cb.onPartialSuccess(output, errorMessage);
                     }
                 }
 
@@ -172,10 +192,19 @@ public class ReportPipeline {
         generateTreatmentPlanLegacy(childIdOrPath, new Callback() {
             @Override
             public void onSuccess(JSONObject plan) {
-                JSONObject output = plan != null ? plan : new JSONObject();
+                JSONObject output = preparePlanForDelivery(plan, false, null);
                 attachRagFields(output, ragResult);
                 if (cb != null) {
                     cb.onSuccess(output);
+                }
+            }
+
+            @Override
+            public void onPartialSuccess(JSONObject partialPlan, String errorMessage) {
+                JSONObject output = preparePlanForDelivery(partialPlan, true, errorMessage);
+                attachRagFields(output, ragResult);
+                if (cb != null) {
+                    cb.onPartialSuccess(output, errorMessage);
                 }
             }
 
@@ -201,6 +230,27 @@ public class ReportPipeline {
             }
         }
         return local;
+    }
+
+    private JSONObject preparePlanForDelivery(JSONObject plan, boolean partial, String warningMessage) {
+        JSONObject output = plan != null ? plan : new JSONObject();
+        try {
+            output.put("partial", partial);
+            if (partial) {
+                output.put("warningMessage", safeText(warningMessage));
+            } else if (!output.has("warningMessage")) {
+                output.put("warningMessage", "");
+            }
+            if (!output.has("failedModules") || !(output.opt("failedModules") instanceof JSONArray)) {
+                output.put("failedModules", new JSONArray());
+            }
+            if (!output.has("generatedAt")) {
+                output.put("generatedAt", System.currentTimeMillis());
+            }
+        } catch (JSONException e) {
+            safeLogE("preparePlanForDelivery failed", e);
+        }
+        return output;
     }
 
     private RagKbHelper.RagResult buildRagResult(JSONObject structuredInputOrEval, int topKPerTag, int maxContextItems) {
@@ -577,6 +627,10 @@ public class ReportPipeline {
         } catch (Exception ignored) {
             return 0L;
         }
+    }
+
+    private String safeText(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private void safeLogI(String msg) {

@@ -2293,6 +2293,9 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             saveSocialReport();
             finish();
         } else if (v.getId() == R.id.btn_generate_plan) {
+            if (isArticulationResult && !saveArticulationReport()) {
+                return;
+            }
             generateTreatmentPlan();
         } else if (v.getId() == R.id.btn_view_plan) {
             openTreatmentPlanActivity();
@@ -2474,25 +2477,26 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
-    private void saveArticulationReport() {
+    private boolean saveArticulationReport() {
         if (!isArticulationResult) {
-            return;
+            return true;
         }
         if (fName == null || fName.trim().isEmpty()) {
             Toast.makeText(this, "未找到评估数据", Toast.LENGTH_SHORT).show();
-            return;
+            return false;
         }
         JSONObject data;
         try {
             data = dataManager.getInstance().loadData(fName);
         } catch (Exception e) {
             Toast.makeText(this, "读取评估数据失败", Toast.LENGTH_SHORT).show();
-            return;
+            return false;
         }
         JSONObject evaluations = data.optJSONObject("evaluations");
         if (evaluations == null) {
             evaluations = new JSONObject();
         }
+        boolean saved = false;
         try {
             data.put("evaluations", evaluations);
 
@@ -2534,10 +2538,12 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
             }
             evaluations.put("initial_accuracy", initialText);
             dataManager.getInstance().saveChildJson(fName, data);
+            saved = true;
             Toast.makeText(this, "已保存评估报告", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Toast.makeText(this, "保存评估报告失败", Toast.LENGTH_SHORT).show();
         }
+        return saved;
     }
 
     private void saveSocialReport() {

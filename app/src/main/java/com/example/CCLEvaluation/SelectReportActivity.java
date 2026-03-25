@@ -289,12 +289,7 @@ public class SelectReportActivity extends AppCompatActivity {
     }
 
     private String getTestDate(String key) {
-        // Retrieve date from last item in array? Or from 'info' object?
-        // evmenuactivity doesn't show date on buttons.
-        // Assuming we can get today's date or stored date.
-        // For now returning placeholder or actual logic if available.
-        // Let's use current date format if available in JSON.
-        return "2023-10-25"; // Placeholder, needs actual date logic implementation
+        return "";
     }
     
     private boolean checkReportGenerated(String key) {

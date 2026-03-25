@@ -28,10 +28,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import utils.ArticulationPlanHelper;
@@ -91,6 +94,7 @@ public class TreatmentPlanActivity extends AppCompatActivity {
     private String reportMode;
     private JSONObject currentPlan;
     private JSONObject overallReportSchema;
+    private PlanGenerationState planGenerationState = new PlanGenerationState();
     private final List<PlanUiItem> items = new ArrayList<>();
     private final List<String> speechStageNames = new ArrayList<>();
     private TreatmentPlanAdapter adapter;
@@ -121,6 +125,25 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         List<View> editViews = new ArrayList<>();
     }
 
+    private static class PlanGenerationState {
+        boolean partial;
+        String warningMessage = "";
+        List<String> failedModules = new ArrayList<>();
+        long generatedAt;
+
+        boolean hasGeneratedAt() {
+            return generatedAt > 0L;
+        }
+
+        boolean hasVisibleState() {
+            return partial || !failedModules.isEmpty() || !safeString(warningMessage).isEmpty() || hasGeneratedAt();
+        }
+
+        private static String safeString(String value) {
+            return value == null ? "" : value.trim();
+        }
+    }
+
     private static final String[] OVERALL_MODULES = {"prelinguistic", "social", "vocabulary", "syntax", "articulation"};
     private static final Map<String, String> MODULE_COLORS = new HashMap<>();
     private static final Map<String, String> OVERALL_MODULE_DISPLAY_TITLES = new HashMap<>();
@@ -145,6 +168,8 @@ public class TreatmentPlanActivity extends AppCompatActivity {
 
         fName = getIntent().getStringExtra("fName");
         reportMode = getIntent().getStringExtra(EXTRA_REPORT_MODE);
+        String planWarningMessage = getIntent().getStringExtra("planWarningMessage");
+        ArrayList<String> intentFailedModules = getIntent().getStringArrayListExtra("failedModules");
 
         tvTitle = findViewById(R.id.tv_title);
         tvDate = findViewById(R.id.tv_date);
@@ -158,13 +183,16 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         tvOverallSubtitle = findViewById(R.id.tv_overall_subtitle);
         tvOverallStatus = findViewById(R.id.tv_overall_status);
 
-        String planJson = getIntent().getStringExtra("planJsonString");
-        if (planJson == null || planJson.trim().isEmpty()) {
-            planJson = getIntent().getStringExtra("planJson");
+        String incomingPlanJson = getIntent().getStringExtra("planJsonString");
+        if (incomingPlanJson == null || incomingPlanJson.trim().isEmpty()) {
+            incomingPlanJson = getIntent().getStringExtra("planJson");
         }
-        boolean preferIncomingPlan = getIntent().getBooleanExtra("preferIncomingPlan", false);
+        JSONObject incomingPlanObject = parsePlan(incomingPlanJson);
+        boolean hasValidIncomingPlan = hasPlanContent(incomingPlanObject);
+        boolean shouldUseIncomingPlan = hasValidIncomingPlan;
 
-        if (!preferIncomingPlan) {
+        String planJson = incomingPlanJson;
+        if (!shouldUseIncomingPlan) {
             String savedPlan = loadPlanFromFile(fName);
             if (savedPlan != null && !savedPlan.trim().isEmpty()) {
                 planJson = savedPlan;
@@ -172,6 +200,7 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         }
 
         JSONObject planObject = parsePlan(planJson);
+        planGenerationState = resolvePlanGenerationState(planObject, planWarningMessage, intentFailedModules);
         mChildData = null;
         JSONObject evaluations = null;
         JSONArray evaluationsA = null;
@@ -185,7 +214,11 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         }
 
         if (shouldOpenOverallIntervention(mChildData)) {
-            overallReportSchema = OverallInterventionReportBuilder.build(mChildData);
+            if (shouldUseIncomingPlan && isOverallInterventionPlan(incomingPlanObject)) {
+                overallReportSchema = incomingPlanObject;
+            } else {
+                overallReportSchema = OverallInterventionReportBuilder.build(mChildData);
+            }
             initOverallInterventionUi();
             return;
         }
@@ -242,6 +275,7 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         }
 
         bindOverallHeader();
+        applyOverallGenerationState();
         buildOverallViews();
         setOverallEditMode(false);
 
@@ -904,9 +938,35 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         }
     }
 
+    private boolean hasPlanContent(JSONObject plan) {
+        return plan != null && plan.length() > 0;
+    }
+
+    private boolean isOverallInterventionPlan(JSONObject plan) {
+        if (!hasPlanContent(plan)) {
+            return false;
+        }
+        if (OverallInterventionReportBuilder.REPORT_MODE_OVERALL_INTERVENTION.equals(
+                safeText(plan.optString("reportMode", "")))) {
+            return true;
+        }
+        return plan.optJSONObject("metadata") != null && plan.optJSONArray("modules") != null;
+    }
+
+    private void showPlanWarning(String warningMessage) {
+        if (warningMessage == null || warningMessage.trim().isEmpty()) {
+            return;
+        }
+        Toast.makeText(this, warningMessage, Toast.LENGTH_LONG).show();
+    }
+
     private List<PlanUiItem> buildUiItems(JSONObject plan) {
         List<PlanUiItem> list = new ArrayList<>();
         speechStageNames.clear();
+        if (planGenerationState != null && planGenerationState.hasVisibleState()) {
+            list.add(new PlanUiItem.SectionDivider("生成状态"));
+            list.add(buildPlanGenerationStatusCard());
+        }
 
         // 1. 个人信息模块
         list.add(new PlanUiItem.SectionDivider("个人信息"));
@@ -931,6 +991,193 @@ public class TreatmentPlanActivity extends AppCompatActivity {
                 modulePlan == null ? null : modulePlan.optJSONObject("social_pragmatics"), false, keyFindings);
 
         return list;
+    }
+
+    private PlanUiItem.ModuleCard buildPlanGenerationStatusCard() {
+        List<PlanUiItem> children = new ArrayList<>();
+        List<PlanUiItem> summaryItems = new ArrayList<>();
+        summaryItems.add(new PlanUiItem.ListMirror(
+                "plan_generation_status.summary",
+                buildGenerationStatusLines(),
+                "暂无生成状态"));
+        children.add(new PlanUiItem.InfoBox("当前结果状态", summaryItems));
+        return new PlanUiItem.ModuleCard("生成状态", "generation_status", children);
+    }
+
+    private List<String> buildGenerationStatusLines() {
+        List<String> lines = new ArrayList<>();
+        if (planGenerationState == null) {
+            return lines;
+        }
+        lines.add(planGenerationState.partial ? "当前状态：部分成功结果" : "当前状态：完整成功结果");
+        if (planGenerationState.hasGeneratedAt()) {
+            lines.add("生成时间：" + formatGeneratedAt(planGenerationState.generatedAt));
+        }
+        if (!safeText(planGenerationState.warningMessage).isEmpty()) {
+            lines.add("提示信息：" + planGenerationState.warningMessage);
+        }
+        if (!planGenerationState.failedModules.isEmpty()) {
+            lines.add("失败模块：" + joinTexts(planGenerationState.failedModules));
+        }
+        return lines;
+    }
+
+    private PlanGenerationState resolvePlanGenerationState(JSONObject plan,
+                                                           String intentWarningMessage,
+                                                           ArrayList<String> intentFailedModules) {
+        PlanGenerationState state = new PlanGenerationState();
+        JSONObject source = plan == null ? new JSONObject() : plan;
+        state.partial = source.optBoolean("partial", false);
+        state.warningMessage = safeText(source.optString("warningMessage", ""));
+        if (state.warningMessage.isEmpty()) {
+            state.warningMessage = safeText(intentWarningMessage);
+        }
+        state.failedModules = extractFailedModules(source.optJSONArray("failedModules"));
+        if (state.failedModules.isEmpty() && intentFailedModules != null) {
+            for (String module : intentFailedModules) {
+                String text = safeText(module);
+                if (!text.isEmpty()) {
+                    state.failedModules.add(text);
+                }
+            }
+        }
+        state.generatedAt = parseGeneratedAt(source);
+        if (!state.partial && (!state.failedModules.isEmpty() || !state.warningMessage.isEmpty())) {
+            state.partial = true;
+        }
+        return state;
+    }
+
+    private List<String> extractFailedModules(JSONArray failedModulesArray) {
+        List<String> failedModules = new ArrayList<>();
+        if (failedModulesArray == null) {
+            return failedModules;
+        }
+        for (int i = 0; i < failedModulesArray.length(); i++) {
+            String moduleName = safeText(failedModulesArray.optString(i, ""));
+            if (!moduleName.isEmpty()) {
+                failedModules.add(moduleName);
+            }
+        }
+        return failedModules;
+    }
+
+    private long parseGeneratedAt(JSONObject source) {
+        if (source == null) {
+            return 0L;
+        }
+        Object value = source.opt("generatedAt");
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Long.parseLong(((String) value).trim());
+            } catch (Exception ignored) {
+                return 0L;
+            }
+        }
+        JSONObject metadata = source.optJSONObject("metadata");
+        if (metadata != null) {
+            Object metadataValue = metadata.opt("generatedAt");
+            if (metadataValue instanceof Number) {
+                return ((Number) metadataValue).longValue();
+            }
+        }
+        return 0L;
+    }
+
+    private void applyOverallGenerationState() {
+        if (tvOverallStatus == null || planGenerationState == null || !planGenerationState.hasVisibleState()) {
+            return;
+        }
+        JSONObject metadata = overallReportSchema == null ? null : overallReportSchema.optJSONObject("metadata");
+        tvOverallStatus.setText(buildOverallStatusText(metadata));
+    }
+
+    private String buildOverallStatusText(JSONObject metadata) {
+        List<String> lines = new ArrayList<>();
+        int moduleCount = metadata == null ? 0 : metadata.optInt("moduleCount", 0);
+        if (moduleCount > 0) {
+            lines.add("本报告按模块干预报告统一 schema 渲染，共 " + moduleCount + " 个模块。");
+        } else {
+            lines.add("本报告按模块干预报告统一 schema 渲染。");
+        }
+        if (planGenerationState != null && planGenerationState.hasVisibleState()) {
+            lines.add(planGenerationState.partial ? "当前状态：部分成功结果" : "当前状态：完整成功结果");
+            if (planGenerationState.hasGeneratedAt()) {
+                lines.add("生成时间：" + formatGeneratedAt(planGenerationState.generatedAt));
+            }
+            if (!planGenerationState.failedModules.isEmpty()) {
+                lines.add("失败模块：" + joinTexts(planGenerationState.failedModules));
+            }
+            if (!safeText(planGenerationState.warningMessage).isEmpty()) {
+                lines.add("提示信息：" + planGenerationState.warningMessage);
+            }
+        }
+        return joinLines(lines);
+    }
+
+    private String formatGeneratedAt(long generatedAt) {
+        if (generatedAt <= 0L) {
+            return "";
+        }
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                .format(new Date(generatedAt));
+    }
+
+    private String joinTexts(List<String> values) {
+        StringBuilder sb = new StringBuilder();
+        if (values == null) {
+            return "";
+        }
+        for (String value : values) {
+            String text = safeText(value);
+            if (text.isEmpty()) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append("、");
+            }
+            sb.append(text);
+        }
+        return sb.toString();
+    }
+
+    private String joinLines(List<String> lines) {
+        StringBuilder sb = new StringBuilder();
+        if (lines == null) {
+            return "";
+        }
+        for (String line : lines) {
+            String text = safeText(line);
+            if (text.isEmpty()) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('\n');
+            }
+            sb.append(text);
+        }
+        return sb.toString();
+    }
+
+    private void copyPlanGenerationMetadata(JSONObject source, JSONObject target) throws JSONException {
+        if (source == null || target == null) {
+            return;
+        }
+        target.put("partial", source.optBoolean("partial", false));
+        target.put("warningMessage", source.optString("warningMessage", ""));
+        JSONArray failedModules = source.optJSONArray("failedModules");
+        target.put("failedModules", failedModules == null ? new JSONArray() : new JSONArray(failedModules.toString()));
+        Object generatedAt = source.opt("generatedAt");
+        if (generatedAt instanceof Number) {
+            target.put("generatedAt", ((Number) generatedAt).longValue());
+        } else if (generatedAt instanceof String && !safeText((String) generatedAt).isEmpty()) {
+            target.put("generatedAt", generatedAt);
+        } else if (planGenerationState != null && planGenerationState.hasGeneratedAt()) {
+            target.put("generatedAt", planGenerationState.generatedAt);
+        }
     }
 
     private PlanUiItem.ModuleCard buildPersonalInfoCard() {
@@ -1285,6 +1532,7 @@ public class TreatmentPlanActivity extends AppCompatActivity {
         JSONArray existingParents = currentPlan == null ? null : currentPlan.optJSONArray("notes_for_parents");
         plan.put("notes_for_therapist", resolveArray(listValues, "notes_for_therapist", existingTherapist));
         plan.put("notes_for_parents", resolveArray(listValues, "notes_for_parents", existingParents));
+        copyPlanGenerationMetadata(currentPlan, plan);
 
         return plan;
     }

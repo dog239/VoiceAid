@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -475,13 +476,28 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                 runOnUiThread(() -> {
                     clearPlanHint();
                     setLoading(false, null);
-                    openTreatmentPlanActivity(plan.toString());
+                    handleGeneratedPlan(plan, null);
+                });
+            }
+
+            @Override
+            public void onPartialSuccess(JSONObject partialPlan, String errorMessage) {
+                runOnUiThread(() -> {
+                    clearPlanHint();
+                    setLoading(false, null);
+                    String message = errorMessage == null || errorMessage.trim().isEmpty()
+                            ? "部分模块生成失败，已保留可用内容"
+                            : errorMessage;
+                    if (partialPlan != null && partialPlan.length() > 0) {
+                        handleGeneratedPlan(partialPlan, message);
+                        return;
+                    }
+                    Toast.makeText(evmenuactivity.this, message, Toast.LENGTH_LONG).show();
                 });
             }
 
             @Override
             public void onError(String errorMessage) {
-                // only invoked if tasks never started
                 runOnUiThread(() -> {
                     clearPlanHint();
                     setLoading(false, null);
@@ -517,10 +533,87 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
+    private void handleGeneratedPlan(JSONObject plan, String fallbackWarningMessage) {
+        if (plan == null || plan.length() == 0) {
+            Toast.makeText(this, "鐢熸垚缁撴灉涓虹┖锛岃閲嶈瘯", Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            persistGeneratedPlan(plan, fallbackWarningMessage);
+            openTreatmentPlanActivity(plan.toString(),
+                    resolvePlanWarningMessage(plan, fallbackWarningMessage),
+                    extractFailedModules(plan));
+        } catch (Exception e) {
+            Log.e("evmenuactivity", "persistGeneratedPlan failed", e);
+            Toast.makeText(this, "鏂规鑷姩淇濆瓨澶辫触: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void persistGeneratedPlan(JSONObject plan, String fallbackWarningMessage) throws Exception {
+        if (fName == null || fName.trim().isEmpty()) {
+            throw new JSONException("missing child file name");
+        }
+        JSONObject latestData = dataManager.getInstance().loadData(fName);
+        JSONObject output = new JSONObject(plan.toString());
+        if (!output.has("generatedAt")) {
+            output.put("generatedAt", System.currentTimeMillis());
+        }
+        if (!output.has("partial")) {
+            output.put("partial", false);
+        }
+        if (!output.has("failedModules") || !(output.opt("failedModules") instanceof JSONArray)) {
+            output.put("failedModules", new JSONArray());
+        }
+        output.put("warningMessage", resolvePlanWarningMessage(output, fallbackWarningMessage));
+        latestData.put("treatmentPlan", output);
+        dataManager.getInstance().saveChildJson(fName, latestData);
+    }
+
+    private String resolvePlanWarningMessage(JSONObject plan, String fallbackWarningMessage) {
+        String warningMessage = plan == null ? "" : plan.optString("warningMessage", "");
+        if (warningMessage == null || warningMessage.trim().isEmpty()) {
+            warningMessage = fallbackWarningMessage;
+        }
+        return warningMessage == null ? "" : warningMessage.trim();
+    }
+
+    private ArrayList<String> extractFailedModules(JSONObject plan) {
+        ArrayList<String> failedModules = new ArrayList<>();
+        if (plan == null) {
+            return failedModules;
+        }
+        JSONArray array = plan.optJSONArray("failedModules");
+        if (array == null) {
+            return failedModules;
+        }
+        for (int i = 0; i < array.length(); i++) {
+            String moduleName = array.optString(i, "").trim();
+            if (!moduleName.isEmpty()) {
+                failedModules.add(moduleName);
+            }
+        }
+        return failedModules;
+    }
+
     private void openTreatmentPlanActivity(String planJson) {
+        openTreatmentPlanActivity(planJson, null, null);
+    }
+
+    private void openTreatmentPlanActivity(String planJson, String warningMessage) {
+        openTreatmentPlanActivity(planJson, warningMessage, null);
+    }
+
+    private void openTreatmentPlanActivity(String planJson, String warningMessage, ArrayList<String> failedModules) {
         Intent intent = new Intent(this, TreatmentPlanActivity.class);
-        if (planJson != null) {
+        if (planJson != null && !planJson.trim().isEmpty()) {
             intent.putExtra("planJsonString", planJson);
+            intent.putExtra("preferIncomingPlan", true);
+        }
+        if (warningMessage != null && !warningMessage.trim().isEmpty()) {
+            intent.putExtra("planWarningMessage", warningMessage);
+        }
+        if (failedModules != null && !failedModules.isEmpty()) {
+            intent.putStringArrayListExtra("failedModules", failedModules);
         }
         intent.putExtra("fName", fName);
         startActivity(intent);

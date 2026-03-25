@@ -82,7 +82,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:fontFamily="@font/zcool_kuaile"
-                android:text="2023-10-25"
+                android:text=""
                 android:visibility="gone"
                 android:textColor="#94A3B8"
                 android:textSize="12sp"

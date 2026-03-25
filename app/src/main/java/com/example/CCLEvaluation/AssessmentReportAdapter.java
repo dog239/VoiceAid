@@ -82,15 +82,13 @@ public class AssessmentReportAdapter extends RecyclerView.Adapter<AssessmentRepo
                 status.setTextColor(itemView.getContext().getResources().getColor(R.color.teal_700));
                 status.setBackgroundResource(R.drawable.bg_chip_primary_light);
                 
-                date.setText(module.getLastTestDate());
-                date.setVisibility(View.VISIBLE);
             } else {
                 status.setText("待完成");
                 status.setTextColor(itemView.getContext().getResources().getColor(R.color.warm_gray));
                 status.setBackgroundResource(R.drawable.bg_chip_primary_light); // Using same bg for now
                 
-                date.setVisibility(View.GONE);
             }
+            date.setVisibility(View.GONE);
 
             // Set report generation status
             if (module.isReportGenerated()) {
