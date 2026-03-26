@@ -126,10 +126,10 @@ public class ev extends evaluation {
                     testPoint = "形容词";
                     break;
                 case 6:
-                    testPoint = "形容词";
+                    testPoint = "分类名词（名词上位词）";
                     break;
                 case 7:
-                    testPoint = "分类名词（名词上位词）";
+                    testPoint = "形容词";
                     break;
                 default:
                     testPoint = "";

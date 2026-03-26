@@ -878,31 +878,7 @@ public class SyntaxResultActivity extends AppCompatActivity implements View.OnCl
             resultText.setTextSize(14);
             row.addView(resultText);
 
-            // 为句法表达添加录音播放按钮
-            if (format.equals("SE") && !detail.audioPath.isEmpty()) {
-                Button playButton = new Button(this);
-                playButton.setText("播放录音");
-                playButton.setTextSize(12);
-                playButton.setPadding(4, 4, 4, 4);
-                playButton.setOnClickListener(v -> {
-                    try {
-                        // 直接使用MediaPlayer播放，避免使用AudioPlayer的audioIcons列表
-                        android.media.MediaPlayer mediaPlayer = new android.media.MediaPlayer();
-                        mediaPlayer.setDataSource(detail.audioPath);
-                        mediaPlayer.prepare();
-                        mediaPlayer.start();
-                        
-                        // 播放完成后释放资源
-                        mediaPlayer.setOnCompletionListener(mp -> {
-                            mp.release();
-                        });
-                    } catch (Exception e) {
-                        Toast.makeText(this, "播放失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        e.printStackTrace();
-                    }
-                });
-                row.addView(playButton);
-            }
+
 
             // 对应测试语法点
             TextView languageText = new TextView(this);
