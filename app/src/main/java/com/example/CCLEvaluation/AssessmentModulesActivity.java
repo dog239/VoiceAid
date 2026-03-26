@@ -61,10 +61,10 @@ public class AssessmentModulesActivity extends AppCompatActivity {
 
         ImageView btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> {
-            Intent intent = new Intent(AssessmentModulesActivity.this, history.showchildinformation.class);
-            intent.putExtra("fName", fName);
-            intent.putExtra("Uid", uid);
-            intent.putExtra("childID", childUser);
+            // 直接回到图二（startActivity），无论前面有多少个界面
+            Intent intent = new Intent(AssessmentModulesActivity.this, startActivity.class);
+            // 清除所有之前的Activity，确保直接回到主界面
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
             finish();
         });
@@ -133,67 +133,46 @@ public class AssessmentModulesActivity extends AppCompatActivity {
     }
 
     private void updateModulesList(String moduleJson) {
-        String E = "1", A = "1", RG = "1", PL = "1"; // Default to enabled
-        
-        if (moduleJson != null && !moduleJson.isEmpty()) {
-            try {
-                JSONObject jsonObject = new JSONObject(moduleJson);
-                E = jsonObject.optString("E", "1");
-                A = jsonObject.optString("A", "1");
-                RG = jsonObject.optString("RG", "1");
-                PL = jsonObject.optString("PL", "1");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
+        // 始终启用所有模块，不依赖服务器返回的结果
+        // 这样可以确保用户始终看到所有测试模块
 
         moduleList.clear();
 
         // 1. 构音 (A)
-        if ("1".equals(A)) {
-            AssessmentModule m = new AssessmentModule("A", "构音评估", "评估语音放置和发音准确性", "10 分钟", android.R.drawable.ic_btn_speak_now);
-            int progressStatus = getModuleProgressStatus("A", ImageUrls.A_imageUrls.length);
-            m.setProgressStatus(progressStatus);
-            m.setCompleted(progressStatus == AssessmentModule.STATUS_COMPLETED);
-            moduleList.add(m);
-        }
+        AssessmentModule m1 = new AssessmentModule("A", "构音评估", "评估语音放置和发音准确性", "10 分钟", android.R.drawable.ic_btn_speak_now);
+        int progressStatusA = getModuleProgressStatus("A", ImageUrls.A_imageUrls.length);
+        m1.setProgressStatus(progressStatusA);
+        m1.setCompleted(progressStatusA == AssessmentModule.STATUS_COMPLETED);
+        moduleList.add(m1);
 
         // 2. 前语言 (PL)
-        if ("1".equals(PL)) {
-            AssessmentModule m = new AssessmentModule("PL", "前语言能力", "评估前语言沟通技能", "15 分钟", android.R.drawable.ic_menu_agenda);
-            int progressStatus = getModuleProgressStatus("PL", ImageUrls.PL_SKILLS.length);
-            m.setProgressStatus(progressStatus);
-            m.setCompleted(progressStatus == AssessmentModule.STATUS_COMPLETED);
-            moduleList.add(m);
-        }
+        AssessmentModule m2 = new AssessmentModule("PL", "前语言能力", "评估前语言沟通技能", "15 分钟", android.R.drawable.ic_menu_agenda);
+        int progressStatusPL = getModuleProgressStatus("PL", ImageUrls.PL_SKILLS.length);
+        m2.setProgressStatus(progressStatusPL);
+        m2.setCompleted(progressStatusPL == AssessmentModule.STATUS_COMPLETED);
+        moduleList.add(m2);
 
         // 3. 词汇-表达 (E)
-        if ("1".equals(E)) {
-            AssessmentModule m = new AssessmentModule("E", "词汇能力-表达", "评估词汇表达能力", "15 分钟", android.R.drawable.ic_menu_sort_by_size);
-            m.setCompleted(checkCompletion("E", 7)); 
-            moduleList.add(m);
-        }
+        AssessmentModule m3 = new AssessmentModule("E", "词汇能力-表达", "评估词汇表达能力", "15 分钟", android.R.drawable.ic_menu_sort_by_size);
+        m3.setCompleted(checkCompletion("E", 7)); 
+        moduleList.add(m3);
 
         // 4. 词汇-理解 (EV)
-        if ("1".equals(E)) { 
-            AssessmentModule m = new AssessmentModule("EV", "词汇能力-理解", "评估词汇理解能力", "15 分钟", android.R.drawable.ic_menu_search);
-            m.setCompleted(checkCompletion("EV", 7)); 
-            moduleList.add(m);
-        }
+        AssessmentModule m4 = new AssessmentModule("EV", "词汇能力-理解", "评估词汇理解能力", "15 分钟", android.R.drawable.ic_menu_search);
+        m4.setCompleted(checkCompletion("EV", 7)); 
+        moduleList.add(m4);
 
         // 5. 句法 (RG)
-        if ("1".equals(RG)) {
-            AssessmentModule m = new AssessmentModule("RG", "句法能力", "评估句法理解与表达", "20 分钟", android.R.drawable.ic_menu_edit);
-            // 检查句法理解和句法表达是否都至少完成了一组
-            boolean syntaxCompleted = checkSyntaxCompletion();
-            m.setCompleted(syntaxCompleted);
-            moduleList.add(m);
-        }
+        AssessmentModule m5 = new AssessmentModule("RG", "句法能力", "评估句法理解与表达", "20 分钟", android.R.drawable.ic_menu_edit);
+        // 检查句法理解和句法表达是否都至少完成了一组
+        boolean syntaxCompleted = checkSyntaxCompletion();
+        m5.setCompleted(syntaxCompleted);
+        moduleList.add(m5);
 
         // 6. 社交 (Social) - Always added
-        AssessmentModule m = new AssessmentModule("SOCIAL", "社交能力", "评估社交互动技能", "15 分钟", android.R.drawable.ic_menu_myplaces);
-        m.setCompleted(checkCompletion("SOCIAL", 7)); // Assuming 7 based on earlier snippet or default
-        moduleList.add(m);
+        AssessmentModule m6 = new AssessmentModule("SOCIAL", "社交能力", "评估社交互动技能", "15 分钟", android.R.drawable.ic_menu_myplaces);
+        m6.setCompleted(checkCompletion("SOCIAL", 7)); // Assuming 7 based on earlier snippet or default
+        moduleList.add(m6);
 
         runOnUiThread(() -> adapter.notifyDataSetChanged());
     }

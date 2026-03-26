@@ -27,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -499,11 +500,13 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                                 testPoint = "动词";
                                 break;
                             case 5:
-                            case 6:
                                 testPoint = "形容词";
                                 break;
-                            case 7:
+                            case 6:
                                 testPoint = "分类名词（名词上位词）";
+                                break;
+                            case 7:
+                                testPoint = "形容词";
                                 break;
                         }
                         eTestPointScores.put(testPoint, eTestPointScores.get(testPoint) + 1);
@@ -530,11 +533,13 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                                 testPoint = "动词";
                                 break;
                             case 5:
-                            case 6:
                                 testPoint = "形容词";
                                 break;
-                            case 7:
+                            case 6:
                                 testPoint = "分类名词（名词上位词）";
+                                break;
+                            case 7:
+                                testPoint = "形容词";
                                 break;
                         }
                         evTestPointScores.put(testPoint, evTestPointScores.get(testPoint) + 1);
@@ -617,28 +622,154 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 goodAt = "无";
                 needImprove = "无";
             }
+            // 添加词汇理解表格标题
+            evaluations.add(new evaluation(-998) {
+                @Override
+                public int handle(View[] views, int position) {
+                    // 显示标题
+                    if (views.length > 2) {
+                        TextView titleView = (TextView) views[2];
+                        titleView.setText("（1）词汇理解结果");
+                        titleView.setVisibility(View.VISIBLE);
+                        titleView.setTextSize(18);
+                        titleView.setGravity(Gravity.CENTER);
+                        titleView.setTextColor(android.graphics.Color.BLACK);
+                    }
+                    // 隐藏其他列
+                    for (int i = 0; i < views.length; i++) {
+                        if (i != 2 && views[i] instanceof TextView) {
+                            views[i].setVisibility(View.GONE);
+                        }
+                    }
+                    return 2;
+                }
+                
+                @Override
+                public void test(View view, int position, List<Integer> ImageIdList, List<Integer[]> ImageGroupIdList, List<String[]> StringGroupIdList, String[] Hint, String[] TabString, TextView counter, TextView timer) {
+                }
+                
+                @Override
+                public void toJson(JSONObject evaluations) throws JSONException {
+                }
+                
+                @Override
+                public String getTime() {
+                    return null;
+                }
+                
+                @Override
+                public Boolean getResult() {
+                    return null;
+                }
+            });
             
             // 添加词汇理解表格的表头行
             evaluations.add(new ev(0, "序号", null, "结果"));//首行
+            // 定义词汇理解的目标词
+            String[] evTargets = {"勺子", "眼睛", "跑", "吃", "红", "动物", "大"};
             for (int i = 0; i < evArray.length(); i++) {
                 JSONObject object = evArray.getJSONObject(i);
+                String target = i < evTargets.length ? evTargets[i] : object.getString("target");
                 if (object.has("result") && !object.isNull("result")) {
-                    evaluations.add(new ev(i + 1, object.getString("target"), object.optBoolean("result", false), object.getString("time")));
+                    evaluations.add(new ev(i + 1, target, object.optBoolean("result", false), object.getString("time")));
                 } else {
-                    evaluations.add(new ev(i + 1, object.getString("target"), null, null));
+                    evaluations.add(new ev(i + 1, target, null, null));
                 }
             }
             // 添加词汇理解结果总分
             evaluations.add(new ev(-1, "词汇理解结果", null, String.valueOf((int) countev) + "/" + String.valueOf(evArray.length())));
             
+            // 添加一个空的评估对象作为间距
+            evaluations.add(new evaluation(-999) {
+                @Override
+                public int handle(View[] views, int position) {
+                    // 不显示任何内容，并且设置行高为150像素作为间距
+                    ViewGroup parent = (ViewGroup) views[0].getParent();
+                    ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) parent.getLayoutParams();
+                    layoutParams.height = 150; // 设置行高为150像素作为间距
+                    parent.setLayoutParams(layoutParams);
+                    
+                    // 隐藏所有TextView
+                    for (View view : views) {
+                        if (view instanceof TextView) {
+                            ((TextView) view).setText("");
+                            view.setVisibility(View.GONE);
+                        }
+                    }
+                    return 0;
+                }
+                
+                @Override
+                public void test(View view, int position, List<Integer> ImageIdList, List<Integer[]> ImageGroupIdList, List<String[]> StringGroupIdList, String[] Hint, String[] TabString, TextView counter, TextView timer) {
+                }
+                
+                @Override
+                public void toJson(JSONObject evaluations) throws JSONException {
+                }
+                
+                @Override
+                public String getTime() {
+                    return null;
+                }
+                
+                @Override
+                public Boolean getResult() {
+                    return null;
+                }
+            });
+            
+            // 添加词汇表达表格标题
+            evaluations.add(new evaluation(-997) {
+                @Override
+                public int handle(View[] views, int position) {
+                    // 显示标题
+                    if (views.length > 2) {
+                        TextView titleView = (TextView) views[2];
+                        titleView.setText("（2）词汇表达结果");
+                        titleView.setVisibility(View.VISIBLE);
+                        titleView.setTextSize(18);
+                        titleView.setGravity(Gravity.CENTER);
+                        titleView.setTextColor(android.graphics.Color.BLACK);
+                    }
+                    // 隐藏其他列
+                    for (int i = 0; i < views.length; i++) {
+                        if (i != 2 && views[i] instanceof TextView) {
+                            views[i].setVisibility(View.GONE);
+                        }
+                    }
+                    return 2;
+                }
+                
+                @Override
+                public void test(View view, int position, List<Integer> ImageIdList, List<Integer[]> ImageGroupIdList, List<String[]> StringGroupIdList, String[] Hint, String[] TabString, TextView counter, TextView timer) {
+                }
+                
+                @Override
+                public void toJson(JSONObject evaluations) throws JSONException {
+                }
+                
+                @Override
+                public String getTime() {
+                    return null;
+                }
+                
+                @Override
+                public Boolean getResult() {
+                    return null;
+                }
+            });
+            
             // 添加词汇表达表格的表头行
             evaluations.add(new e(0, "序号", "测试点", "目标词", "结果", "答题时长"));//首行
+            // 定义词汇表达的目标词
+            String[] eTargets = {"杯子", "耳朵", "睡觉", "喝水", "蓝色", "水果", "长"};
             for (int i = 0; i < eArray.length(); i++) {
                 JSONObject object = eArray.getJSONObject(i);
+                String target = i < eTargets.length ? eTargets[i] : object.getString("target");
                 if (object.has("result") && !object.isNull("result")) {
-                    evaluations.add(new e(i + 1, object.getString("target"), object.optBoolean("result", false), object.getString("time")));
+                    evaluations.add(new e(i + 1, target, object.optBoolean("result", false), object.getString("time")));
                 } else {
-                    evaluations.add(new e(i + 1, object.getString("target"), null, null));
+                    evaluations.add(new e(i + 1, target, null, null));
                 }
             }
             // 添加词汇表达结果总分

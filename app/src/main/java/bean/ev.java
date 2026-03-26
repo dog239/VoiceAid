@@ -126,10 +126,10 @@ public class ev extends evaluation {
                     testPoint = "形容词";
                     break;
                 case 6:
-                    testPoint = "形容词";
+                    testPoint = "分类名词（名词上位词）";
                     break;
                 case 7:
-                    testPoint = "分类名词（名词上位词）";
+                    testPoint = "形容词";
                     break;
                 default:
                     testPoint = "";
@@ -188,30 +188,6 @@ public class ev extends evaluation {
         // 重新计算已完成的题目数量并更新计数显示
         testcontext.getInstance().searchOne();
         counter.setText(testcontext.getInstance().getCount() + "/" + testcontext.getInstance().getLengths());
-
-        // 初始化计时器变量
-        handler = new android.os.Handler();
-        
-        // 重置计时器为0
-        timer.setText("00:00");
-        
-        // 重新创建runnable对象，确保每次都使用新的开始时间
-        runnable = new Runnable() {
-            long startTime = System.currentTimeMillis();
-            @Override
-            public void run() {
-                long currentTime = System.currentTimeMillis();
-                long elapsedTime = currentTime - startTime;
-                int minutes = (int) (elapsedTime / 60000);
-                int seconds = (int) ((elapsedTime % 60000) / 1000);
-                String timeString = String.format("%02d:%02d", minutes, seconds);
-                timer.setText(timeString);
-                handler.postDelayed(this, 1000);
-            }
-        };
-        
-        // 开始时间统计
-        handler.post(runnable);
 
         // 显示网格布局
         gridLayout.setVisibility(View.VISIBLE);
@@ -309,6 +285,30 @@ public class ev extends evaluation {
                 nextPage(position, testcontext.getInstance().getCount(), testcontext.getInstance().getLengths());
             });
         }
+        
+        // 初始化计时器变量
+        handler = new android.os.Handler();
+        
+        // 重置计时器为0
+        timer.setText("00:00");
+        
+        // 重新创建runnable对象，确保每次都使用新的开始时间
+        runnable = new Runnable() {
+            long startTime = System.currentTimeMillis();
+            @Override
+            public void run() {
+                long currentTime = System.currentTimeMillis();
+                long elapsedTime = currentTime - startTime;
+                int minutes = (int) (elapsedTime / 60000);
+                int seconds = (int) ((elapsedTime % 60000) / 1000);
+                String timeString = String.format("%02d:%02d", minutes, seconds);
+                timer.setText(timeString);
+                handler.postDelayed(this, 1000);
+            }
+        };
+        
+        // 开始时间统计
+        handler.post(runnable);
     }
 
     @Override

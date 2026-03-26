@@ -137,8 +137,8 @@ public class se extends evaluation {
 
    @Override
    public int handle(View[] views, int position) {
-       // 确保有足够的视图来显示所有列（包括答题时间和录音）
-       int requiredViews = 10; // 测试阶段、题号、例句、正确选项、被选选项、测试结果、答题时间、录音、对应测试语法点
+       // 确保有足够的视图来显示所有列（包括答题时间）
+       int requiredViews = 9; // 测试阶段、题号、例句、正确选项、被选选项、测试结果、答题时间、对应测试语法点
        if (views.length < requiredViews) {
            // 如果视图不够，只显示可用的
            requiredViews = views.length;
@@ -156,8 +156,7 @@ public class se extends evaluation {
            if (requiredViews > 4) ((TextView)views[4]).setText("被选选项");
            if (requiredViews > 5) ((TextView)views[5]).setText("测试结果");
            if (requiredViews > 6) ((TextView)views[6]).setText("答题时间");
-           if (requiredViews > 7) ((TextView)views[7]).setText("录音");
-           if (requiredViews > 8) ((TextView)views[8]).setText("对应测试语法点");
+           if (requiredViews > 7) ((TextView)views[7]).setText("对应测试语法点");
        }
        else if (num == -3) {
            // 组标题
@@ -200,27 +199,7 @@ public class se extends evaluation {
                    ((TextView)views[6]).setText("");
                }
            }
-           if (requiredViews > 7) {
-               if(audio != null && audio.getPath() != null) {
-                   // 添加录音播放按钮或图标
-                   ((TextView)views[7]).setTextColor(ResultContext.getInstance().getContext().getResources().getColor(R.color.audio_green));
-                   ((TextView)views[7]).setText(ResultContext.getInstance().getContext().getResources().getString(R.string.audio));
-                   ((TextView)views[7]).setTextSize(20); // 调整图标大小
-                   // 将播放按钮添加到AudioPlayer的audioIcons列表中
-                   final int audioPosition = AudioPlayer.getInstance().getIconCount();
-                   AudioPlayer.getInstance().addIcon((TextView)views[7]);
-                   views[7].setOnClickListener(v -> {
-                       // 播放录音
-                       if (audio.getPath() != null) {
-                           // 使用录音图标的实际位置
-                           AudioPlayer.getInstance().play(audio.getPath(), audioPosition);
-                       }
-                   });
-               } else {
-                   ((TextView)views[7]).setText("");
-               }
-           }
-           if (requiredViews > 8) ((TextView)views[8]).setText(grammarPoint);
+           if (requiredViews > 7) ((TextView)views[7]).setText(grammarPoint);
        }
        return requiredViews - 1;
    }
