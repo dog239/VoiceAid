@@ -13,7 +13,9 @@ public final class ModuleRagConfig {
     public static boolean isEnabledFor(String moduleType) {
         String normalized = normalize(moduleType);
         return ENABLE_MODULE_RAG
-                && ("articulation".equals(normalized) || "syntax".equals(normalized));
+                && ("articulation".equals(normalized)
+                || "syntax".equals(normalized)
+                || "vocabulary".equals(normalized));
     }
 
     public static String assetPathForModule(String moduleType) {
@@ -23,6 +25,9 @@ public final class ModuleRagConfig {
         }
         if ("syntax".equals(normalized)) {
             return "kb/syntax_kb.json";
+        }
+        if ("vocabulary".equals(normalized)) {
+            return "kb/vocabulary_kb.json";
         }
         return "";
     }

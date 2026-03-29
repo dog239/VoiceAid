@@ -72,6 +72,7 @@ public class RagQuery {
     public final List<String> targetPositions;
     public final List<String> goalTags;
     public final String severity;
+    public final List<String> supportingSignals;
     public final GlobalQuery global;
     public final List<SubModuleQuery> subModules;
 
@@ -87,6 +88,7 @@ public class RagQuery {
                 targetPositions,
                 goalTags,
                 severity,
+                Collections.<String>emptyList(),
                 new GlobalQuery(goalTags, severity),
                 Collections.<SubModuleQuery>emptyList());
     }
@@ -99,12 +101,33 @@ public class RagQuery {
                     String severity,
                     GlobalQuery global,
                     List<SubModuleQuery> subModules) {
+        this(moduleType,
+                errorTypes,
+                targetSounds,
+                targetPositions,
+                goalTags,
+                severity,
+                Collections.<String>emptyList(),
+                global,
+                subModules);
+    }
+
+    public RagQuery(String moduleType,
+                    List<String> errorTypes,
+                    List<String> targetSounds,
+                    List<String> targetPositions,
+                    List<String> goalTags,
+                    String severity,
+                    List<String> supportingSignals,
+                    GlobalQuery global,
+                    List<SubModuleQuery> subModules) {
         this.moduleType = moduleType == null ? "" : moduleType;
         this.errorTypes = immutableCopy(errorTypes);
         this.targetSounds = immutableCopy(targetSounds);
         this.targetPositions = immutableCopy(targetPositions);
         this.goalTags = immutableCopy(goalTags);
         this.severity = severity == null ? "" : severity;
+        this.supportingSignals = immutableCopy(supportingSignals);
         this.global = global == null ? new GlobalQuery(goalTags, severity) : global;
         this.subModules = immutableSubModules(subModules);
     }
@@ -118,6 +141,7 @@ public class RagQuery {
             out.put("targetPositions", toJsonArray(targetPositions));
             out.put("goalTags", toJsonArray(goalTags));
             out.put("severity", severity);
+            out.put("supportingSignals", toJsonArray(supportingSignals));
             out.put("global", global.toJson());
             JSONArray subModuleArray = new JSONArray();
             for (SubModuleQuery subModule : subModules) {
@@ -137,6 +161,7 @@ public class RagQuery {
                 && targetPositions.isEmpty()
                 && goalTags.isEmpty()
                 && severity.trim().isEmpty()
+                && supportingSignals.isEmpty()
                 && (global == null || global.isEmpty())
                 && areSubModulesEmpty(subModules);
     }

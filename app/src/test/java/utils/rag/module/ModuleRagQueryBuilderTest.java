@@ -92,6 +92,53 @@ public class ModuleRagQueryBuilderTest {
         assertFalse(queryJson.contains("chiefComplaint"));
     }
 
+    @Test
+    public void buildVocabularyQuery_shouldSplitReceptiveAndExpressiveSignals() throws Exception {
+        RagQuery query = ModuleRagQueryBuilder.build("vocabulary", vocabularyModuleInput());
+
+        assertNotNull(query);
+        assertEquals(2, query.subModules.size());
+        assertEquals("receptive", query.subModules.get(0).name);
+        assertEquals("expressive", query.subModules.get(1).name);
+        assertTrue(query.subModules.get(0).problemTags.contains("semantic_comprehension_difficulty"));
+        assertTrue(query.subModules.get(1).problemTags.contains("naming_difficulty"));
+    }
+
+    @Test
+    public void buildVocabularyQuery_shouldIncludeSupportingSignals() throws Exception {
+        RagQuery query = ModuleRagQueryBuilder.build("vocabulary", vocabularyModuleInput());
+
+        assertTrue(query.supportingSignals.contains("RE"));
+        assertTrue(query.supportingSignals.contains("S"));
+        assertTrue(query.supportingSignals.contains("NWR"));
+    }
+
+    @Test
+    public void buildVocabularyQuery_shouldHandleMergedSummaryWithoutCrash() throws Exception {
+        JSONObject moduleInput = new JSONObject()
+                .put("moduleType", "vocabulary")
+                .put("moduleEvaluations", new JSONObject().put("summary", new JSONObject()));
+
+        RagQuery query = ModuleRagQueryBuilder.build("vocabulary", moduleInput);
+
+        assertNotNull(query);
+        assertNotNull(query.subModules);
+        assertEquals(2, query.subModules.size());
+        assertNotNull(query.supportingSignals);
+    }
+
+    @Test
+    public void buildVocabularyQuery_shouldNotLeakPrivacyFields() throws Exception {
+        JSONObject input = vocabularyModuleInput();
+        input.put("chiefComplaint", "contact 13800138000, address road 1");
+
+        RagQuery query = ModuleRagQueryBuilder.build("vocabulary", input);
+        String queryJson = query.toJson().toString();
+
+        assertFalse(queryJson.contains("13800138000"));
+        assertFalse(queryJson.contains("address road 1"));
+    }
+
     private JSONObject articulationModuleInput() throws Exception {
         JSONObject summary = new JSONObject();
         summary.put("intelligibility", "moderate");
@@ -111,17 +158,17 @@ public class ModuleRagQueryBuilderTest {
 
     private JSONObject syntaxModuleInput() throws Exception {
         JSONObject rg = new JSONObject()
-                .put("overallLevel", "句法理解不稳定，复杂句理解较弱")
-                .put("focusStructures", new JSONArray().put("复杂句理解").put("结构关系理解"))
-                .put("unstableStructures", new JSONArray().put("理解正确率不稳定"));
+                .put("overallLevel", "unstable comprehension")
+                .put("focusStructures", new JSONArray().put("complex sentence comprehension").put("structure relation comprehension"))
+                .put("unstableStructures", new JSONArray().put("comprehension accuracy unstable"));
         JSONObject se = new JSONObject()
-                .put("overallLevel", "句法表达较弱，输出不稳定")
-                .put("focusStructures", new JSONArray().put("句式单一").put("表达遗漏"))
-                .put("unstableStructures", new JSONArray().put("句子组织弱"));
+                .put("overallLevel", "expression output unstable")
+                .put("focusStructures", new JSONArray().put("sentence variety limited").put("expression omission"))
+                .put("unstableStructures", new JSONArray().put("sentence organization weak"));
         JSONObject assessment = new JSONObject()
-                .put("overallLevel", "句法理解与表达均需支持")
-                .put("sharedPriorityStructures", new JSONArray().put("因果句"))
-                .put("sharedUnstableStructures", new JSONArray().put("并列句"));
+                .put("overallLevel", "syntax support needed")
+                .put("sharedPriorityStructures", new JSONArray().put("cause effect"))
+                .put("sharedUnstableStructures", new JSONArray().put("coordination"));
         JSONObject summary = new JSONObject()
                 .put("rgComprehension", rg)
                 .put("seExpression", se)
@@ -129,6 +176,46 @@ public class ModuleRagQueryBuilderTest {
 
         return new JSONObject()
                 .put("moduleType", "syntax")
+                .put("moduleEvaluations", new JSONObject().put("summary", summary));
+    }
+
+    private JSONObject vocabularyModuleInput() throws Exception {
+        JSONObject receptiveCategories = new JSONObject()
+                .put("noun", new JSONObject().put("status", "focus"))
+                .put("verb", new JSONObject().put("status", "unstable"));
+        JSONObject expressiveCategories = new JSONObject()
+                .put("noun", new JSONObject().put("status", "unstable"))
+                .put("verb", new JSONObject().put("status", "focus"));
+
+        JSONObject vocabularyAssessment = new JSONObject()
+                .put("overallLevel", "receptive_stronger")
+                .put("relativeProfile", "understanding stronger than output")
+                .put("focus", new JSONArray()
+                        .put("semantic comprehension weak")
+                        .put("classification understanding weak")
+                        .put("naming difficulty")
+                        .put("lexical retrieval slow")
+                        .put("expressive output unstable"))
+                .put("unstable", new JSONArray()
+                        .put("input side weak when cues fade")
+                        .put("active expression unstable"))
+                .put("crossDomainPriorityCategories", new JSONArray().put("noun"))
+                .put("crossDomainUnstableCategories", new JSONArray().put("verb"))
+                .put("receptive", new JSONObject()
+                        .put("accuracy", "50%")
+                        .put("categories", receptiveCategories))
+                .put("expressive", new JSONObject()
+                        .put("accuracy", "30%")
+                        .put("categories", expressiveCategories));
+
+        JSONObject summary = new JSONObject()
+                .put("vocabularyAssessment", vocabularyAssessment)
+                .put("RE", new JSONObject().put("total", 6).put("accuracy", "40%"))
+                .put("S", new JSONObject().put("total", 4).put("accuracy", "50%"))
+                .put("NWR", new JSONObject().put("total", 5).put("accuracy", "20%"));
+
+        return new JSONObject()
+                .put("moduleType", "vocabulary")
                 .put("moduleEvaluations", new JSONObject().put("summary", summary));
     }
 }

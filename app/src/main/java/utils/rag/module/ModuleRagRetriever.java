@@ -15,9 +15,15 @@ public final class ModuleRagRetriever {
             return Collections.emptyList();
         }
 
-        List<RagHit> hits = "syntax".equals(normalize(query.moduleType))
-                ? retrieveSyntax(query, docs, topK)
-                : retrieveDefault(query, docs, topK);
+        String moduleType = normalize(query.moduleType);
+        List<RagHit> hits;
+        if ("syntax".equals(moduleType)) {
+            hits = retrieveStructured(query, docs, topK, "syntax");
+        } else if ("vocabulary".equals(moduleType)) {
+            hits = retrieveStructured(query, docs, topK, "vocabulary");
+        } else {
+            hits = retrieveDefault(query, docs, topK);
+        }
         if (hits.size() <= topK) {
             return hits;
         }
@@ -40,18 +46,17 @@ public final class ModuleRagRetriever {
         return hits.size() <= topK ? hits : new ArrayList<>(hits.subList(0, topK));
     }
 
-    private List<RagHit> retrieveSyntax(RagQuery query, List<KnowledgeDoc> docs, int topK) {
+    private List<RagHit> retrieveStructured(RagQuery query, List<KnowledgeDoc> docs, int topK, String moduleType) {
         Map<String, RagHit> merged = new LinkedHashMap<>();
-
         for (KnowledgeDoc doc : docs) {
-            if (doc == null || !normalize(query.moduleType).equals(normalize(doc.module))) {
+            if (doc == null || !moduleType.equals(normalize(doc.module))) {
                 continue;
             }
-            RagHit globalHit = scoreSyntaxGlobal(query, doc);
+            RagHit globalHit = scoreStructuredGlobal(query, doc, moduleType);
             mergeHit(merged, globalHit);
 
             for (RagQuery.SubModuleQuery subModule : query.subModules) {
-                RagHit hit = scoreSyntaxSubModule(query, subModule, doc);
+                RagHit hit = scoreStructuredSubModule(query, subModule, doc, moduleType);
                 mergeHit(merged, hit);
             }
         }
@@ -89,7 +94,7 @@ public final class ModuleRagRetriever {
         return new RagHit(doc, score, new ArrayList<>(matched));
     }
 
-    private RagHit scoreSyntaxGlobal(RagQuery query, KnowledgeDoc doc) {
+    private RagHit scoreStructuredGlobal(RagQuery query, KnowledgeDoc doc, String moduleType) {
         if (query.global == null || query.global.isEmpty()) {
             return null;
         }
@@ -102,6 +107,9 @@ public final class ModuleRagRetriever {
         score += addMatches(matched, query.global.goalTags, doc.goalTags, 1.5d, "global_goal:");
         score += addMatches(matched, query.global.goalTags, doc.problemTags, 1.2d, "global_problem:");
         score += addTextMatches(matched, query.global.goalTags, doc, 0.8d, "global_text:");
+        if ("vocabulary".equals(moduleType)) {
+            score += addSupportingSignalWeight(matched, query.supportingSignals, doc);
+        }
         score += Math.max(0, doc.priority) * 0.1d;
         if (matched.isEmpty()) {
             return null;
@@ -109,7 +117,10 @@ public final class ModuleRagRetriever {
         return new RagHit(doc, score, "global", new ArrayList<>(matched));
     }
 
-    private RagHit scoreSyntaxSubModule(RagQuery query, RagQuery.SubModuleQuery subModule, KnowledgeDoc doc) {
+    private RagHit scoreStructuredSubModule(RagQuery query,
+                                            RagQuery.SubModuleQuery subModule,
+                                            KnowledgeDoc doc,
+                                            String moduleType) {
         if (subModule == null || subModule.isEmpty()) {
             return null;
         }
@@ -130,11 +141,39 @@ public final class ModuleRagRetriever {
             score += 1.0d;
             matched.add("submodule:" + docSubModule);
         }
+        if ("vocabulary".equals(moduleType)) {
+            score += addSupportingSignalWeight(matched, query.supportingSignals, doc);
+        }
         score += Math.max(0, doc.priority) * 0.1d;
         if (matched.isEmpty()) {
             return null;
         }
         return new RagHit(doc, score, normalizedSubModule, new ArrayList<>(matched));
+    }
+
+    private double addSupportingSignalWeight(LinkedHashSet<String> matched, List<String> supportingSignals, KnowledgeDoc doc) {
+        if (supportingSignals == null || supportingSignals.isEmpty() || doc == null) {
+            return 0.0d;
+        }
+        String text = normalize(doc.title) + " " + normalize(doc.content);
+        double score = 0.0d;
+        for (String signal : supportingSignals) {
+            String normalized = normalize(signal);
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            if ("re".equals(normalized) && containsAny(text, "repeat", "retention", "rehearsal", "保持", "复述")) {
+                matched.add("supporting:re");
+                score += 0.35d;
+            } else if ("s".equals(normalized) && containsAny(text, "load", "stability", "task demand", "负荷", "稳定")) {
+                matched.add("supporting:s");
+                score += 0.35d;
+            } else if ("nwr".equals(normalized) && containsAny(text, "phonological", "memory", "nonword", "音系", "保持")) {
+                matched.add("supporting:nwr");
+                score += 0.4d;
+            }
+        }
+        return score;
     }
 
     private double addMatches(LinkedHashSet<String> matched,
@@ -209,6 +248,19 @@ public final class ModuleRagRetriever {
                 + (subModuleName == null ? "" : subModuleName)
                 + " docId=" + hit.doc.id
                 + " score=" + hit.score);
+    }
+
+    private boolean containsAny(String text, String... keywords) {
+        if (text == null || keywords == null) {
+            return false;
+        }
+        String normalizedText = normalize(text);
+        for (String keyword : keywords) {
+            if (keyword != null && normalizedText.contains(normalize(keyword))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String normalize(String value) {

@@ -16,9 +16,13 @@ public final class ModuleRagContextBuilder {
         if (hits == null || hits.isEmpty()) {
             return "";
         }
-        return isSyntaxHits(hits)
-                ? buildSyntaxContext(hits, maxContentLength)
-                : buildDefaultContext(hits, maxContentLength);
+        if (isSyntaxHits(hits)) {
+            return buildStructuredContext(hits, maxContentLength, "syntax");
+        }
+        if (isVocabularyHits(hits)) {
+            return buildStructuredContext(hits, maxContentLength, "vocabulary");
+        }
+        return buildDefaultContext(hits, maxContentLength);
     }
 
     private String buildDefaultContext(List<RagHit> hits, int maxContentLength) {
@@ -39,11 +43,17 @@ public final class ModuleRagContextBuilder {
         return builder.toString().trim();
     }
 
-    private String buildSyntaxContext(List<RagHit> hits, int maxContentLength) {
+    private String buildStructuredContext(List<RagHit> hits, int maxContentLength, String moduleType) {
         Map<String, List<KnowledgeDoc>> sections = new LinkedHashMap<>();
-        sections.put("comprehension", new ArrayList<KnowledgeDoc>());
-        sections.put("expression", new ArrayList<KnowledgeDoc>());
-        sections.put("global", new ArrayList<KnowledgeDoc>());
+        if ("syntax".equals(moduleType)) {
+            sections.put("comprehension", new ArrayList<KnowledgeDoc>());
+            sections.put("expression", new ArrayList<KnowledgeDoc>());
+            sections.put("global", new ArrayList<KnowledgeDoc>());
+        } else {
+            sections.put("receptive", new ArrayList<KnowledgeDoc>());
+            sections.put("expressive", new ArrayList<KnowledgeDoc>());
+            sections.put("global", new ArrayList<KnowledgeDoc>());
+        }
 
         LinkedHashSet<String> seenKeys = new LinkedHashSet<>();
         for (RagHit hit : hits) {
@@ -51,7 +61,7 @@ public final class ModuleRagContextBuilder {
             if (doc == null || doc.id.trim().isEmpty()) {
                 continue;
             }
-            String section = normalizeSection(hit.subModuleName, doc.subModule);
+            String section = normalizeSection(moduleType, hit.subModuleName, doc.subModule);
             String dedupeKey = section + "|" + doc.id.trim();
             if (!seenKeys.add(dedupeKey)) {
                 continue;
@@ -67,9 +77,15 @@ public final class ModuleRagContextBuilder {
         StringBuilder builder = new StringBuilder();
         builder.append("【检索参考知识】\n");
         int index = 1;
-        index = appendSection(builder, "【句法理解相关建议】", sections.get("comprehension"), index, maxContentLength);
-        index = appendSection(builder, "【句法表达相关建议】", sections.get("expression"), index, maxContentLength);
-        index = appendSection(builder, "【句法通用建议】", sections.get("global"), index, maxContentLength);
+        if ("syntax".equals(moduleType)) {
+            index = appendSection(builder, "【句法理解相关建议】", sections.get("comprehension"), index, maxContentLength);
+            index = appendSection(builder, "【句法表达相关建议】", sections.get("expression"), index, maxContentLength);
+            index = appendSection(builder, "【句法通用建议】", sections.get("global"), index, maxContentLength);
+        } else {
+            index = appendSection(builder, "【词汇理解相关建议】", sections.get("receptive"), index, maxContentLength);
+            index = appendSection(builder, "【词汇表达相关建议】", sections.get("expressive"), index, maxContentLength);
+            index = appendSection(builder, "【词汇训练通用建议】", sections.get("global"), index, maxContentLength);
+        }
         if (index == 1) {
             return "";
         }
@@ -119,13 +135,33 @@ public final class ModuleRagContextBuilder {
         return false;
     }
 
-    private String normalizeSection(String hitSubModule, String docSubModule) {
+    private boolean isVocabularyHits(List<RagHit> hits) {
+        for (RagHit hit : hits) {
+            KnowledgeDoc doc = hit == null ? null : hit.doc;
+            if (doc != null && "vocabulary".equals(normalize(doc.module))) {
+                return true;
+            }
+            if (hit != null && ("receptive".equals(normalize(hit.subModuleName))
+                    || "expressive".equals(normalize(hit.subModuleName)))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalizeSection(String moduleType, String hitSubModule, String docSubModule) {
         String normalized = normalize(hitSubModule);
         if (normalized.isEmpty()) {
             normalized = normalize(docSubModule);
         }
-        if ("comprehension".equals(normalized) || "expression".equals(normalized)) {
-            return normalized;
+        if ("syntax".equals(moduleType)) {
+            if ("comprehension".equals(normalized) || "expression".equals(normalized)) {
+                return normalized;
+            }
+        } else if ("vocabulary".equals(moduleType)) {
+            if ("receptive".equals(normalized) || "expressive".equals(normalized)) {
+                return normalized;
+            }
         }
         return "global";
     }

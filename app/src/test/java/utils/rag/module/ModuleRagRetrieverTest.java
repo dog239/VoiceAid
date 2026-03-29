@@ -14,7 +14,7 @@ public class ModuleRagRetrieverTest {
 
     @Test
     public void retrieve_shouldMatchDocsByProblemTags() {
-        List<RagHit> hits = retriever.retrieve(query(), docs(), 5);
+        List<RagHit> hits = retriever.retrieve(articulationQuery(), articulationDocs(), 5);
 
         assertEquals(2, hits.size());
         assertEquals("ART-001", hits.get(0).doc.id);
@@ -22,21 +22,21 @@ public class ModuleRagRetrieverTest {
 
     @Test
     public void retrieve_shouldSortHitsByScore() {
-        List<RagHit> hits = retriever.retrieve(query(), docs(), 5);
+        List<RagHit> hits = retriever.retrieve(articulationQuery(), articulationDocs(), 5);
 
         assertTrue(hits.get(0).score >= hits.get(1).score);
     }
 
     @Test
     public void retrieve_shouldReturnEmpty_whenNoDocs() {
-        List<RagHit> hits = retriever.retrieve(query(), Collections.<KnowledgeDoc>emptyList(), 5);
+        List<RagHit> hits = retriever.retrieve(articulationQuery(), Collections.<KnowledgeDoc>emptyList(), 5);
 
         assertTrue(hits.isEmpty());
     }
 
     @Test
     public void retrieve_shouldRespectTopK() {
-        List<RagHit> hits = retriever.retrieve(query(), docs(), 1);
+        List<RagHit> hits = retriever.retrieve(articulationQuery(), articulationDocs(), 1);
 
         assertEquals(1, hits.size());
         assertEquals("ART-001", hits.get(0).doc.id);
@@ -71,7 +71,48 @@ public class ModuleRagRetrieverTest {
         assertTrue(containsHit(hits, "SYN-G-001", "global"));
     }
 
-    private RagQuery query() {
+    @Test
+    public void retrieveVocabulary_shouldSearchBySubModuleIndependently() {
+        List<RagHit> hits = retriever.retrieve(vocabularyQuery(), vocabularyDocs(), 6);
+
+        assertTrue(containsHit(hits, "VOC-R-001", "receptive"));
+        assertTrue(containsHit(hits, "VOC-E-001", "expressive"));
+    }
+
+    @Test
+    public void retrieveVocabulary_shouldMergeReceptiveAndExpressiveHits() {
+        List<RagHit> hits = retriever.retrieve(vocabularyQuery(), vocabularyDocs(), 6);
+
+        assertTrue(containsHit(hits, "VOC-R-001", "receptive"));
+        assertTrue(containsHit(hits, "VOC-E-001", "expressive"));
+        assertTrue(containsHit(hits, "VOC-G-001", "global"));
+    }
+
+    @Test
+    public void retrieveVocabulary_shouldUseSupportingSignalsAsAuxiliaryWeights() {
+        List<RagHit> hits = retriever.retrieve(vocabularyQuery(), vocabularyDocs(), 6);
+
+        double receptiveScore = findScore(hits, "VOC-R-001", "receptive");
+        double supportScore = findScore(hits, "VOC-G-001", "global");
+        assertTrue(receptiveScore > supportScore);
+        assertTrue(supportScore > 0.0d);
+    }
+
+    @Test
+    public void retrieveVocabulary_shouldRespectTopK() {
+        List<RagHit> hits = retriever.retrieve(vocabularyQuery(), vocabularyDocs(), 2);
+
+        assertEquals(2, hits.size());
+    }
+
+    @Test
+    public void retrieveVocabulary_shouldHandleDocsWithoutSubModuleField() {
+        List<RagHit> hits = retriever.retrieve(vocabularyQuery(), vocabularyDocs(), 6);
+
+        assertTrue(containsHit(hits, "VOC-G-001", "global"));
+    }
+
+    private RagQuery articulationQuery() {
         return new RagQuery(
                 "articulation",
                 Arrays.asList("substitution", "omission"),
@@ -82,7 +123,7 @@ public class ModuleRagRetrieverTest {
         );
     }
 
-    private List<KnowledgeDoc> docs() {
+    private List<KnowledgeDoc> articulationDocs() {
         return Arrays.asList(
                 new KnowledgeDoc(
                         "ART-001",
@@ -112,21 +153,6 @@ public class ModuleRagRetrieverTest {
                         Collections.singletonList("word_level"),
                         Collections.singletonList("family"),
                         5,
-                        "test"
-                ),
-                new KnowledgeDoc(
-                        "VOC-001",
-                        "vocabulary",
-                        "Vocabulary guidance",
-                        "Should not match.",
-                        "training_strategy",
-                        Collections.singletonList("substitution"),
-                        Collections.singletonList("k"),
-                        Collections.singletonList("initial"),
-                        Collections.singletonList("home_practice"),
-                        Collections.singletonList("word_level"),
-                        Collections.singletonList("family"),
-                        10,
                         "test"
                 )
         );
@@ -214,6 +240,89 @@ public class ModuleRagRetrieverTest {
         );
     }
 
+    private RagQuery vocabularyQuery() {
+        return new RagQuery(
+                "vocabulary",
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                Arrays.asList("noun", "balance_support"),
+                "receptive_stronger",
+                Arrays.asList("RE", "S", "NWR"),
+                new RagQuery.GlobalQuery(Arrays.asList("noun", "balance_support"), "receptive_stronger"),
+                Arrays.asList(
+                        new RagQuery.SubModuleQuery(
+                                "receptive",
+                                Arrays.asList("semantic_comprehension_difficulty", "category_comprehension_difficulty"),
+                                Collections.singletonList("receptive_vocabulary_support"),
+                                "50%"
+                        ),
+                        new RagQuery.SubModuleQuery(
+                                "expressive",
+                                Arrays.asList("naming_difficulty", "slow_lexical_retrieval"),
+                                Collections.singletonList("expressive_vocabulary_support"),
+                                "30%"
+                        )
+                )
+        );
+    }
+
+    private List<KnowledgeDoc> vocabularyDocs() {
+        return Arrays.asList(
+                new KnowledgeDoc(
+                        "VOC-R-001",
+                        "vocabulary",
+                        "receptive",
+                        "Semantic comprehension support",
+                        "Support semantic comprehension and category understanding when cues fade.",
+                        "training_strategy",
+                        Arrays.asList("semantic_comprehension_difficulty", "category_comprehension_difficulty"),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.singletonList("receptive_vocabulary_support"),
+                        Collections.singletonList("word_level"),
+                        Collections.singletonList("therapist"),
+                        9,
+                        "test"
+                ),
+                new KnowledgeDoc(
+                        "VOC-E-001",
+                        "vocabulary",
+                        "expressive",
+                        "Naming retrieval practice",
+                        "Support naming difficulty and lexical retrieval under higher task load.",
+                        "training_strategy",
+                        Arrays.asList("naming_difficulty", "slow_lexical_retrieval"),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.singletonList("expressive_vocabulary_support"),
+                        Collections.singletonList("word_level"),
+                        Collections.singletonList("therapist"),
+                        8,
+                        "test"
+                ),
+                new KnowledgeDoc(
+                        "VOC-G-001",
+                        "vocabulary",
+                        "",
+                        "Vocabulary load management",
+                        "Use repetition, phonological memory supports, and lighter task load to keep vocabulary output stable.",
+                        "general_strategy",
+                        Collections.singletonList("vocabulary_integration"),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Arrays.asList("balance_support", "noun"),
+                        Collections.singletonList("word_level"),
+                        Collections.singletonList("family"),
+                        3,
+                        "test"
+                )
+        );
+    }
+
     private boolean containsHit(List<RagHit> hits, String docId, String subModuleName) {
         for (RagHit hit : hits) {
             if (hit != null
@@ -224,5 +333,17 @@ public class ModuleRagRetrieverTest {
             }
         }
         return false;
+    }
+
+    private double findScore(List<RagHit> hits, String docId, String subModuleName) {
+        for (RagHit hit : hits) {
+            if (hit != null
+                    && hit.doc != null
+                    && docId.equals(hit.doc.id)
+                    && subModuleName.equals(hit.subModuleName)) {
+                return hit.score;
+            }
+        }
+        return 0.0d;
     }
 }
