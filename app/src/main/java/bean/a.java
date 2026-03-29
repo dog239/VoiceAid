@@ -28,6 +28,7 @@ import utils.AudioPlayer;
 import utils.AudioRecorder;
 import utils.ImageUrls;
 import utils.ResultContext;
+import utils.SADAEvaluator;
 import utils.testcontext;
 
 /**
@@ -689,37 +690,12 @@ public class a extends evaluation {
         Button nextButton = view.findViewById(R.id.btn_next);
         Spinner spError = view.findViewById(R.id.sp_error_type);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(view.getContext(), android.R.layout.simple_spinner_dropdown_item, ERROR_TYPE_OPTIONS);
-        spError.setAdapter(adapter);
-        int defIndex = 0;
-        if (errorType != null) {
-            for (int i = 0; i < ERROR_TYPE_OPTIONS.length; i++) {
-                if (ERROR_TYPE_OPTIONS[i].equals(errorType)) {
-                    defIndex = i;
-                    break;
-                }
-            }
+        // 自动判别错误类型，测试页面不再手动选择
+        if (spError != null) {
+            spError.setVisibility(View.GONE);
+            spError.setEnabled(false);
+            spError.setOnItemSelectedListener(null);
         }
-        spError.setSelection(defIndex);
-        final boolean[] firstSelect = new boolean[]{true};
-
-        spError.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                if (firstSelect[0] && errorType == null && pos == 0) {
-                    firstSelect[0] = false;
-                    return;
-                }
-                firstSelect[0] = false;
-                errorType = ERROR_TYPE_OPTIONS[pos];
-                if (errorType != null && errorType.isEmpty()) errorType = null;
-            }
-
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
 
         imageView.setImageResource(ImageIdList.get(position));
         numberTextView.setText("第" + TabString[position] + "题：" + Hint[position]);
@@ -759,14 +735,14 @@ public class a extends evaluation {
 
 
         nextButton.setOnClickListener(v -> {
-
-
             testcontext.getInstance().getViewPager().setPagingEnabled(true);
 
             if (audio != null) {
                 AudioRecorder.getInstance().stopRecorder();
                 result = Boolean.TRUE;
             }
+            // 自动计算错误类型（替代/增加/减少），一致时保持空值
+            errorType = SADAEvaluator.computeAutoErrorType(targetWord, answerPhonology);
             nextPage(position, testcontext.getInstance().getCount(), testcontext.getInstance().getLengths());
         });
 
@@ -1082,31 +1058,16 @@ public class a extends evaluation {
         setTextIfChanged(etNucleus, getCachedJoinedParts(PartType.NUCLEUS));
         setTextIfChanged(etCoda, getCachedJoinedParts(PartType.CODA));
 
-        ArrayAdapter<String> errorAdapter = (ArrayAdapter<String>) spError.getAdapter();
-        if (errorAdapter == null) {
-            errorAdapter = new ArrayAdapter<>(spError.getContext(), android.R.layout.simple_spinner_dropdown_item, ERROR_TYPE_OPTIONS);
-            spError.setAdapter(errorAdapter);
-        }
         int errorIndex = findOptionIndex(errorType, ERROR_TYPE_OPTIONS);
         if (spError.getSelectedItemPosition() != errorIndex) {
             spError.setSelection(errorIndex, false);
         }
 
-        ArrayAdapter<String> processAdapter = (ArrayAdapter<String>) spProcess.getAdapter();
-        if (processAdapter == null) {
-            processAdapter = new ArrayAdapter<>(spProcess.getContext(), android.R.layout.simple_spinner_dropdown_item, PHONOLOGY_PROCESS_OPTIONS);
-            spProcess.setAdapter(processAdapter);
-        }
         int processIndex = findOptionIndex(phonologyProcess, PHONOLOGY_PROCESS_OPTIONS);
         if (spProcess.getSelectedItemPosition() != processIndex) {
             spProcess.setSelection(processIndex, false);
         }
 
-        ArrayAdapter<String> inducibleAdapter = (ArrayAdapter<String>) spInducible.getAdapter();
-        if (inducibleAdapter == null) {
-            inducibleAdapter = new ArrayAdapter<>(spInducible.getContext(), android.R.layout.simple_spinner_dropdown_item, INDUCIBLE_OPTIONS);
-            spInducible.setAdapter(inducibleAdapter);
-        }
         int inducibleIndex = areAllInducible() ? 1 : 0;
         if (spInducible.getSelectedItemPosition() != inducibleIndex) {
             spInducible.setSelection(inducibleIndex, false);
