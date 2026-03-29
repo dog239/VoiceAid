@@ -688,14 +688,6 @@ public class a extends evaluation {
         TextView ansTextView = view.findViewById(R.id.tv_ans);
         Button startButton = view.findViewById(R.id.btn_start);
         Button nextButton = view.findViewById(R.id.btn_next);
-        Spinner spError = view.findViewById(R.id.sp_error_type);
-
-        // 自动判别错误类型，测试页面不再手动选择
-        if (spError != null) {
-            spError.setVisibility(View.GONE);
-            spError.setEnabled(false);
-            spError.setOnItemSelectedListener(null);
-        }
 
         imageView.setImageResource(ImageIdList.get(position));
         numberTextView.setText("第" + TabString[position] + "题：" + Hint[position]);
@@ -1011,6 +1003,15 @@ public class a extends evaluation {
         spinner.setTag(TAG_INDUCIBLE_LISTENER, listener);
     }
 
+    private static void ensureSpinnerAdapter(Spinner spinner, String[] options) {
+        if (spinner == null || options == null) return;
+        if (spinner.getAdapter() != null && spinner.getAdapter().getCount() == options.length) return;
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                spinner.getContext(), android.R.layout.simple_spinner_item, options);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+    }
+
     public void bindEditable(View[] views, int position, adapter.resultadapter.ResultUpdateListener updateListener, boolean editable, int cellIndex) {
         if (views == null || views.length < 11) return;
         if (position == 0) {
@@ -1038,6 +1039,10 @@ public class a extends evaluation {
         Spinner spError = (Spinner) views[7];
         Spinner spProcess = (Spinner) views[8];
         Spinner spInducible = (Spinner) views[9];
+
+        ensureSpinnerAdapter(spError, ERROR_TYPE_OPTIONS);
+        ensureSpinnerAdapter(spProcess, PHONOLOGY_PROCESS_OPTIONS);
+        ensureSpinnerAdapter(spInducible, INDUCIBLE_OPTIONS);
 
         EditText[] cells = new EditText[]{etInitial, etMedial, etNucleus, etCoda, null, null, null};
         PartType[] partMap = new PartType[]{PartType.INITIAL, PartType.MEDIAL, PartType.NUCLEUS, PartType.CODA, null, null, null};

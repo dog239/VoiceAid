@@ -4,6 +4,9 @@ import java.util.List;
 
 import bean.a.CharacterPhonology;
 
+/**
+ * 构音测评错误类型自动判别工具类
+ */
 public final class SADAEvaluator {
     private SADAEvaluator() {
     }
