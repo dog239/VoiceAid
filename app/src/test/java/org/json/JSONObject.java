@@ -116,6 +116,19 @@ public class JSONObject {
         return key != null && values.containsKey(key);
     }
 
+    public boolean isNull(String key) {
+        Object value = opt(key);
+        return value == null || value == NULL;
+    }
+
+    public JSONArray names() {
+        JSONArray array = new JSONArray();
+        for (String key : values.keySet()) {
+            array.put(key);
+        }
+        return array.length() == 0 ? null : array;
+    }
+
     public int length() {
         return values.size();
     }
