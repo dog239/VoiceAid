@@ -112,6 +112,10 @@ public class JSONObject {
         return Boolean.parseBoolean(String.valueOf(value));
     }
 
+    public boolean optBoolean(String key) {
+        return optBoolean(key, false);
+    }
+
     public boolean has(String key) {
         return key != null && values.containsKey(key);
     }
