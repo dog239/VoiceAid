@@ -122,6 +122,48 @@ public class ModuleRagContextBuilderTest {
         assertEquals(1, context.split("\\[1\\]").length - 1);
     }
 
+    @Test
+    public void buildSocialContext_shouldGroupInteractionAndGeneralizationHints() {
+        String context = builder.build(Arrays.asList(
+                socialHit("SOC-001", "Interaction support", "Support response and turn-taking in face-to-face interaction.",
+                        Arrays.asList("weak_response"), Collections.<String>emptyList(), Arrays.asList("improve_response"),
+                        Collections.singletonList("therapist")),
+                socialHit("SOC-002", "Generalization support", "Expand peer interaction and daily routine generalization.",
+                        Arrays.asList("weak_generalization"), Arrays.asList("peer_interaction"), Arrays.asList("improve_social_generalization"),
+                        Collections.singletonList("therapist"))
+        ));
+
+        assertTrue(context.contains("【社交互动相关建议】"));
+        assertTrue(context.contains("【情境与泛化相关建议】"));
+    }
+
+    @Test
+    public void buildSocialContext_shouldIncludeFamilySupportHints() {
+        String context = builder.build(Collections.singletonList(
+                socialHit("SOC-003", "Family coaching", "Coach caregivers to use short daily routines and supported peer play.",
+                        Arrays.asList("prompt_dependent_interaction"), Arrays.asList("daily_interaction"),
+                        Arrays.asList("improve_social_generalization"), Collections.singletonList("family"))
+        ));
+
+        assertTrue(context.contains("【家庭与支持建议】"));
+        assertTrue(context.contains("[1] Family coaching"));
+    }
+
+    @Test
+    public void buildSocialContext_shouldTrimAndDeduplicate() {
+        String context = builder.build(Arrays.asList(
+                socialHit("SOC-002", "Generalization support", repeat("SocialContent", 20),
+                        Arrays.asList("weak_generalization"), Arrays.asList("peer_interaction"),
+                        Arrays.asList("improve_social_generalization"), Collections.singletonList("therapist")),
+                socialHit("SOC-002", "Generalization support", repeat("SocialContent", 20),
+                        Arrays.asList("weak_generalization"), Arrays.asList("peer_interaction"),
+                        Arrays.asList("improve_social_generalization"), Collections.singletonList("therapist"))
+        ), 30);
+
+        assertTrue(context.contains("..."));
+        assertEquals(1, context.split("\\[1\\]").length - 1);
+    }
+
     private RagHit articulationHit(String id, String title, String content) {
         return new RagHit(
                 new KnowledgeDoc(
@@ -191,6 +233,39 @@ public class ModuleRagContextBuilderTest {
                 1.0d,
                 subModule,
                 Collections.singletonList("problem:" + subModule)
+        );
+    }
+
+    private RagHit socialHit(String id,
+                             String title,
+                             String content,
+                             java.util.List<String> problemTags,
+                             java.util.List<String> scenarioTags,
+                             java.util.List<String> interactionGoals,
+                             java.util.List<String> audience) {
+        return new RagHit(
+                new KnowledgeDoc(
+                        id,
+                        "social",
+                        "",
+                        title,
+                        content,
+                        "training_strategy",
+                        problemTags,
+                        scenarioTags,
+                        interactionGoals,
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.singletonList("social_generalization"),
+                        Collections.singletonList("daily"),
+                        audience,
+                        1,
+                        "test"
+                ),
+                1.0d,
+                "social",
+                Collections.singletonList("social_problem:" + (problemTags.isEmpty() ? "none" : problemTags.get(0)))
         );
     }
 

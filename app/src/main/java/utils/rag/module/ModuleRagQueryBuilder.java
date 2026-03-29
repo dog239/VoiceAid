@@ -30,6 +30,9 @@ public final class ModuleRagQueryBuilder {
         if ("vocabulary".equals(normalizedModuleType)) {
             return buildVocabularyQuery(normalizedModuleType, moduleInput);
         }
+        if ("social".equals(normalizedModuleType)) {
+            return buildSocialQuery(normalizedModuleType, moduleInput);
+        }
         return new RagQuery(normalizedModuleType, empty(), empty(), empty(), empty(), "");
     }
 
@@ -158,6 +161,57 @@ public final class ModuleRagQueryBuilder {
                 supportingSignals,
                 new RagQuery.GlobalQuery(new ArrayList<>(globalGoalTags), severity),
                 subModules
+        );
+    }
+
+    private static RagQuery buildSocialQuery(String normalizedModuleType, JSONObject moduleInput) {
+        JSONObject summary = optObject(optObject(moduleInput, "moduleEvaluations"), "summary");
+
+        LinkedHashSet<String> problemTags = new LinkedHashSet<>();
+        addAll(problemTags, buildSocialProblemTags(optStringArray(summary, "focusAbilities")));
+        addAll(problemTags, buildSocialProblemTags(optStringArray(summary, "unstableAbilities")));
+        addAll(problemTags, buildSocialProblemTags(optStringArray(summary, "homeGuidanceDirections")));
+        addAll(problemTags, buildSocialProblemTags(extractMeasuredItemLabels(optObjectArray(summary, "measuredItems"))));
+
+        LinkedHashSet<String> scenarioTags = new LinkedHashSet<>();
+        addAll(scenarioTags, buildSocialScenarioTagsFromGroupDetails(optObjectArray(summary, "groupDetails")));
+        addAll(scenarioTags, buildSocialScenarioTags(optStringArray(summary, "homeGuidanceDirections")));
+        addAll(scenarioTags, buildSocialScenarioTags(extractMeasuredItemLabels(optObjectArray(summary, "measuredItems"))));
+
+        LinkedHashSet<String> interactionGoals = new LinkedHashSet<>();
+        addAll(interactionGoals, buildSocialInteractionGoalsFromGroupDetails(optObjectArray(summary, "groupDetails")));
+        addAll(interactionGoals, buildSocialInteractionGoals(extractGoalSeedAbilities(optObjectArray(summary, "smartGoalSeeds"))));
+        addAll(interactionGoals, buildSocialInteractionGoals(optStringArray(summary, "focusAbilities")));
+
+        LinkedHashSet<String> supportingSignals = new LinkedHashSet<>();
+        addAll(supportingSignals, buildSocialSupportingSignals(summary));
+
+        LinkedHashSet<String> globalGoalTags = new LinkedHashSet<>();
+        addAll(globalGoalTags, new ArrayList<>(interactionGoals));
+        if (!scenarioTags.isEmpty()) {
+            globalGoalTags.add("social_generalization");
+        }
+        if (containsAny(normalize(summary == null ? "" : summary.optString("overallLevel", "")), "mixed", "unstable")) {
+            globalGoalTags.add("stability_support");
+        }
+        if (containsAny(normalize(summary == null ? "" : summary.optString("overallLevel", "")), "need_support")) {
+            globalGoalTags.add("core_social_support");
+        }
+
+        String severity = normalize(summary == null ? "" : summary.optString("overallLevel", ""));
+        return new RagQuery(
+                normalizedModuleType,
+                empty(),
+                empty(),
+                empty(),
+                new ArrayList<>(globalGoalTags),
+                severity,
+                new ArrayList<>(supportingSignals),
+                new ArrayList<>(problemTags),
+                new ArrayList<>(scenarioTags),
+                new ArrayList<>(interactionGoals),
+                new RagQuery.GlobalQuery(new ArrayList<>(globalGoalTags), severity),
+                emptySubModules()
         );
     }
 
@@ -489,6 +543,21 @@ public final class ModuleRagQueryBuilder {
         return source == null ? null : source.optJSONObject(key);
     }
 
+    private static List<JSONObject> optObjectArray(JSONObject source, String key) {
+        JSONArray array = source == null ? null : source.optJSONArray(key);
+        List<JSONObject> out = new ArrayList<>();
+        if (array == null) {
+            return out;
+        }
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject item = array.optJSONObject(i);
+            if (item != null) {
+                out.add(item);
+            }
+        }
+        return out;
+    }
+
     private static void addAll(LinkedHashSet<String> target, List<String> values) {
         if (target == null || values == null) {
             return;
@@ -563,6 +632,189 @@ public final class ModuleRagQueryBuilder {
 
     private static List<String> empty() {
         return new ArrayList<>();
+    }
+
+    private static List<RagQuery.SubModuleQuery> emptySubModules() {
+        return new ArrayList<>();
+    }
+
+    private static List<String> extractMeasuredItemLabels(List<JSONObject> items) {
+        List<String> out = new ArrayList<>();
+        if (items == null) {
+            return out;
+        }
+        for (JSONObject item : items) {
+            if (item == null) {
+                continue;
+            }
+            addIfPresent(out, item.optString("label", ""));
+            addIfPresent(out, item.optString("ability", ""));
+            addIfPresent(out, item.optString("focus", ""));
+            addIfPresent(out, item.optString("content", ""));
+        }
+        return out;
+    }
+
+    private static List<String> extractGoalSeedAbilities(List<JSONObject> items) {
+        List<String> out = new ArrayList<>();
+        if (items == null) {
+            return out;
+        }
+        for (JSONObject item : items) {
+            if (item != null) {
+                addIfPresent(out, item.optString("ability", ""));
+            }
+        }
+        return out;
+    }
+
+    private static void addIfPresent(List<String> out, String value) {
+        String normalized = normalize(value);
+        if (!normalized.isEmpty()) {
+            out.add(normalized);
+        }
+    }
+
+    private static List<String> buildSocialProblemTags(List<String> source) {
+        LinkedHashSet<String> out = new LinkedHashSet<>();
+        for (String item : source) {
+            String normalized = normalize(item);
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            if (containsAny(normalized, "response", "respond")) {
+                out.add("weak_response");
+            }
+            if (containsAny(normalized, "turn-taking", "turn taking", "conversation turn")) {
+                out.add("poor_turn_taking");
+            }
+            if (containsAny(normalized, "initiation", "initiate", "social motivation")) {
+                out.add("limited_initiation");
+            }
+            if (containsAny(normalized, "context", "situation", "group", "story", "generalization")) {
+                out.add("context_dependent_expression");
+            }
+            if (containsAny(normalized, "nonverbal", "joint attention", "emotion", "cue")) {
+                out.add("limited_nonverbal_social_cues");
+            }
+            if (containsAny(normalized, "unstable", "mixed", "partly")) {
+                out.add("unstable_social_response");
+            }
+            if (containsAny(normalized, "prompt", "guided", "adult-child play", "support")) {
+                out.add("prompt_dependent_interaction");
+            }
+            if (containsAny(normalized, "generalization", "daily", "peer", "group participation")) {
+                out.add("weak_generalization");
+            }
+        }
+        return new ArrayList<>(out);
+    }
+
+    private static List<String> buildSocialScenarioTags(List<String> source) {
+        LinkedHashSet<String> out = new LinkedHashSet<>();
+        for (String item : source) {
+            String normalized = normalize(item);
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            if (containsAny(normalized, "daily", "everyday", "routine")) {
+                out.add("daily_interaction");
+            }
+            if (containsAny(normalized, "story", "discussion", "picture")) {
+                out.add("picture_or_story_context");
+            }
+            if (containsAny(normalized, "peer", "group")) {
+                out.add("peer_interaction");
+            }
+            if (containsAny(normalized, "adult-child", "adult", "caregiver")) {
+                out.add("adult_led_interaction");
+            }
+            if (containsAny(normalized, "familiar")) {
+                out.add("familiar_context");
+            }
+            if (containsAny(normalized, "conflict", "problem-solving", "negotiation", "misunderstanding")) {
+                out.add("challenging_social_situation");
+            }
+        }
+        return new ArrayList<>(out);
+    }
+
+    private static List<String> buildSocialInteractionGoalsFromGroupDetails(List<JSONObject> groupDetails) {
+        List<String> values = new ArrayList<>();
+        if (groupDetails == null) {
+            return values;
+        }
+        for (JSONObject detail : groupDetails) {
+            if (detail == null) {
+                continue;
+            }
+            addIfPresent(values, detail.optString("goalDirection", ""));
+            addIfPresent(values, detail.optString("trainingLevel", ""));
+            addIfPresent(values, detail.optString("homeGuidanceDirection", ""));
+        }
+        return buildSocialInteractionGoals(values);
+    }
+
+    private static List<String> buildSocialScenarioTagsFromGroupDetails(List<JSONObject> groupDetails) {
+        List<String> values = new ArrayList<>();
+        if (groupDetails == null) {
+            return values;
+        }
+        for (JSONObject detail : groupDetails) {
+            if (detail == null) {
+                continue;
+            }
+            addIfPresent(values, detail.optString("trainingLevel", ""));
+            addIfPresent(values, detail.optString("homeGuidanceDirection", ""));
+        }
+        return buildSocialScenarioTags(values);
+    }
+
+    private static List<String> buildSocialInteractionGoals(List<String> source) {
+        LinkedHashSet<String> out = new LinkedHashSet<>();
+        for (String item : source) {
+            String normalized = normalize(item);
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            if (containsAny(normalized, "respond", "response")) {
+                out.add("improve_response");
+            }
+            if (containsAny(normalized, "turn-taking", "turn taking", "conversation turn")) {
+                out.add("increase_turn_taking");
+            }
+            if (containsAny(normalized, "initiation", "initiate", "requesting", "refusing")) {
+                out.add("increase_initiation");
+            }
+            if (containsAny(normalized, "expression", "conversation", "pretend", "group expression")) {
+                out.add("expand_contextual_expression");
+            }
+            if (containsAny(normalized, "joint attention", "shared")) {
+                out.add("strengthen_shared_participation");
+            }
+            if (containsAny(normalized, "generalization", "daily", "peer", "group", "routine")) {
+                out.add("improve_social_generalization");
+            }
+        }
+        return new ArrayList<>(out);
+    }
+
+    private static List<String> buildSocialSupportingSignals(JSONObject summary) {
+        LinkedHashSet<String> out = new LinkedHashSet<>();
+        JSONObject scoreBreakdown = optObject(summary, "scoreBreakdown");
+        int score1 = scoreBreakdown == null ? 0 : scoreBreakdown.optInt("score1", 0);
+        int score0 = scoreBreakdown == null ? 0 : scoreBreakdown.optInt("score0", 0);
+        if (score1 > 0) {
+            out.add("unstable_profile");
+        }
+        if (score0 > 0) {
+            out.add("emerging_profile");
+        }
+        JSONArray measuredGroups = summary == null ? null : summary.optJSONArray("measuredGroups");
+        if (measuredGroups != null && measuredGroups.length() >= 2) {
+            out.add("cross_scenario_sampling");
+        }
+        return new ArrayList<>(out);
     }
 
     private static String normalize(String value) {

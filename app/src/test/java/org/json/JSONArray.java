@@ -14,6 +14,22 @@ public class JSONArray {
         return this;
     }
 
+    public JSONArray put(int value) {
+        return put(Integer.valueOf(value));
+    }
+
+    public JSONArray put(long value) {
+        return put(Long.valueOf(value));
+    }
+
+    public JSONArray put(double value) {
+        return put(Double.valueOf(value));
+    }
+
+    public JSONArray put(boolean value) {
+        return put(Boolean.valueOf(value));
+    }
+
     public int length() {
         return values.size();
     }

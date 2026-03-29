@@ -73,6 +73,9 @@ public class RagQuery {
     public final List<String> goalTags;
     public final String severity;
     public final List<String> supportingSignals;
+    public final List<String> problemTags;
+    public final List<String> scenarioTags;
+    public final List<String> interactionGoals;
     public final GlobalQuery global;
     public final List<SubModuleQuery> subModules;
 
@@ -88,6 +91,9 @@ public class RagQuery {
                 targetPositions,
                 goalTags,
                 severity,
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
                 Collections.<String>emptyList(),
                 new GlobalQuery(goalTags, severity),
                 Collections.<SubModuleQuery>emptyList());
@@ -108,6 +114,9 @@ public class RagQuery {
                 goalTags,
                 severity,
                 Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
                 global,
                 subModules);
     }
@@ -121,6 +130,32 @@ public class RagQuery {
                     List<String> supportingSignals,
                     GlobalQuery global,
                     List<SubModuleQuery> subModules) {
+        this(moduleType,
+                errorTypes,
+                targetSounds,
+                targetPositions,
+                goalTags,
+                severity,
+                supportingSignals,
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                global,
+                subModules);
+    }
+
+    public RagQuery(String moduleType,
+                    List<String> errorTypes,
+                    List<String> targetSounds,
+                    List<String> targetPositions,
+                    List<String> goalTags,
+                    String severity,
+                    List<String> supportingSignals,
+                    List<String> problemTags,
+                    List<String> scenarioTags,
+                    List<String> interactionGoals,
+                    GlobalQuery global,
+                    List<SubModuleQuery> subModules) {
         this.moduleType = moduleType == null ? "" : moduleType;
         this.errorTypes = immutableCopy(errorTypes);
         this.targetSounds = immutableCopy(targetSounds);
@@ -128,6 +163,9 @@ public class RagQuery {
         this.goalTags = immutableCopy(goalTags);
         this.severity = severity == null ? "" : severity;
         this.supportingSignals = immutableCopy(supportingSignals);
+        this.problemTags = immutableCopy(problemTags);
+        this.scenarioTags = immutableCopy(scenarioTags);
+        this.interactionGoals = immutableCopy(interactionGoals);
         this.global = global == null ? new GlobalQuery(goalTags, severity) : global;
         this.subModules = immutableSubModules(subModules);
     }
@@ -142,6 +180,9 @@ public class RagQuery {
             out.put("goalTags", toJsonArray(goalTags));
             out.put("severity", severity);
             out.put("supportingSignals", toJsonArray(supportingSignals));
+            out.put("problemTags", toJsonArray(problemTags));
+            out.put("scenarioTags", toJsonArray(scenarioTags));
+            out.put("interactionGoals", toJsonArray(interactionGoals));
             out.put("global", global.toJson());
             JSONArray subModuleArray = new JSONArray();
             for (SubModuleQuery subModule : subModules) {
@@ -162,6 +203,9 @@ public class RagQuery {
                 && goalTags.isEmpty()
                 && severity.trim().isEmpty()
                 && supportingSignals.isEmpty()
+                && problemTags.isEmpty()
+                && scenarioTags.isEmpty()
+                && interactionGoals.isEmpty()
                 && (global == null || global.isEmpty())
                 && areSubModulesEmpty(subModules);
     }

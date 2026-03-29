@@ -12,6 +12,8 @@ public class KnowledgeDoc {
     public final String content;
     public final String knowledgeType;
     public final List<String> problemTags;
+    public final List<String> scenarioTags;
+    public final List<String> interactionGoals;
     public final List<String> errorTypes;
     public final List<String> targetSounds;
     public final List<String> targetPositions;
@@ -41,6 +43,8 @@ public class KnowledgeDoc {
                 content,
                 knowledgeType,
                 Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
                 errorTypes,
                 targetSounds,
                 targetPositions,
@@ -66,6 +70,42 @@ public class KnowledgeDoc {
                         List<String> audience,
                         int priority,
                         String source) {
+        this(id,
+                module,
+                subModule,
+                title,
+                content,
+                knowledgeType,
+                problemTags,
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                errorTypes,
+                targetSounds,
+                targetPositions,
+                goalTags,
+                applicableStages,
+                audience,
+                priority,
+                source);
+    }
+
+    public KnowledgeDoc(String id,
+                        String module,
+                        String subModule,
+                        String title,
+                        String content,
+                        String knowledgeType,
+                        List<String> problemTags,
+                        List<String> scenarioTags,
+                        List<String> interactionGoals,
+                        List<String> errorTypes,
+                        List<String> targetSounds,
+                        List<String> targetPositions,
+                        List<String> goalTags,
+                        List<String> applicableStages,
+                        List<String> audience,
+                        int priority,
+                        String source) {
         this.id = safe(id);
         this.module = safe(module);
         this.subModule = safe(subModule);
@@ -73,6 +113,8 @@ public class KnowledgeDoc {
         this.content = safe(content);
         this.knowledgeType = safe(knowledgeType);
         this.problemTags = immutableCopy(problemTags);
+        this.scenarioTags = immutableCopy(scenarioTags);
+        this.interactionGoals = immutableCopy(interactionGoals);
         this.errorTypes = immutableCopy(errorTypes);
         this.targetSounds = immutableCopy(targetSounds);
         this.targetPositions = immutableCopy(targetPositions);

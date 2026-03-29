@@ -21,6 +21,8 @@ public final class ModuleRagRetriever {
             hits = retrieveStructured(query, docs, topK, "syntax");
         } else if ("vocabulary".equals(moduleType)) {
             hits = retrieveStructured(query, docs, topK, "vocabulary");
+        } else if ("social".equals(moduleType)) {
+            hits = retrieveSocial(query, docs, topK);
         } else {
             hits = retrieveDefault(query, docs, topK);
         }
@@ -62,6 +64,22 @@ public final class ModuleRagRetriever {
         }
 
         List<RagHit> hits = new ArrayList<>(merged.values());
+        sortHits(hits);
+        return hits.size() <= topK ? hits : new ArrayList<>(hits.subList(0, topK));
+    }
+
+    private List<RagHit> retrieveSocial(RagQuery query, List<KnowledgeDoc> docs, int topK) {
+        List<RagHit> hits = new ArrayList<>();
+        for (KnowledgeDoc doc : docs) {
+            if (doc == null || !"social".equals(normalize(doc.module))) {
+                continue;
+            }
+            RagHit hit = scoreSocial(query, doc);
+            if (hit != null && hit.score > 0) {
+                hits.add(hit);
+                logHit("social", hit);
+            }
+        }
         sortHits(hits);
         return hits.size() <= topK ? hits : new ArrayList<>(hits.subList(0, topK));
     }
@@ -151,6 +169,25 @@ public final class ModuleRagRetriever {
         return new RagHit(doc, score, normalizedSubModule, new ArrayList<>(matched));
     }
 
+    private RagHit scoreSocial(RagQuery query, KnowledgeDoc doc) {
+        LinkedHashSet<String> matched = new LinkedHashSet<>();
+        double score = 0.0d;
+        score += addMatches(matched, query.problemTags, doc.problemTags, 5.0d, "social_problem:");
+        score += addMatches(matched, query.problemTags, doc.goalTags, 2.0d, "social_problem_goal:");
+        score += addMatches(matched, query.interactionGoals, doc.interactionGoals, 3.0d, "social_goal:");
+        score += addMatches(matched, query.interactionGoals, doc.goalTags, 1.6d, "social_goal_fallback:");
+        score += addMatches(matched, query.scenarioTags, doc.scenarioTags, 1.2d, "social_scenario:");
+        score += addTextMatches(matched, query.problemTags, doc, 0.8d, "social_text:");
+        score += addTextMatches(matched, query.interactionGoals, doc, 0.7d, "social_goal_text:");
+        score += addTextMatches(matched, query.scenarioTags, doc, 0.4d, "social_scenario_text:");
+        score += addSocialSupportingSignalWeight(matched, query.supportingSignals, doc);
+        score += Math.max(0, doc.priority) * 0.1d;
+        if (matched.isEmpty()) {
+            return null;
+        }
+        return new RagHit(doc, score, "social", new ArrayList<>(matched));
+    }
+
     private double addSupportingSignalWeight(LinkedHashSet<String> matched, List<String> supportingSignals, KnowledgeDoc doc) {
         if (supportingSignals == null || supportingSignals.isEmpty() || doc == null) {
             return 0.0d;
@@ -171,6 +208,33 @@ public final class ModuleRagRetriever {
             } else if ("nwr".equals(normalized) && containsAny(text, "phonological", "memory", "nonword", "音系", "保持")) {
                 matched.add("supporting:nwr");
                 score += 0.4d;
+            }
+        }
+        return score;
+    }
+
+    private double addSocialSupportingSignalWeight(LinkedHashSet<String> matched,
+                                                   List<String> supportingSignals,
+                                                   KnowledgeDoc doc) {
+        if (supportingSignals == null || supportingSignals.isEmpty() || doc == null) {
+            return 0.0d;
+        }
+        String text = normalize(doc.title) + " " + normalize(doc.content);
+        double score = 0.0d;
+        for (String signal : supportingSignals) {
+            String normalized = normalize(signal);
+            if ("unstable_profile".equals(normalized)
+                    && containsAny(text, "stability", "unstable", "gradual", "stepwise")) {
+                matched.add("supporting:unstable_profile");
+                score += 0.25d;
+            } else if ("emerging_profile".equals(normalized)
+                    && containsAny(text, "foundational", "emerging", "adult support", "caregiver support")) {
+                matched.add("supporting:emerging_profile");
+                score += 0.25d;
+            } else if ("cross_scenario_sampling".equals(normalized)
+                    && containsAny(text, "daily", "peer", "group", "generalization", "routine")) {
+                matched.add("supporting:cross_scenario_sampling");
+                score += 0.2d;
             }
         }
         return score;

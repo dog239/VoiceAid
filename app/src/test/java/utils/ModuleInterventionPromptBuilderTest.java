@@ -155,6 +155,19 @@ public class ModuleInterventionPromptBuilderTest {
         assertTrue(prompt.contains("one combined syntax assessment module report"));
     }
 
+    @Test
+    public void buildUserPromptWithRag_shouldKeepSocialUnifiedReport() throws Exception {
+        String ragContext = "【检索参考知识】\n【社交互动相关建议】\n[1] Response support：Build turn-taking in adult-led play.\n\n【情境与泛化相关建议】\n[2] Generalization：Expand peer interaction across daily routines.";
+        String prompt = ModuleInterventionPromptBuilder.buildUserPromptWithRag(
+                "social",
+                socialChildData(),
+                ragContext
+        );
+
+        assertTrue(prompt.contains(ragContext));
+        assertTrue(prompt.contains("\"moduleType\":\"social\""));
+    }
+
     private JSONObject articulationChildData() throws Exception {
         JSONObject info = new JSONObject()
                 .put("birthDate", "2020-01-01")
@@ -247,6 +260,32 @@ public class ModuleInterventionPromptBuilderTest {
         JSONObject evaluations = new JSONObject()
                 .put("RG", new JSONArray().put(rgItem))
                 .put("SE", new JSONArray().put(seItem));
+
+        return new JSONObject()
+                .put("info", info)
+                .put("evaluations", evaluations);
+    }
+
+    private JSONObject socialChildData() throws Exception {
+        JSONObject info = new JSONObject()
+                .put("birthDate", "2020-06-01")
+                .put("testDate", "2024-06-01")
+                .put("chiefComplaint", "Social response is inconsistent.");
+
+        JSONObject social1 = new JSONObject()
+                .put("num", 12)
+                .put("score", 0)
+                .put("ability", "response to peer")
+                .put("focus", "peer interaction");
+        JSONObject social2 = new JSONObject()
+                .put("num", 24)
+                .put("score", 1)
+                .put("ability", "turn taking")
+                .put("focus", "daily interaction");
+
+        JSONObject evaluations = new JSONObject()
+                .put("SOCIAL1", new JSONArray().put(social1))
+                .put("SOCIAL2", new JSONArray().put(social2));
 
         return new JSONObject()
                 .put("info", info)

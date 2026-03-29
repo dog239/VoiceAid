@@ -112,6 +112,38 @@ public class ModuleRagRetrieverTest {
         assertTrue(containsHit(hits, "VOC-G-001", "global"));
     }
 
+    @Test
+    public void retrieveSocial_shouldSearchByProblemTagsAndInteractionGoals() {
+        List<RagHit> hits = retriever.retrieve(socialQuery(), socialDocs(), 5);
+
+        assertTrue(containsHit(hits, "SOC-001", "social"));
+        assertTrue(containsHit(hits, "SOC-002", "social"));
+    }
+
+    @Test
+    public void retrieveSocial_shouldUseScenarioTagsAsAuxiliaryWeights() {
+        List<RagHit> hits = retriever.retrieve(socialQuery(), socialDocs(), 5);
+
+        double interactionScore = findScore(hits, "SOC-001", "social");
+        double scenarioScore = findScore(hits, "SOC-002", "social");
+        assertTrue(interactionScore >= scenarioScore);
+        assertTrue(scenarioScore > 0.0d);
+    }
+
+    @Test
+    public void retrieveSocial_shouldRespectTopK() {
+        List<RagHit> hits = retriever.retrieve(socialQuery(), socialDocs(), 2);
+
+        assertEquals(2, hits.size());
+    }
+
+    @Test
+    public void retrieveSocial_shouldHandleDocsWithoutScenarioFields() {
+        List<RagHit> hits = retriever.retrieve(socialQuery(), socialDocs(), 5);
+
+        assertTrue(containsHit(hits, "SOC-003", "social"));
+    }
+
     private RagQuery articulationQuery() {
         return new RagQuery(
                 "articulation",
@@ -318,6 +350,85 @@ public class ModuleRagRetrieverTest {
                         Collections.singletonList("word_level"),
                         Collections.singletonList("family"),
                         3,
+                        "test"
+                )
+        );
+    }
+
+    private RagQuery socialQuery() {
+        return new RagQuery(
+                "social",
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                Collections.<String>emptyList(),
+                Arrays.asList("improve_response", "increase_turn_taking"),
+                "mixed_profile",
+                Arrays.asList("unstable_profile", "cross_scenario_sampling"),
+                Arrays.asList("weak_response", "poor_turn_taking", "weak_generalization"),
+                Arrays.asList("daily_interaction", "peer_interaction"),
+                Arrays.asList("improve_response", "increase_turn_taking", "improve_social_generalization"),
+                new RagQuery.GlobalQuery(Arrays.asList("improve_response", "increase_turn_taking"), "mixed_profile"),
+                Collections.<RagQuery.SubModuleQuery>emptyList()
+        );
+    }
+
+    private List<KnowledgeDoc> socialDocs() {
+        return Arrays.asList(
+                new KnowledgeDoc(
+                        "SOC-001",
+                        "social",
+                        "",
+                        "Response and turn-taking support",
+                        "Support weak response and turn-taking with stepwise adult support in interaction.",
+                        "training_strategy",
+                        Arrays.asList("weak_response", "poor_turn_taking"),
+                        Collections.<String>emptyList(),
+                        Arrays.asList("improve_response", "increase_turn_taking"),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Arrays.asList("improve_response", "increase_turn_taking"),
+                        Collections.singletonList("interaction"),
+                        Collections.singletonList("therapist"),
+                        9,
+                        "test"
+                ),
+                new KnowledgeDoc(
+                        "SOC-002",
+                        "social",
+                        "",
+                        "Peer routine generalization",
+                        "Generalization in peer interaction and daily routines needs repeated practice in group games.",
+                        "generalization_strategy",
+                        Collections.singletonList("weak_generalization"),
+                        Arrays.asList("daily_interaction", "peer_interaction"),
+                        Collections.singletonList("improve_social_generalization"),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.singletonList("social_generalization"),
+                        Collections.singletonList("interaction"),
+                        Collections.singletonList("therapist"),
+                        5,
+                        "test"
+                ),
+                new KnowledgeDoc(
+                        "SOC-003",
+                        "social",
+                        "",
+                        "Family coaching",
+                        "Coach caregivers to use short daily routines and supported peer practice at home.",
+                        "home_guidance",
+                        Collections.singletonList("prompt_dependent_interaction"),
+                        Collections.<String>emptyList(),
+                        Collections.singletonList("improve_social_generalization"),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.<String>emptyList(),
+                        Collections.singletonList("core_social_support"),
+                        Collections.singletonList("daily"),
+                        Collections.singletonList("family"),
+                        4,
                         "test"
                 )
         );

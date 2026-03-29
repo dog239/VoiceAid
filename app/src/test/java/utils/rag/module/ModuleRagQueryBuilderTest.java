@@ -139,6 +139,53 @@ public class ModuleRagQueryBuilderTest {
         assertFalse(queryJson.contains("address road 1"));
     }
 
+    @Test
+    public void buildSocialQuery_shouldExtractProblemTagsAndScenarioTags() throws Exception {
+        RagQuery query = ModuleRagQueryBuilder.build("social", socialModuleInput());
+
+        assertNotNull(query);
+        assertTrue(query.problemTags.contains("weak_response"));
+        assertTrue(query.problemTags.contains("poor_turn_taking"));
+        assertTrue(query.scenarioTags.contains("daily_interaction"));
+        assertTrue(query.scenarioTags.contains("peer_interaction"));
+    }
+
+    @Test
+    public void buildSocialQuery_shouldExtractInteractionGoals() throws Exception {
+        RagQuery query = ModuleRagQueryBuilder.build("social", socialModuleInput());
+
+        assertTrue(query.interactionGoals.contains("improve_response"));
+        assertTrue(query.interactionGoals.contains("increase_turn_taking"));
+        assertTrue(query.interactionGoals.contains("improve_social_generalization"));
+    }
+
+    @Test
+    public void buildSocialQuery_shouldHandleMergedSummaryWithoutCrash() throws Exception {
+        JSONObject moduleInput = new JSONObject()
+                .put("moduleType", "social")
+                .put("moduleEvaluations", new JSONObject().put("summary", new JSONObject()));
+
+        RagQuery query = ModuleRagQueryBuilder.build("social", moduleInput);
+
+        assertNotNull(query);
+        assertNotNull(query.problemTags);
+        assertNotNull(query.scenarioTags);
+        assertNotNull(query.interactionGoals);
+        assertNotNull(query.supportingSignals);
+    }
+
+    @Test
+    public void buildSocialQuery_shouldNotLeakPrivacyFields() throws Exception {
+        JSONObject input = socialModuleInput();
+        input.put("chiefComplaint", "call 13800138000 at home");
+
+        RagQuery query = ModuleRagQueryBuilder.build("social", input);
+        String queryJson = query.toJson().toString();
+
+        assertFalse(queryJson.contains("13800138000"));
+        assertFalse(queryJson.contains("chiefComplaint"));
+    }
+
     private JSONObject articulationModuleInput() throws Exception {
         JSONObject summary = new JSONObject();
         summary.put("intelligibility", "moderate");
@@ -216,6 +263,45 @@ public class ModuleRagQueryBuilderTest {
 
         return new JSONObject()
                 .put("moduleType", "vocabulary")
+                .put("moduleEvaluations", new JSONObject().put("summary", summary));
+    }
+
+    private JSONObject socialModuleInput() throws Exception {
+        JSONObject summary = new JSONObject()
+                .put("overallLevel", "mixed_profile_with_partly_established_social_skills")
+                .put("focusAbilities", new JSONArray()
+                        .put("response to social bids is weak")
+                        .put("needs prompts to enter interaction"))
+                .put("unstableAbilities", new JSONArray()
+                        .put("turn-taking is unstable in peer play")
+                        .put("generalization across daily routines is limited"))
+                .put("homeGuidanceDirections", new JSONArray()
+                        .put("daily routines with caregiver support")
+                        .put("peer play and group routines"))
+                .put("groupDetails", new JSONArray()
+                        .put(new JSONObject()
+                                .put("goalDirection", "prioritize response, turn-taking, and peer interaction")
+                                .put("trainingLevel", "peer interaction and social routines")
+                                .put("homeGuidanceDirection", "daily routine practice with caregiver support")))
+                .put("smartGoalSeeds", new JSONArray()
+                        .put(new JSONObject().put("ability", "increase social response"))
+                        .put(new JSONObject().put("ability", "improve generalization in peer play")))
+                .put("measuredItems", new JSONArray()
+                        .put(new JSONObject()
+                                .put("label", "response to adult")
+                                .put("focus", "daily interaction")
+                                .put("content", "needs support in familiar routine"))
+                        .put(new JSONObject()
+                                .put("label", "peer turn-taking")
+                                .put("focus", "peer interaction")
+                                .put("content", "unstable in group game")))
+                .put("scoreBreakdown", new JSONObject()
+                        .put("score0", 3)
+                        .put("score1", 2))
+                .put("measuredGroups", new JSONArray().put(2).put(3));
+
+        return new JSONObject()
+                .put("moduleType", "social")
                 .put("moduleEvaluations", new JSONObject().put("summary", summary));
     }
 }
