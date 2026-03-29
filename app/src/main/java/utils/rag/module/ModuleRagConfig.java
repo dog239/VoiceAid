@@ -11,12 +11,18 @@ public final class ModuleRagConfig {
     }
 
     public static boolean isEnabledFor(String moduleType) {
-        return ENABLE_MODULE_RAG && "articulation".equals(normalize(moduleType));
+        String normalized = normalize(moduleType);
+        return ENABLE_MODULE_RAG
+                && ("articulation".equals(normalized) || "syntax".equals(normalized));
     }
 
     public static String assetPathForModule(String moduleType) {
-        if ("articulation".equals(normalize(moduleType))) {
+        String normalized = normalize(moduleType);
+        if ("articulation".equals(normalized)) {
             return "kb/articulation_kb.json";
+        }
+        if ("syntax".equals(normalized)) {
+            return "kb/syntax_kb.json";
         }
         return "";
     }

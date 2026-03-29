@@ -7,9 +7,11 @@ import java.util.List;
 public class KnowledgeDoc {
     public final String id;
     public final String module;
+    public final String subModule;
     public final String title;
     public final String content;
     public final String knowledgeType;
+    public final List<String> problemTags;
     public final List<String> errorTypes;
     public final List<String> targetSounds;
     public final List<String> targetPositions;
@@ -32,11 +34,45 @@ public class KnowledgeDoc {
                         List<String> audience,
                         int priority,
                         String source) {
+        this(id,
+                module,
+                "",
+                title,
+                content,
+                knowledgeType,
+                Collections.<String>emptyList(),
+                errorTypes,
+                targetSounds,
+                targetPositions,
+                goalTags,
+                applicableStages,
+                audience,
+                priority,
+                source);
+    }
+
+    public KnowledgeDoc(String id,
+                        String module,
+                        String subModule,
+                        String title,
+                        String content,
+                        String knowledgeType,
+                        List<String> problemTags,
+                        List<String> errorTypes,
+                        List<String> targetSounds,
+                        List<String> targetPositions,
+                        List<String> goalTags,
+                        List<String> applicableStages,
+                        List<String> audience,
+                        int priority,
+                        String source) {
         this.id = safe(id);
         this.module = safe(module);
+        this.subModule = safe(subModule);
         this.title = safe(title);
         this.content = safe(content);
         this.knowledgeType = safe(knowledgeType);
+        this.problemTags = immutableCopy(problemTags);
         this.errorTypes = immutableCopy(errorTypes);
         this.targetSounds = immutableCopy(targetSounds);
         this.targetPositions = immutableCopy(targetPositions);

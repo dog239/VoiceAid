@@ -142,6 +142,19 @@ public class ModuleInterventionPromptBuilderTest {
         assertTrue(prompt.contains("\"homeGuidance\""));
     }
 
+    @Test
+    public void buildUserPromptWithRag_shouldKeepSyntaxUnifiedReport() throws Exception {
+        String ragContext = "【检索参考知识】\n【句法理解相关建议】\n[1] 理解策略：支持复杂句理解\n\n【句法表达相关建议】\n[2] 表达策略：支持句式扩展";
+        String prompt = ModuleInterventionPromptBuilder.buildUserPromptWithRag(
+                "syntax",
+                syntaxChildData(),
+                ragContext
+        );
+
+        assertTrue(prompt.contains(ragContext));
+        assertTrue(prompt.contains("one combined syntax assessment module report"));
+    }
+
     private JSONObject articulationChildData() throws Exception {
         JSONObject info = new JSONObject()
                 .put("birthDate", "2020-01-01")
@@ -212,6 +225,28 @@ public class ModuleInterventionPromptBuilderTest {
                 .put("RE", new JSONArray().put(reItem))
                 .put("S", new JSONArray().put(sItem))
                 .put("NWR", new JSONArray().put(nwrItem));
+
+        return new JSONObject()
+                .put("info", info)
+                .put("evaluations", evaluations);
+    }
+
+    private JSONObject syntaxChildData() throws Exception {
+        JSONObject info = new JSONObject()
+                .put("birthDate", "2020-06-01")
+                .put("testDate", "2024-06-01")
+                .put("chiefComplaint", "Syntax comprehension and expression both need support.");
+
+        JSONObject rgItem = new JSONObject()
+                .put("question", "理解复杂句")
+                .put("result", false);
+        JSONObject seItem = new JSONObject()
+                .put("question", "句式表达")
+                .put("result", false);
+
+        JSONObject evaluations = new JSONObject()
+                .put("RG", new JSONArray().put(rgItem))
+                .put("SE", new JSONArray().put(seItem));
 
         return new JSONObject()
                 .put("info", info)

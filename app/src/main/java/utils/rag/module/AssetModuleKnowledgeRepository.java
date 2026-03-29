@@ -105,9 +105,11 @@ public class AssetModuleKnowledgeRepository implements ModuleKnowledgeRepository
         return new KnowledgeDoc(
                 item.optString("id", ""),
                 normalize(item.optString("module", moduleType)),
+                normalize(item.optString("subModule", "")),
                 item.optString("title", ""),
                 item.optString("content", ""),
                 normalize(item.optString("knowledgeType", "")),
+                toStringList(item.optJSONArray("problemTags")),
                 toStringList(item.optJSONArray("errorTypes")),
                 toStringList(item.optJSONArray("targetSounds")),
                 toStringList(item.optJSONArray("targetPositions")),
