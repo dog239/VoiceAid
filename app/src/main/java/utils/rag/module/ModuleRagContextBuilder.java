@@ -21,7 +21,9 @@ public final class ModuleRagContextBuilder {
             if (doc == null || doc.id.trim().isEmpty() || !seen.add(doc.id.trim())) {
                 continue;
             }
-            builder.append("[").append(index++).append("] ")
+            builder.append("[")
+                    .append(index++)
+                    .append("] ")
                     .append(safe(doc.title))
                     .append("：")
                     .append(trim(safe(doc.content), maxContentLength))
@@ -34,7 +36,7 @@ public final class ModuleRagContextBuilder {
     }
 
     private String trim(String value, int maxContentLength) {
-        if (value.length() <= maxContentLength || maxContentLength <= 0) {
+        if (maxContentLength <= 0 || value.length() <= maxContentLength) {
             return value;
         }
         return value.substring(0, maxContentLength).trim() + "...";

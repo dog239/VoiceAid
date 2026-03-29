@@ -45,18 +45,61 @@ public class ModuleRagRetrieverTest {
     private RagQuery query() {
         return new RagQuery(
                 "articulation",
-                Arrays.asList("替代", "家庭训练"),
-                Collections.singletonList("k"),
-                Collections.singletonList("g"),
-                "中度"
+                Arrays.asList("substitution", "omission"),
+                Arrays.asList("k", "s"),
+                Collections.singletonList("initial"),
+                Collections.singletonList("home_practice"),
+                "moderate"
         );
     }
 
     private List<KnowledgeDoc> docs() {
         return Arrays.asList(
-                new KnowledgeDoc("ART-001", "articulation", "替代原则", "先稳定目标音", Arrays.asList("替代", "k"), Collections.singletonList("k"), 10, "test"),
-                new KnowledgeDoc("ART-002", "articulation", "家庭训练", "短时高频家庭练习", Collections.singletonList("家庭训练"), Collections.singletonList("home"), 5, "test"),
-                new KnowledgeDoc("VOC-001", "vocabulary", "词汇", "不应命中", Collections.singletonList("替代"), Collections.singletonList("x"), 10, "test")
+                new KnowledgeDoc(
+                        "ART-001",
+                        "articulation",
+                        "Substitution strategy",
+                        "Stabilize the target sound in initial position first.",
+                        "intervention_principle",
+                        Collections.singletonList("substitution"),
+                        Arrays.asList("k", "g"),
+                        Collections.singletonList("initial"),
+                        Arrays.asList("stabilization", "home_practice"),
+                        Collections.singletonList("word_level"),
+                        Collections.singletonList("therapist"),
+                        10,
+                        "test"
+                ),
+                new KnowledgeDoc(
+                        "ART-002",
+                        "articulation",
+                        "Home practice",
+                        "Use short high-frequency home practice.",
+                        "home_guidance",
+                        Collections.singletonList("omission"),
+                        Collections.singletonList("s"),
+                        Collections.singletonList("initial"),
+                        Collections.singletonList("home_practice"),
+                        Collections.singletonList("word_level"),
+                        Collections.singletonList("family"),
+                        5,
+                        "test"
+                ),
+                new KnowledgeDoc(
+                        "VOC-001",
+                        "vocabulary",
+                        "Vocabulary guidance",
+                        "Should not match.",
+                        "training_strategy",
+                        Collections.singletonList("substitution"),
+                        Collections.singletonList("k"),
+                        Collections.singletonList("initial"),
+                        Collections.singletonList("home_practice"),
+                        Collections.singletonList("word_level"),
+                        Collections.singletonList("family"),
+                        10,
+                        "test"
+                )
         );
     }
 }

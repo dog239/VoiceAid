@@ -14,9 +14,10 @@ public class ModuleRagQueryBuilderTest {
     public void build_shouldExtractProblemTags_forArticulationSummary() throws Exception {
         RagQuery query = ModuleRagQueryBuilder.build("articulation", articulationModuleInput());
 
-        assertTrue(query.problemTags.contains("替代"));
-        assertTrue(query.goalTags.contains("k"));
-        assertTrue(query.weakPoints.contains("g"));
+        assertTrue(query.errorTypes.contains("substitution"));
+        assertTrue(query.targetSounds.contains("k"));
+        assertTrue(query.targetPositions.contains("initial"));
+        assertTrue(query.goalTags.contains("home_practice"));
     }
 
     @Test
@@ -24,9 +25,10 @@ public class ModuleRagQueryBuilderTest {
         RagQuery query = ModuleRagQueryBuilder.build("articulation", new JSONObject());
 
         assertNotNull(query);
-        assertNotNull(query.problemTags);
+        assertNotNull(query.errorTypes);
+        assertNotNull(query.targetSounds);
+        assertNotNull(query.targetPositions);
         assertNotNull(query.goalTags);
-        assertNotNull(query.weakPoints);
     }
 
     @Test
@@ -37,32 +39,32 @@ public class ModuleRagQueryBuilderTest {
         RagQuery query = ModuleRagQueryBuilder.build("articulation", moduleInput);
 
         assertNotNull(query);
-        assertTrue(query.problemTags.isEmpty());
+        assertTrue(query.errorTypes.isEmpty());
     }
 
     @Test
     public void build_shouldNotIncludePrivacyFields() throws Exception {
         JSONObject input = articulationModuleInput();
-        input.put("chiefComplaint", "家长联系电话13800138000，地址测试路");
+        input.put("chiefComplaint", "Parent phone 13800138000 address test road");
 
         RagQuery query = ModuleRagQueryBuilder.build("articulation", input);
         String queryJson = query.toJson().toString();
 
         assertFalse(queryJson.contains("13800138000"));
-        assertFalse(queryJson.contains("地址"));
+        assertFalse(queryJson.contains("address test road"));
     }
 
     private JSONObject articulationModuleInput() throws Exception {
         JSONObject summary = new JSONObject();
-        summary.put("intelligibility", "中度");
+        summary.put("intelligibility", "moderate");
         summary.put("initial_consonant_accuracy", new JSONObject().put("accuracy", "45.00%"));
         summary.put("phonemeSummary", new JSONObject().put("targets", new JSONArray().put("k").put("s")));
         summary.put("articulationProfile", new JSONObject()
                 .put("focusPhonemes", new JSONArray().put("g").put("sh"))
                 .put("unstablePhonemes", new JSONArray().put("s"))
-                .put("wordPositionFocus", new JSONArray().put("词首位置"))
-                .put("wordPositionUnstable", new JSONArray().put("多音节"))
-                .put("phonologyProcesses", new JSONArray().put("替代")));
+                .put("wordPositionFocus", new JSONArray().put("initial"))
+                .put("wordPositionUnstable", new JSONArray().put("multisyllable"))
+                .put("phonologyProcesses", new JSONArray().put("substitution")));
 
         return new JSONObject()
                 .put("moduleType", "articulation")

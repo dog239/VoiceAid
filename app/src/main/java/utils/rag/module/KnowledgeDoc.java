@@ -9,8 +9,13 @@ public class KnowledgeDoc {
     public final String module;
     public final String title;
     public final String content;
-    public final List<String> tags;
-    public final List<String> subtypes;
+    public final String knowledgeType;
+    public final List<String> errorTypes;
+    public final List<String> targetSounds;
+    public final List<String> targetPositions;
+    public final List<String> goalTags;
+    public final List<String> applicableStages;
+    public final List<String> audience;
     public final int priority;
     public final String source;
 
@@ -18,21 +23,37 @@ public class KnowledgeDoc {
                         String module,
                         String title,
                         String content,
-                        List<String> tags,
-                        List<String> subtypes,
+                        String knowledgeType,
+                        List<String> errorTypes,
+                        List<String> targetSounds,
+                        List<String> targetPositions,
+                        List<String> goalTags,
+                        List<String> applicableStages,
+                        List<String> audience,
                         int priority,
                         String source) {
-        this.id = id == null ? "" : id;
-        this.module = module == null ? "" : module;
-        this.title = title == null ? "" : title;
-        this.content = content == null ? "" : content;
-        this.tags = tags == null
-                ? Collections.<String>emptyList()
-                : Collections.unmodifiableList(new ArrayList<>(tags));
-        this.subtypes = subtypes == null
-                ? Collections.<String>emptyList()
-                : Collections.unmodifiableList(new ArrayList<>(subtypes));
+        this.id = safe(id);
+        this.module = safe(module);
+        this.title = safe(title);
+        this.content = safe(content);
+        this.knowledgeType = safe(knowledgeType);
+        this.errorTypes = immutableCopy(errorTypes);
+        this.targetSounds = immutableCopy(targetSounds);
+        this.targetPositions = immutableCopy(targetPositions);
+        this.goalTags = immutableCopy(goalTags);
+        this.applicableStages = immutableCopy(applicableStages);
+        this.audience = immutableCopy(audience);
         this.priority = priority;
-        this.source = source == null ? "" : source;
+        this.source = safe(source);
+    }
+
+    private static String safe(String value) {
+        return value == null ? "" : value;
+    }
+
+    private static List<String> immutableCopy(List<String> source) {
+        return source == null
+                ? Collections.<String>emptyList()
+                : Collections.unmodifiableList(new ArrayList<>(source));
     }
 }

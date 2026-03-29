@@ -13,12 +13,12 @@ public class ModuleInterventionPromptBuilderTest {
         String prompt = ModuleInterventionPromptBuilder.buildUserPrompt("articulation", childData());
 
         assertTrue(prompt.contains("\"moduleType\":\"articulation\""));
-        assertTrue(prompt.contains("输出 schema"));
+        assertTrue(prompt.contains("schema"));
     }
 
     @Test
     public void buildUserPromptWithRag_shouldIncludeRagContext() throws Exception {
-        String ragContext = "【检索参考知识】\n[1] 构音替代错误干预原则：先稳定词首。";
+        String ragContext = "【检索参考知识】\n[1] Substitution principle：Stabilize initial-position targets.";
         String prompt = ModuleInterventionPromptBuilder.buildUserPromptWithRag("articulation", childData(), ragContext);
 
         assertTrue(prompt.contains(ragContext));
@@ -29,10 +29,10 @@ public class ModuleInterventionPromptBuilderTest {
         String prompt = ModuleInterventionPromptBuilder.buildUserPromptWithRag(
                 "articulation",
                 childData(),
-                "【检索参考知识】\n[1] 示例：参考。"
+                "【检索参考知识】\n[1] Example：Reference."
         );
 
-        assertTrue(prompt.contains("输出 schema"));
+        assertTrue(prompt.contains("schema"));
         assertTrue(prompt.contains("\"smartGoal\""));
     }
 
@@ -48,7 +48,7 @@ public class ModuleInterventionPromptBuilderTest {
         JSONObject info = new JSONObject()
                 .put("birthDate", "2020-01-01")
                 .put("testDate", "2024-01-01")
-                .put("chiefComplaint", "构音不清");
+                .put("chiefComplaint", "Articulation is unclear.");
         JSONObject evaluations = new JSONObject();
         evaluations.put("A", new org.json.JSONArray());
 

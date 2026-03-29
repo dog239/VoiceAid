@@ -107,8 +107,13 @@ public class AssetModuleKnowledgeRepository implements ModuleKnowledgeRepository
                 normalize(item.optString("module", moduleType)),
                 item.optString("title", ""),
                 item.optString("content", ""),
-                toStringList(item.optJSONArray("tags")),
-                toStringList(item.optJSONArray("subtypes")),
+                normalize(item.optString("knowledgeType", "")),
+                toStringList(item.optJSONArray("errorTypes")),
+                toStringList(item.optJSONArray("targetSounds")),
+                toStringList(item.optJSONArray("targetPositions")),
+                toStringList(item.optJSONArray("goalTags")),
+                toStringList(item.optJSONArray("applicableStages")),
+                toStringList(item.optJSONArray("audience")),
                 item.optInt("priority", 0),
                 item.optString("source", "")
         );

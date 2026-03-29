@@ -21,6 +21,7 @@ public final class ModuleRagRetriever {
             RagHit hit = score(query, doc);
             if (hit != null && hit.score > 0) {
                 hits.add(hit);
+                System.out.println("ModuleRagRetriever docId=" + doc.id + " score=" + hit.score);
             }
         }
 
@@ -43,58 +44,45 @@ public final class ModuleRagRetriever {
     }
 
     private RagHit score(RagQuery query, KnowledgeDoc doc) {
-        LinkedHashSet<String> matchedTags = new LinkedHashSet<>();
+        LinkedHashSet<String> matched = new LinkedHashSet<>();
         double score = 0.0d;
 
-        for (String tag : safeList(doc.tags)) {
-            String normalizedTag = normalize(tag);
-            if (contains(query.problemTags, normalizedTag)) {
-                score += 3.0d;
-                matchedTags.add(normalizedTag);
-            }
-            if (contains(query.goalTags, normalizedTag)) {
-                score += 2.5d;
-                matchedTags.add(normalizedTag);
-            }
-            if (contains(query.weakPoints, normalizedTag)) {
-                score += 2.0d;
-                matchedTags.add(normalizedTag);
-            }
-            if (!query.severity.isEmpty() && query.severity.equals(normalizedTag)) {
-                score += 1.5d;
-                matchedTags.add(normalizedTag);
-            }
-        }
-
-        for (String subtype : safeList(doc.subtypes)) {
-            String normalizedSubtype = normalize(subtype);
-            if (contains(query.goalTags, normalizedSubtype) || contains(query.weakPoints, normalizedSubtype)) {
-                score += 1.0d;
-                matchedTags.add(normalizedSubtype);
-            }
-        }
-
+        score += addMatches(matched, query.errorTypes, doc.errorTypes, 5.0d, "error:");
+        score += addMatches(matched, query.targetSounds, doc.targetSounds, 3.0d, "sound:");
+        score += addMatches(matched, query.targetPositions, doc.targetPositions, 2.0d, "position:");
+        score += addMatches(matched, query.goalTags, doc.goalTags, 1.5d, "goal:");
         score += Math.max(0, doc.priority) * 0.1d;
-        if (matchedTags.isEmpty()) {
+
+        if (matched.isEmpty()) {
             return null;
         }
-        return new RagHit(doc, score, new ArrayList<>(matchedTags));
+        return new RagHit(doc, score, new ArrayList<>(matched));
     }
 
-    private boolean contains(List<String> values, String expected) {
-        if (values == null || expected == null || expected.trim().isEmpty()) {
-            return false;
+    private double addMatches(LinkedHashSet<String> matched,
+                              List<String> queryValues,
+                              List<String> docValues,
+                              double weight,
+                              String prefix) {
+        if (queryValues == null || queryValues.isEmpty() || docValues == null || docValues.isEmpty()) {
+            return 0.0d;
         }
-        for (String value : values) {
-            if (normalize(value).equals(expected)) {
-                return true;
+        double score = 0.0d;
+        for (String queryValue : queryValues) {
+            String normalizedQuery = normalize(queryValue);
+            if (normalizedQuery.isEmpty()) {
+                continue;
+            }
+            for (String docValue : docValues) {
+                String normalizedDoc = normalize(docValue);
+                if (!normalizedDoc.isEmpty() && normalizedDoc.equals(normalizedQuery)) {
+                    score += weight;
+                    matched.add(prefix + normalizedDoc);
+                    break;
+                }
             }
         }
-        return false;
-    }
-
-    private List<String> safeList(List<String> values) {
-        return values == null ? Collections.<String>emptyList() : values;
+        return score;
     }
 
     private String normalize(String value) {

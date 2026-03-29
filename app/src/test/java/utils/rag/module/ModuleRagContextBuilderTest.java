@@ -13,10 +13,10 @@ public class ModuleRagContextBuilderTest {
 
     @Test
     public void build_shouldFormatHitsAsContext() {
-        String context = builder.build(Arrays.asList(hit("ART-001", "构音替代错误干预原则", "先稳定词首，再扩展到短语。")));
+        String context = builder.build(Arrays.asList(hit("ART-001", "Substitution principle", "Stabilize initial-position target sounds first.")));
 
         assertTrue(context.contains("【检索参考知识】"));
-        assertTrue(context.contains("[1] 构音替代错误干预原则"));
+        assertTrue(context.contains("[1] Substitution principle"));
     }
 
     @Test
@@ -27,8 +27,8 @@ public class ModuleRagContextBuilderTest {
     @Test
     public void build_shouldDeduplicateHits() {
         String context = builder.build(Arrays.asList(
-                hit("ART-001", "标题A", "内容A"),
-                hit("ART-001", "标题A", "内容A")
+                hit("ART-001", "Title A", "Content A"),
+                hit("ART-001", "Title A", "Content A")
         ));
 
         assertEquals(1, context.split("\\[1\\]").length - 1);
@@ -36,16 +36,30 @@ public class ModuleRagContextBuilderTest {
 
     @Test
     public void build_shouldTrimLongContent() {
-        String context = builder.build(Arrays.asList(hit("ART-002", "标题B", repeat("长内容", 80))), 20);
+        String context = builder.build(Arrays.asList(hit("ART-002", "Title B", repeat("LongContent", 20))), 20);
 
         assertTrue(context.contains("..."));
     }
 
     private RagHit hit(String id, String title, String content) {
         return new RagHit(
-                new KnowledgeDoc(id, "articulation", title, content, Collections.singletonList("替代"), Collections.singletonList("k"), 1, "test"),
+                new KnowledgeDoc(
+                        id,
+                        "articulation",
+                        title,
+                        content,
+                        "training_strategy",
+                        Collections.singletonList("substitution"),
+                        Collections.singletonList("k"),
+                        Collections.singletonList("initial"),
+                        Collections.singletonList("stabilization"),
+                        Collections.singletonList("word_level"),
+                        Collections.singletonList("therapist"),
+                        1,
+                        "test"
+                ),
                 1.0d,
-                Collections.singletonList("替代")
+                Collections.singletonList("error:substitution")
         );
     }
 

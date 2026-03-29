@@ -13,61 +13,141 @@ public final class ModuleRagQueryBuilder {
     }
 
     /**
-     * Single-module LLM input contract and retrieval policy:
-     * 1. Current prompt input fields are built from moduleType/moduleTitle/subtypes/ageMonths/chiefComplaint/
-     *    moduleEvaluations(summary + raw measured arrays)/existingModuleReport.
-     * 2. RAG query only uses structured module summary fields that are stable and low-risk:
-     *    articulationProfile.focusPhonemes / unstablePhonemes / phonologyProcesses /
-     *    phonemeSummary.targets / intelligibility / initial_consonant_accuracy.
-     * 3. chiefComplaint, existingModuleReport, name, address, phone, familyMembers and other free text
-     *    are intentionally excluded from retrieval to reduce privacy leakage and noisy matching.
-     * 4. First MVP is articulation-only; other modules return an empty query and keep the old prompt path.
+     * Retrieval input policy for the current single-module articulation flow:
+     * 1. Query only uses stable structured summary fields from moduleEvaluations.summary.
+     * 2. Preferred fields for v2 KB retrieval are errorTypes, targetSounds, targetPositions, goalTags.
+     * 3. Prompt-only fields such as chiefComplaint and existingModuleReport stay out of retrieval.
+     * 4. Privacy-sensitive or free-text fields like name, address, phone and family text never enter query.
      */
     public static RagQuery build(String moduleType, JSONObject moduleInput) {
         String normalizedModuleType = normalize(moduleType);
         if (!"articulation".equals(normalizedModuleType)) {
-            return new RagQuery(normalizedModuleType, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), "");
+            return new RagQuery(normalizedModuleType, empty(), empty(), empty(), empty(), "");
         }
 
-        JSONObject moduleEvaluations = optObject(moduleInput, "moduleEvaluations");
-        JSONObject summary = optObject(moduleEvaluations, "summary");
+        JSONObject summary = optObject(optObject(moduleInput, "moduleEvaluations"), "summary");
         JSONObject phonemeSummary = optObject(summary, "phonemeSummary");
         JSONObject articulationProfile = optObject(summary, "articulationProfile");
 
-        LinkedHashSet<String> problemTags = new LinkedHashSet<>();
-        addAll(problemTags, optStringArray(articulationProfile, "phonologyProcesses"));
-        addAll(problemTags, optStringArray(articulationProfile, "wordPositionFocus"));
-        addAll(problemTags, optStringArray(articulationProfile, "wordPositionUnstable"));
-        addIfMeaningful(problemTags, normalize(summary == null ? "" : summary.optString("intelligibility", "")));
+        LinkedHashSet<String> errorTypes = new LinkedHashSet<>();
+        addAll(errorTypes, normalizeErrorTypes(optStringArray(articulationProfile, "phonologyProcesses")));
+
+        LinkedHashSet<String> targetSounds = new LinkedHashSet<>();
+        addAll(targetSounds, optStringArray(phonemeSummary, "targets"));
+        addAll(targetSounds, optStringArray(articulationProfile, "focusPhonemes"));
+        addAll(targetSounds, optStringArray(articulationProfile, "unstablePhonemes"));
+
+        LinkedHashSet<String> targetPositions = new LinkedHashSet<>();
+        addAll(targetPositions, normalizePositions(optStringArray(articulationProfile, "wordPositionFocus")));
+        addAll(targetPositions, normalizePositions(optStringArray(articulationProfile, "wordPositionUnstable")));
 
         LinkedHashSet<String> goalTags = new LinkedHashSet<>();
-        addAll(goalTags, optStringArray(phonemeSummary, "targets"));
+        if (!targetSounds.isEmpty()) {
+            goalTags.add("stabilization");
+        }
+        if (!targetPositions.isEmpty()) {
+            goalTags.add("carryover");
+        }
+        if (containsMultisyllable(summary, articulationProfile)) {
+            goalTags.add("multisyllable");
+        }
+        goalTags.add("home_practice");
 
-        LinkedHashSet<String> weakPoints = new LinkedHashSet<>();
-        addAll(weakPoints, optStringArray(articulationProfile, "focusPhonemes"));
-        addAll(weakPoints, optStringArray(articulationProfile, "unstablePhonemes"));
-
-        String severity = buildSeverity(summary);
         return new RagQuery(
                 normalizedModuleType,
-                new ArrayList<>(problemTags),
+                new ArrayList<>(errorTypes),
+                new ArrayList<>(targetSounds),
+                new ArrayList<>(targetPositions),
                 new ArrayList<>(goalTags),
-                new ArrayList<>(weakPoints),
-                severity
+                buildSeverity(summary)
         );
+    }
+
+    private static List<String> empty() {
+        return new ArrayList<>();
     }
 
     private static String buildSeverity(JSONObject summary) {
         if (summary == null) {
             return "";
         }
-        JSONObject accuracy = optObject(summary, "initial_consonant_accuracy");
-        String accuracyText = normalize(accuracy == null ? "" : accuracy.optString("accuracy", ""));
         String intelligibility = normalize(summary.optString("intelligibility", ""));
         if (!intelligibility.isEmpty()) {
             return intelligibility;
         }
-        return accuracyText;
+        JSONObject accuracy = optObject(summary, "initial_consonant_accuracy");
+        return normalize(accuracy == null ? "" : accuracy.optString("accuracy", ""));
+    }
+
+    private static boolean containsMultisyllable(JSONObject summary, JSONObject articulationProfile) {
+        return containsKeyword(optStringArray(articulationProfile, "wordPositionFocus"), "multi")
+                || containsKeyword(optStringArray(articulationProfile, "wordPositionUnstable"), "multi")
+                || containsKeyword(optStringArray(articulationProfile, "wordPositionFocus"), "syll")
+                || containsKeyword(optStringArray(articulationProfile, "wordPositionUnstable"), "syll")
+                || containsKeyword(optStringArray(summary, "focus"), "multi")
+                || containsKeyword(optStringArray(summary, "focus"), "syll");
+    }
+
+    private static boolean containsKeyword(List<String> values, String keyword) {
+        if (values == null || keyword == null || keyword.trim().isEmpty()) {
+            return false;
+        }
+        for (String value : values) {
+            if (normalize(value).contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<String> normalizeErrorTypes(List<String> source) {
+        List<String> out = new ArrayList<>();
+        if (source == null) {
+            return out;
+        }
+        for (String item : source) {
+            String normalized = normalize(item);
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            if (normalized.contains("substitution") || normalized.contains("replace")) {
+                out.add("substitution");
+            } else if (normalized.contains("omission") || normalized.contains("delete")) {
+                out.add("omission");
+            } else if (normalized.contains("distortion")) {
+                out.add("distortion");
+            } else if (normalized.contains("instability") || normalized.contains("inconsistent")) {
+                out.add("instability");
+            } else {
+                out.add(normalized);
+            }
+        }
+        return out;
+    }
+
+    private static List<String> normalizePositions(List<String> source) {
+        List<String> out = new ArrayList<>();
+        if (source == null) {
+            return out;
+        }
+        for (String item : source) {
+            String normalized = normalize(item);
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            if (normalized.contains("initial")) {
+                out.add("initial");
+            } else if (normalized.contains("medial") || normalized.contains("middle")) {
+                out.add("medial");
+            } else if (normalized.contains("final") || normalized.contains("ending")) {
+                out.add("final");
+            } else if (normalized.contains("multi") || normalized.contains("syll")) {
+                out.add("multisyllable");
+            } else {
+                out.add(normalized);
+            }
+        }
+        return out;
     }
 
     private static List<String> optStringArray(JSONObject source, String key) {
@@ -94,19 +174,11 @@ public final class ModuleRagQueryBuilder {
             return;
         }
         for (String value : values) {
-            addIfMeaningful(target, value);
+            String normalized = normalize(value);
+            if (!normalized.isEmpty()) {
+                target.add(normalized);
+            }
         }
-    }
-
-    private static void addIfMeaningful(LinkedHashSet<String> target, String value) {
-        String normalized = normalize(value);
-        if (normalized.isEmpty()) {
-            return;
-        }
-        if (normalized.contains("138") || normalized.contains("电话") || normalized.contains("地址")) {
-            return;
-        }
-        target.add(normalized);
     }
 
     private static String normalize(String value) {
