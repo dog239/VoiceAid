@@ -129,7 +129,7 @@ public class a extends evaluation {
     private static final int TAG_ERROR_TYPE_LISTENER = R.id.tag_error_type_listener;
     private static final int TAG_INDUCIBLE_LISTENER = R.id.tag_inducible_listener;
 
-    private static final float DISTORTION_THRESHOLD = 60.0f;
+    private static final float DISTORTION_THRESHOLD = 90.0f;
 
     public a(int num, String target, String progress, String target_tone1, String target_tone2, bean.audio audio, String time) {
         super(num);
