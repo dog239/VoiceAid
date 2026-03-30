@@ -29,6 +29,7 @@ import utils.AudioRecorder;
 import utils.ImageUrls;
 import utils.ResultContext;
 import utils.SADAEvaluator;
+import utils.IflytekEvaluator;
 import utils.testcontext;
 
 /**
@@ -127,6 +128,8 @@ public class a extends evaluation {
     private static final int TAG_PHONOLOGY_PROCESS_LISTENER = R.id.tag_phonology_process_listener;
     private static final int TAG_ERROR_TYPE_LISTENER = R.id.tag_error_type_listener;
     private static final int TAG_INDUCIBLE_LISTENER = R.id.tag_inducible_listener;
+
+    private static final float DISTORTION_THRESHOLD = 60.0f;
 
     public a(int num, String target, String progress, String target_tone1, String target_tone2, bean.audio audio, String time) {
         super(num);
@@ -735,6 +738,16 @@ public class a extends evaluation {
             }
             // 自动计算错误类型（替代/增加/减少），一致时保持空值
             errorType = SADAEvaluator.computeAutoErrorType(targetWord, answerPhonology);
+            if (errorType == null && SADAEvaluator.shouldCheckDistortion(targetWord, answerPhonology) && audio != null) {
+                String referenceText = buildTargetHanzi();
+                String audioPath = audio.getPath();
+                IflytekEvaluator.evaluateFromAudio(v.getContext(), referenceText, audioPath,
+                        (score, raw, err) -> {
+                            if (score != null && score < DISTORTION_THRESHOLD) {
+                                errorType = "扭曲";
+                            }
+                        });
+            }
             nextPage(position, testcontext.getInstance().getCount(), testcontext.getInstance().getLengths());
         });
 

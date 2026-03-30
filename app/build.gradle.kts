@@ -85,6 +85,7 @@ dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
     implementation("com.itextpdf:itextpdf:5.5.13.2")
     implementation("com.itextpdf:itext-asian:5.2.0")
+    implementation(files("libs/Msc.jar"))
 }
 
 tasks.withType<JavaCompile>().configureEach {

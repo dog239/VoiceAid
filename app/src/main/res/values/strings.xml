@@ -143,4 +143,5 @@
 频率与时长建议应在合理范围内，并给出复评周期（例如每周2-5次、每次5-30分钟、8-12周复评）。
 硬约束：只输出严格合法JSON；key 保持英文不变；value 为简体中文临床表述；允许缩写 PST/PN/NWR/SLP/ASD/ADHD/SSD/DLD；不得出现英文完整句子；不含个人可识别信息。
 若年龄缺失，age_months=0，并在 notes_for_therapist 提示需人工确认。</string>
+    <string name="app_id">b7a2375e</string>
 </resources>

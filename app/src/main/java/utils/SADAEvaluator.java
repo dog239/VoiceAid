@@ -5,7 +5,8 @@ import java.util.List;
 import bean.a.CharacterPhonology;
 
 /**
- * 构音测评错误类型自动判别工具类
+ * 构音测评错误类型自动判别工具类，仅测评替代/增加/减少的文本规则判断
+ * 扭曲由讯飞测评接口判断
  */
 public final class SADAEvaluator {
     private SADAEvaluator() {
@@ -29,6 +30,13 @@ public final class SADAEvaluator {
         return "替代";
     }
 
+    public static boolean shouldCheckDistortion(List<CharacterPhonology> targetWord,
+                                                List<CharacterPhonology> answerPhonology) {
+        String targetJoined = buildJoinedPhonologyString(targetWord);
+        String answerJoined = buildJoinedPhonologyString(answerPhonology);
+        return targetJoined.equals(answerJoined);
+    }
+
     private static String buildJoinedPhonologyString(List<CharacterPhonology> list) {
         if (list == null || list.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
@@ -46,4 +54,3 @@ public final class SADAEvaluator {
         return s == null ? "" : s;
     }
 }
-
