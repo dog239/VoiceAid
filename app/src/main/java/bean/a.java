@@ -3,6 +3,7 @@ package bean;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -739,11 +740,12 @@ public class a extends evaluation {
             // 自动计算错误类型（替代/增加/减少），一致时保持空值
             errorType = SADAEvaluator.computeAutoErrorType(targetWord, answerPhonology);
             if (errorType == null && SADAEvaluator.shouldCheckDistortion(targetWord, answerPhonology) && audio != null) {
-                android.util.Log.d("IflytekEvaluator", "trigger evaluate: target=" + buildTargetHanzi() + ", audio=" + audio.getPath());
+                Log.d("IflytekEvaluator", "trigger evaluate: target=" + buildTargetHanzi() + ", audio=" + audio.getPath());
                 String referenceText = buildTargetHanzi();
                 String audioPath = audio.getPath();
                 IflytekEvaluator.evaluateFromAudio(v.getContext(), referenceText, audioPath,
                         (score, raw, err) -> {
+                            Log.d("IflytekEvaluator", "score=" + score);
                             if (score != null && score < DISTORTION_THRESHOLD) {
                                 errorType = "扭曲";
                             }
