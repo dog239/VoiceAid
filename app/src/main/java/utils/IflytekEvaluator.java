@@ -38,27 +38,35 @@ public final class IflytekEvaluator {
         String params = "appid=" + appId;
         SpeechUtility.createUtility(context.getApplicationContext(), params);
         initialized = true;
+        Log.d(TAG, "init ok: appIdLen=" + appId.length());
     }
 
     public static void evaluateFromAudio(Context context,
                                          String referenceText,
                                          String audioPath,
                                          ScoreCallback callback) {
+        Log.d(TAG, "evaluateFromAudio: refLen=" + (referenceText == null ? 0 : referenceText.length())
+                + ", audioPath=" + audioPath);
+        Log.d(TAG, "evaluateFromAudio: initialized=" + initialized);
         if (context == null) {
+            Log.w(TAG, "return: context is null");
             if (callback != null) callback.onScore(null, null, "context is null");
             return;
         }
         if (TextUtils.isEmpty(referenceText)) {
+            Log.w(TAG, "return: referenceText is empty");
             if (callback != null) callback.onScore(null, null, "referenceText is empty");
             return;
         }
         if (TextUtils.isEmpty(audioPath) || !new File(audioPath).exists()) {
+            Log.w(TAG, "return: audioPath missing");
             if (callback != null) callback.onScore(null, null, "audioPath missing");
             return;
         }
 
         SpeechEvaluator evaluator = SpeechEvaluator.createEvaluator(context.getApplicationContext(), null);
         if (evaluator == null) {
+            Log.w(TAG, "return: SpeechEvaluator is null");
             if (callback != null) callback.onScore(null, null, "SpeechEvaluator is null");
             return;
         }
@@ -72,16 +80,20 @@ public final class IflytekEvaluator {
             public void onResult(EvaluatorResult result, boolean isLast) {
                 if (result == null) return;
                 lastResult = result.getResultString();
+                Log.d(TAG, "onResult: isLast=" + isLast + ", resultLen=" + (lastResult == null ? 0 : lastResult.length()));
                 if (!isLast) return;
                 Float score = parseTotalScore(lastResult);
+                Log.d(TAG, "onResult: totalScore=" + score);
                 if (callback != null) callback.onScore(score, lastResult, null);
                 evaluator.destroy();
+                Log.d(TAG, "evaluate complete");
             }
 
             @Override
             public void onError(SpeechError error) {
                 if (callback != null) {
                     String msg = error == null ? "unknown" : (error.getErrorCode() + ":" + error.getErrorDescription());
+                    Log.w(TAG, "onError: " + msg);
                     callback.onScore(null, lastResult, msg);
                 }
                 evaluator.destroy();
@@ -89,10 +101,12 @@ public final class IflytekEvaluator {
 
             @Override
             public void onBeginOfSpeech() {
+                Log.d(TAG, "onBeginOfSpeech");
             }
 
             @Override
             public void onEndOfSpeech() {
+                Log.d(TAG, "onEndOfSpeech");
             }
 
             @Override
@@ -104,27 +118,33 @@ public final class IflytekEvaluator {
             }
         });
 
+        Log.d(TAG, "startEvaluating ret=" + ret);
         if (ret != 0) {
             evaluator.destroy();
             if (callback != null) callback.onScore(null, null, "startEvaluating failed: " + ret);
             return;
         }
 
-        byte[] audioBytes = AudioCodecConverter.readAllBytes(audioPath);
+        Log.d(TAG, "convert audio begin");
+        byte[] audioBytes = AudioCodecConverter.decodeAmrToWavBytes(audioPath);
         if (audioBytes == null || audioBytes.length == 0) {
+            Log.w(TAG, "audio convert failed or empty");
             evaluator.destroy();
             if (callback != null) callback.onScore(null, null, "audio bytes empty");
             return;
         }
+        Log.d(TAG, "audioBytes=" + audioBytes.length);
         evaluator.writeAudio(audioBytes, 0, audioBytes.length);
         evaluator.stopEvaluating();
     }
 
     private static void configureEvaluator(SpeechEvaluator evaluator) {
+        Log.d(TAG, "configureEvaluator");
         evaluator.setParameter(SpeechConstant.LANGUAGE, "zh_cn");
         evaluator.setParameter(SpeechConstant.ISE_CATEGORY, "read_word");
         evaluator.setParameter(SpeechConstant.RESULT_LEVEL, "complete");
         evaluator.setParameter(SpeechConstant.TEXT_ENCODING, "utf-8");
+        evaluator.setParameter(SpeechConstant.AUDIO_FORMAT, "wav");
         evaluator.setParameter("ise_unite", "1");
         evaluator.setParameter("rst", "entirety");
         evaluator.setParameter("extra_ability", "syll_phone_err_msg;pitch;multi_dimension");

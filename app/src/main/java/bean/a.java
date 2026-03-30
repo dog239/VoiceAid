@@ -739,6 +739,7 @@ public class a extends evaluation {
             // 自动计算错误类型（替代/增加/减少），一致时保持空值
             errorType = SADAEvaluator.computeAutoErrorType(targetWord, answerPhonology);
             if (errorType == null && SADAEvaluator.shouldCheckDistortion(targetWord, answerPhonology) && audio != null) {
+                android.util.Log.d("IflytekEvaluator", "trigger evaluate: target=" + buildTargetHanzi() + ", audio=" + audio.getPath());
                 String referenceText = buildTargetHanzi();
                 String audioPath = audio.getPath();
                 IflytekEvaluator.evaluateFromAudio(v.getContext(), referenceText, audioPath,

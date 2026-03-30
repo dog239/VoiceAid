@@ -18,6 +18,7 @@ import com.example.CCLEvaluation.startActivity;
 
 import utils.ImageUrls;
 import utils.NetInteractUtils;
+import utils.IflytekEvaluator;
 
 public class LoginActivity extends AppCompatActivity{
     //声明控件
@@ -35,6 +36,7 @@ public class LoginActivity extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        IflytekEvaluator.init(this, getString(R.string.app_id));
         //找到控件
         mBtnLogin = findViewById(R.id.btn_loginrr);
         mBtnRegister = findViewById(R.id.btn_regs);
