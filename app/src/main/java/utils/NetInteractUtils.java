@@ -27,17 +27,17 @@ import okhttp3.Response;
  * <network-security-config>
  *     <base-config cleartextTrafficPermitted="true" />
  * </network-security-config>
- *在Manifest中添加：
- *android:networkSecurityConfig="@xml/network"
- *需添加网络权限
+ * 在Manifest中添加：
+ * android:networkSecurityConfig="@xml/network"
+ * 需添加网络权限
  * <uses-permission android:name="android.permission.INTERNET" />
  */
 
 /**
+ * 远程服务器 IP 端口如下，使用 Nginx 反向代理
  * http://123.57.104.101/voiceaid
- * 以下为NetInteractUtils 2.3版本, 实现用户注销，管理员删除用户等......持续更新
- * 添加管理员获取所有普通用户id(除了管理员), 修改删除用户需要管理员验证
- * 获取全部测评分页，用户模块选择
+ * 以下为 NetInteractUtils 2.0 版本, 实现用户验证码登录、注销等，持续更新
+ * 服务端采用 FastAPI 框架，接口设计遵循 RESTful 风格，返回 JSON 格式数据，包含状态码和消息
  */
 
 public class NetInteractUtils {
