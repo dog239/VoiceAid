@@ -32,14 +32,12 @@ public final class OverallInterventionReportBuilder {
         }
         for (String moduleType : MODULE_ORDER) {
             JSONObject normalizedGuide = normalizeGuide(childJson, moduleType);
-            if (normalizedGuide == null) {
-                return false;
-            }
-            if (safeText(normalizedGuide.optString("overallSummary", "")).isEmpty()) {
-                return false;
+            if (normalizedGuide != null
+                    && !safeText(normalizedGuide.optString("overallSummary", "")).isEmpty()) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     public static JSONObject build(JSONObject childJson) {

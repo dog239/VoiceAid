@@ -24,6 +24,7 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
     }
 
     public static class FamilyMember {
+        public final long itemId = System.nanoTime();
         public String memberName = "";
         public String relation = "";
         public String memberPhone = "";
@@ -46,6 +47,7 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
     public FamilyMemberAdapter(List<FamilyMember> members, OnMemberDeleteListener deleteListener) {
         this.members = members != null ? members : new ArrayList<>();
         this.deleteListener = deleteListener;
+        setHasStableIds(true);
     }
 
     public void setReadOnly(boolean readOnly) {
@@ -151,6 +153,14 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
     @Override
     public int getItemCount() {
         return members.size();
+    }
+
+    @Override
+    public long getItemId(int position) {
+        if (position < 0 || position >= members.size()) {
+            return RecyclerView.NO_ID;
+        }
+        return members.get(position).itemId;
     }
 
     class MemberViewHolder extends RecyclerView.ViewHolder {

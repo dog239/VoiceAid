@@ -76,17 +76,6 @@
                 android:textColor="#64748B"
                 android:textSize="14sp" />
 
-            <TextView
-                android:id="@+id/date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="@font/zcool_kuaile"
-                android:text="2023-10-25"
-                android:visibility="gone"
-                android:textColor="#94A3B8"
-                android:textSize="12sp"
-                android:textStyle="italic" />
         </LinearLayout>
 
         <ImageView
