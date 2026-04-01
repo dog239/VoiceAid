@@ -219,6 +219,12 @@ public class PdfGenerator extends evmenuactivity{
             if (data == null) {
                 data = dataManager.getInstance().loadData(fname);
             }
+            JSONObject info = data.optJSONObject("info");
+            JSONObject evaluations = data.optJSONObject("evaluations");
+            if (evaluations == null) {
+                evaluations = new JSONObject();
+            }
+
             String moduleKey = normalizeModuleKey(evaluationModuleOverride.get());
             boolean includeAll = moduleKey.isEmpty();
             boolean showArticulation = includeAll || "articulation".equals(moduleKey);
@@ -227,18 +233,21 @@ public class PdfGenerator extends evmenuactivity{
             boolean showSyntax = includeAll || "syntax".equals(moduleKey);
             boolean showSocial = includeAll || "social".equals(moduleKey);
 
-            JSONObject info = data.getJSONObject("info");
-            name = info.getString("name");
-            c = info.getString("class");
-            serialNumber = info.getString("serialNumber");
-            birthDate = info.getString("birthDate");
-            testData = info.getString("testDate");
-            testLocation = info.getString("testLocation");
-            examiner = info.getString("examiner");
+            name = info == null ? "" : info.optString("name", "");
+            c = info == null ? "" : info.optString("class", "");
+            serialNumber = info == null ? "" : info.optString("serialNumber", "");
+            birthDate = info == null ? "" : info.optString("birthDate", "");
+            testData = info == null ? "" : info.optString("testDate", "");
+            testLocation = info == null ? "" : info.optString("testLocation", "");
+            examiner = info == null ? "" : info.optString("examiner", "");
+
 //  A
             String[] characs = ImageUrls.A_characs;
             int[] score = new int[21];
-            JSONArray jsonArrayA = data.getJSONObject("evaluations").getJSONArray("A");
+            JSONArray jsonArrayA = evaluations.optJSONArray("A");
+            if (jsonArrayA == null) {
+                jsonArrayA = new JSONArray();
+            }
             int num[] = ImageUrls.A_nums;
             if (jsonArrayA.length() == 0) {
                 for (int i = 0; i < num.length; ++i) {
@@ -246,20 +255,24 @@ public class PdfGenerator extends evmenuactivity{
                 }
             } else {
                 for (int i = 0; i < jsonArrayA.length(); i++) {
-                    JSONObject object = jsonArrayA.getJSONObject(i);
-                    if (object.has("time") && !object.isNull("time") && !object.get("time").equals("null")) {
-                        if (!object.getString("target_tone1").equals("")) {
-                            String originalString = object.getString("target_tone1");
+                    JSONObject object = jsonArrayA.optJSONObject(i);
+                    if (object == null) {
+                        continue;
+                    }
+                    String time = object.optString("time", "");
+                    if (!time.isEmpty() && !"null".equals(time)) {
+                        String tone1 = object.optString("target_tone1", "");
+                        if (!tone1.isEmpty()) {
                             for (int j = 0; j < characs.length; j++) {
-                                if (characs[j].equals(originalString)) {
+                                if (characs[j].equals(tone1)) {
                                     score[j]++;
                                 }
                             }
                         }
-                        if (!object.getString("target_tone2").equals("")) {
-                            String originalString = object.getString("target_tone2");
+                        String tone2 = object.optString("target_tone2", "");
+                        if (!tone2.isEmpty()) {
                             for (int j = 0; j < characs.length; j++) {
-                                if (characs[j].equals(originalString)) {
+                                if (characs[j].equals(tone2)) {
                                     score[j]++;
                                 }
                             }
@@ -268,17 +281,23 @@ public class PdfGenerator extends evmenuactivity{
                 }
                 for (int i = 0; i < num.length; ++i) {
                     double lentha = num[i];
-                    double scorea = (score[i] / lentha) * 100;
+                    double scorea = lentha == 0 ? 0 : (score[i] / lentha) * 100;
                     scoreA[i] = String.format("%.2f%%", scorea);
                 }
             }
 //        E
             double counte = 0;
-            JSONArray jsonArrayE = data.getJSONObject("evaluations").getJSONArray("E");
+            JSONArray jsonArrayE = evaluations.optJSONArray("E");
+            if (jsonArrayE == null) {
+                jsonArrayE = new JSONArray();
+            }
             for (int i = 0; i < jsonArrayE.length(); i++) {
-                JSONObject object = jsonArrayE.getJSONObject(i);
-                if (object.has("result") && !object.isNull("result") && !object.get("result").equals("null")) {
-                    if (object.getBoolean("result")) {
+                JSONObject object = jsonArrayE.optJSONObject(i);
+                if (object == null) {
+                    continue;
+                }
+                if (object.has("result") && !object.isNull("result")) {
+                    if (object.optBoolean("result", false)) {
                         counte++;
                     }
                 }
@@ -294,14 +313,17 @@ public class PdfGenerator extends evmenuactivity{
 
 //RE (使用EV模块数据，词汇理解测试)
             double countre = 0;
-            JSONArray jsonArrayRE = data.getJSONObject("evaluations").optJSONArray("EV");
+            JSONArray jsonArrayRE = evaluations.optJSONArray("EV");
             if (jsonArrayRE == null) {
                 jsonArrayRE = new JSONArray();
             }
             for (int i = 0; i < jsonArrayRE.length(); i++) {
-                JSONObject object = jsonArrayRE.getJSONObject(i);
-                if (object.has("result") && !object.isNull("result") && !object.get("result").equals("null")) {
-                    if (object.getBoolean("result")) {
+                JSONObject object = jsonArrayRE.optJSONObject(i);
+                if (object == null) {
+                    continue;
+                }
+                if (object.has("result") && !object.isNull("result")) {
+                    if (object.optBoolean("result", false)) {
                         countre++;
                     }
                 }
@@ -315,11 +337,18 @@ public class PdfGenerator extends evmenuactivity{
             }
 //        RG
             double countrg = 0;
-            JSONArray jsonArrayRG = data.getJSONObject("evaluations").getJSONArray("RG");
+            JSONArray jsonArrayRG = evaluations.optJSONArray("RG");
+            if (jsonArrayRG == null) {
+                jsonArrayRG = new JSONArray();
+            }
             for (int i = 0; i < jsonArrayRG.length(); i++) {
-                JSONObject object = jsonArrayRG.getJSONObject(i);
-                if (object.has("time") && !object.isNull("time") && !object.get("time").equals("null")) {
-                    if (object.getBoolean("result")) {
+                JSONObject object = jsonArrayRG.optJSONObject(i);
+                if (object == null) {
+                    continue;
+                }
+                String time = object.optString("time", "");
+                if (!time.isEmpty() && !"null".equals(time)) {
+                    if (object.optBoolean("result", false)) {
                         countrg++;
                     }
                 }
@@ -337,12 +366,16 @@ public class PdfGenerator extends evmenuactivity{
             double lenthse = 0;
             // 检查所有SE组的数据
             for (int group = 1; group <= 4; group++) {
-                JSONArray jsonArraySE = data.getJSONObject("evaluations").optJSONArray("SE" + group);
+                JSONArray jsonArraySE = evaluations.optJSONArray("SE" + group);
                 if (jsonArraySE != null) {
                     for (int i = 0; i < jsonArraySE.length(); i++) {
-                        JSONObject object = jsonArraySE.getJSONObject(i);
-                        if (object.has("time") && !object.isNull("time") && !object.get("time").equals("null")) {
-                            if (object.getBoolean("result")) {
+                        JSONObject object = jsonArraySE.optJSONObject(i);
+                        if (object == null) {
+                            continue;
+                        }
+                        String time = object.optString("time", "");
+                        if (!time.isEmpty() && !"null".equals(time)) {
+                            if (object.optBoolean("result", false)) {
                                 countse++;
                             }
                             lenthse++;
@@ -368,11 +401,17 @@ public class PdfGenerator extends evmenuactivity{
 
 //S
             double counts = 0;
-            JSONArray jsonArrayS = data.getJSONObject("evaluations").getJSONArray("S");
+            JSONArray jsonArrayS = evaluations.optJSONArray("S");
+            if (jsonArrayS == null) {
+                jsonArrayS = new JSONArray();
+            }
             for (int i = 0; i < jsonArrayS.length(); i++) {
-                JSONObject object = jsonArrayS.getJSONObject(i);
-                if (object.has("result") && !object.isNull("result") && !object.get("result").equals("null")) {
-                    if (object.getBoolean("result")) {
+                JSONObject object = jsonArrayS.optJSONObject(i);
+                if (object == null) {
+                    continue;
+                }
+                if (object.has("result") && !object.isNull("result")) {
+                    if (object.optBoolean("result", false)) {
                         counts++;
                     }
                 }
@@ -388,12 +427,19 @@ public class PdfGenerator extends evmenuactivity{
 
 //NWR
             double countnwr = 0;
-            JSONArray jsonArrayNWR = data.getJSONObject("evaluations").getJSONArray("NWR");
+            JSONArray jsonArrayNWR = evaluations.optJSONArray("NWR");
+            if (jsonArrayNWR == null) {
+                jsonArrayNWR = new JSONArray();
+            }
             for (int i = 0; i < jsonArrayNWR.length(); i++) {
-                JSONObject object = jsonArrayNWR.getJSONObject(i);
+                JSONObject object = jsonArrayNWR.optJSONObject(i);
+                if (object == null) {
+                    continue;
+                }
                 for (int j = 0; j < 6; ++j) {
-                    if (object.has("results" + (j + 1)) && !object.isNull("results" + (j + 1)) && !object.get("results" + (j + 1)).equals("null")) {
-                        if (object.getBoolean("results" + (j + 1))) {
+                    String key = "results" + (j + 1);
+                    if (object.has(key) && !object.isNull(key)) {
+                        if (object.optBoolean(key, false)) {
                             countnwr++;
                         }
                     }
@@ -410,14 +456,22 @@ public class PdfGenerator extends evmenuactivity{
 //PST
             double countpst = 0;
             double lenthpst = 0;
-            JSONArray jsonArrayPST = data.getJSONObject("evaluations").getJSONArray("PST");
+            JSONArray jsonArrayPST = evaluations.optJSONArray("PST");
+            if (jsonArrayPST == null) {
+                jsonArrayPST = new JSONArray();
+            }
             if (jsonArrayPST.length() == 0) {
                 Arrays.fill(scorePST, " ");
             } else {
                 for (int i = 0; i < jsonArrayPST.length(); i++) {
-                    JSONObject object = jsonArrayPST.getJSONObject(i);
-                    if (object.has("time") && !object.isNull("time") && !object.getString("time").equals("null")) {
-                        int sc = object.getInt("score");
+                    JSONObject object = jsonArrayPST.optJSONObject(i);
+                    if (object == null) {
+                        scorePST[i] = "";
+                        continue;
+                    }
+                    String time = object.optString("time", "");
+                    if (!time.isEmpty() && !"null".equals(time)) {
+                        int sc = object.optInt("score", 0);
                         scorePST[i] = String.valueOf(sc);
                         countpst += sc;
                         lenthpst++;
@@ -438,14 +492,22 @@ public class PdfGenerator extends evmenuactivity{
 //PN
             double countpn = 0;
             double lenthpn = 0;
-            JSONArray jsonArrayPN = data.getJSONObject("evaluations").getJSONArray("PN");
+            JSONArray jsonArrayPN = evaluations.optJSONArray("PN");
+            if (jsonArrayPN == null) {
+                jsonArrayPN = new JSONArray();
+            }
             if (jsonArrayPN.length() == 0) {
                 Arrays.fill(scorePN, " ");
             } else {
                 for (int i = 0; i < jsonArrayPN.length(); i++) {
-                    JSONObject object = jsonArrayPN.getJSONObject(i);
-                    if (object.has("time") && !object.isNull("time") && !object.getString("time").equals("null")) {
-                        int sc = object.getInt("score");
+                    JSONObject object = jsonArrayPN.optJSONObject(i);
+                    if (object == null) {
+                        scorePN[i] = "";
+                        continue;
+                    }
+                    String time = object.optString("time", "");
+                    if (!time.isEmpty() && !"null".equals(time)) {
+                        int sc = object.optInt("score", 0);
                         scorePN[i] = String.valueOf(sc);
                         countpn += sc;
                         lenthpn++;
@@ -581,10 +643,13 @@ public class PdfGenerator extends evmenuactivity{
             List<String> plStrengths = new ArrayList<>();
             List<String> plWeaknesses = new ArrayList<>();
             int computedScore = 0;
-            JSONArray plArray = data.getJSONObject("evaluations").optJSONArray("PL");
+            JSONArray plArray = evaluations.optJSONArray("PL");
             if (plArray != null) {
                 for (int i = 0; i < plArray.length(); i++) {
-                    JSONObject item = plArray.getJSONObject(i);
+                    JSONObject item = plArray.optJSONObject(i);
+                    if (item == null) {
+                        continue;
+                    }
                     int scoreValue = item.has("score") && !item.isNull("score") ? item.optInt("score", 0) : 0;
                     String skill = item.optString("skill", "");
                     if (scoreValue == 1) {
@@ -652,9 +717,9 @@ public class PdfGenerator extends evmenuactivity{
 
                     // 检查词汇理解结果
                     if (i < jsonArrayRE.length()) {
-                        JSONObject reObject = jsonArrayRE.getJSONObject(i);
-                        if (reObject.has("result") && !reObject.isNull("result")) {
-                            if (reObject.getBoolean("result")) {
+                        JSONObject reObject = jsonArrayRE.optJSONObject(i);
+                        if (reObject != null && reObject.has("result") && !reObject.isNull("result")) {
+                            if (reObject.optBoolean("result", false)) {
                                 correctCount++;
                                 RE_scores[i] = 1;
                             }
@@ -663,9 +728,9 @@ public class PdfGenerator extends evmenuactivity{
 
                     // 检查词汇表达结果
                     if (i < jsonArrayE.length()) {
-                        JSONObject eObject = jsonArrayE.getJSONObject(i);
-                        if (eObject.has("result") && !eObject.isNull("result")) {
-                            if (eObject.getBoolean("result")) {
+                        JSONObject eObject = jsonArrayE.optJSONObject(i);
+                        if (eObject != null && eObject.has("result") && !eObject.isNull("result")) {
+                            if (eObject.optBoolean("result", false)) {
                                 correctCount++;
                                 E_scores[i] = 1;
                             }
@@ -889,7 +954,7 @@ public class PdfGenerator extends evmenuactivity{
                 document.add(new Paragraph(" ", simsun));
 
                 // 读取社交能力评估数据
-                JSONArray socialArray = data.getJSONObject("evaluations").optJSONArray("SOCIAL");
+                JSONArray socialArray = evaluations.optJSONArray("SOCIAL");
                 if (socialArray != null && socialArray.length() > 0) {
                     // 按组分类统计结果
                     Map<Integer, ArrayList<JSONObject>> groupSocialData = new HashMap<>();
@@ -906,15 +971,14 @@ public class PdfGenerator extends evmenuactivity{
                         for (int i = 0; i < 10; i++) {
                             int questionIndex = (group - 1) * 10 + i;
                             if (questionIndex < socialArray.length()) {
-                                JSONObject object = socialArray.getJSONObject(questionIndex);
-                                if (object.has("score") && !object.isNull("score")) {
+                                JSONObject object = socialArray.optJSONObject(questionIndex);
+                                if (object != null && object.has("score") && !object.isNull("score")) {
                                     hasCompletedQuestions = true;
                                     socialCompletedQuestions++;
-                                    socialTotalScore += object.getInt("score");
+                                    socialTotalScore += object.optInt("score", 0);
 
-                                    // 收集需要重点关注和进一步发展的能力
                                     String focus = object.optString("focus", "");
-                                    int socialScore = object.getInt("score");
+                                    int socialScore = object.optInt("score", 0);
                                     if (socialScore == 0 && !weaknessList.contains(focus)) {
                                         weaknessList.add(focus);
                                     } else if (socialScore == 1 && !inProgressList.contains(focus)) {
@@ -961,11 +1025,14 @@ public class PdfGenerator extends evmenuactivity{
 
                             // 添加题目数据行
                             for (JSONObject object : groupDetails) {
+                                if (object == null) {
+                                    continue;
+                                }
                                 int socialNum = object.optInt("num", 0);
                                 String ability = object.optString("ability", "");
                                 String focus = object.optString("focus", "");
                                 String content = object.optString("content", "");
-                                int socialScore = object.getInt("score");
+                                int socialScore = object.optInt("score", 0);
 
                                 // 题目内容，在选择0或者1时在题目内容后面加个括号填进考查点
                                 StringBuilder contentBuilder = new StringBuilder(content);
