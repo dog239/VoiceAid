@@ -47,25 +47,47 @@
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:padding="16dp"
-        app:layout_constraintBottom_toTopOf="@id/btn_view_overall"
+        app:layout_constraintBottom_toTopOf="@id/bottom_actions"
         app:layout_constraintTop_toBottomOf="@id/header"
         tools:listitem="@layout/item_assessment_report" />
 
-    <!-- Bottom Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_view_overall"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_margin="16dp"
-        android:backgroundTint="#E2E8F0"
-        android:enabled="false"
-        android:text="查看总体干预报告"
-        android:textColor="#94A3B8"
-        app:cornerRadius="12dp"
-        app:icon="@android:drawable/ic_menu_sort_by_size"
-        app:iconGravity="textStart"
-        app:iconTint="#94A3B8"
-        app:layout_constraintBottom_toTopOf="@id/bottom_nav" />
+    <LinearLayout
+        android:id="@+id/bottom_actions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_view_overall"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:backgroundTint="#E2E8F0"
+            android:enabled="false"
+            android:text="查看总体干预报告"
+            android:textColor="#94A3B8"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_menu_sort_by_size"
+            app:iconGravity="textStart"
+            app:iconTint="#94A3B8" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_export_report"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="#0EA5E9"
+            android:text="导出测评报告"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_menu_save"
+            app:iconGravity="textStart" />
+    </LinearLayout>
 
     <!-- Bottom Navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
