@@ -195,6 +195,7 @@ public class PdfGenerator extends evmenuactivity{
 
     @SuppressLint("NewApi")
     public static void generatePdf(OutputStream outputStream, String fname) {
+        Document document = new Document();
         try {
             String[] scoreA =new String[21];
             String scoreE;
@@ -462,7 +463,6 @@ public class PdfGenerator extends evmenuactivity{
             }
 
 
-            Document document = new Document();
             PdfWriter.getInstance(document, outputStream);
             document.open();
             // 最大宽度
@@ -1156,7 +1156,14 @@ public class PdfGenerator extends evmenuactivity{
 
             Toast.makeText(context, "文件已保存", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (document.isOpen()) {
+                    document.close();
+                }
+            } catch (Exception ignored) {
+            }
         }
     }
 
