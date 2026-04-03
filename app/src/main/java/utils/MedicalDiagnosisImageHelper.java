@@ -97,7 +97,10 @@ public final class MedicalDiagnosisImageHelper {
         if (prefix.isEmpty()) {
             prefix = "medical_diagnosis";
         }
-        String fileName = prefix + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + cleanExt;
+        String fileName = prefix + "_"
+                + new SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.getDefault()).format(new Date())
+                + "_" + System.nanoTime()
+                + cleanExt;
         return new File(dir, fileName);
     }
 

@@ -23,6 +23,10 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
         void onDelete(int position);
     }
 
+    public interface OnMemberChangedListener {
+        void onChanged();
+    }
+
     public static class FamilyMember {
         public final long itemId = System.nanoTime();
         public String memberName = "";
@@ -42,6 +46,7 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
 
     private final List<FamilyMember> members;
     private final OnMemberDeleteListener deleteListener;
+    private OnMemberChangedListener changedListener;
     private boolean readOnly = false;
 
     public FamilyMemberAdapter(List<FamilyMember> members, OnMemberDeleteListener deleteListener) {
@@ -55,6 +60,10 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
         notifyDataSetChanged();
     }
 
+    public void setOnMemberChangedListener(OnMemberChangedListener changedListener) {
+        this.changedListener = changedListener;
+    }
+
     public List<FamilyMember> getMembers() {
         return members;
     }
@@ -65,11 +74,13 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
             members.addAll(newMembers);
         }
         notifyDataSetChanged();
+        notifyMembersChanged();
     }
 
     public void addMember(FamilyMember member) {
         members.add(member);
         notifyItemInserted(members.size() - 1);
+        notifyMembersChanged();
     }
 
     public void removeMember(int position) {
@@ -78,6 +89,7 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
         }
         members.remove(position);
         notifyItemRemoved(position);
+        notifyMembersChanged();
     }
 
     public void clearMember(int position) {
@@ -91,6 +103,7 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
         member.occupation = "";
         member.education = "";
         notifyItemChanged(position);
+        notifyMembersChanged();
     }
 
     public static List<FamilyMember> fromJsonArray(JSONArray array) {
@@ -209,11 +222,26 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
             occupation.setText(member.occupation);
             education.setText(member.education);
 
-            nameWatcher = new SimpleTextWatcher(text -> member.memberName = text);
-            relationWatcher = new SimpleTextWatcher(text -> member.relation = text);
-            phoneWatcher = new SimpleTextWatcher(text -> member.memberPhone = text);
-            occupationWatcher = new SimpleTextWatcher(text -> member.occupation = text);
-            educationWatcher = new SimpleTextWatcher(text -> member.education = text);
+            nameWatcher = new SimpleTextWatcher(text -> {
+                member.memberName = text;
+                notifyMembersChanged();
+            });
+            relationWatcher = new SimpleTextWatcher(text -> {
+                member.relation = text;
+                notifyMembersChanged();
+            });
+            phoneWatcher = new SimpleTextWatcher(text -> {
+                member.memberPhone = text;
+                notifyMembersChanged();
+            });
+            occupationWatcher = new SimpleTextWatcher(text -> {
+                member.occupation = text;
+                notifyMembersChanged();
+            });
+            educationWatcher = new SimpleTextWatcher(text -> {
+                member.education = text;
+                notifyMembersChanged();
+            });
 
             memberName.addTextChangedListener(nameWatcher);
             relation.addTextChangedListener(relationWatcher);
@@ -241,6 +269,12 @@ public class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapte
             editText.setEnabled(enabled);
             editText.setFocusable(enabled);
             editText.setFocusableInTouchMode(enabled);
+        }
+    }
+
+    private void notifyMembersChanged() {
+        if (changedListener != null) {
+            changedListener.onChanged();
         }
     }
 

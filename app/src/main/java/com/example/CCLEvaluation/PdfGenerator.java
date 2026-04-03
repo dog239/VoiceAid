@@ -11,6 +11,8 @@ import static utils.permissionutils.permissionUtils;
 import android.annotation.SuppressLint;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
@@ -66,6 +68,7 @@ import bean.rg;
 import bean.s;
 import utils.ImageUrls;
 import utils.ArticulationPlanHelper;
+import utils.MedicalDiagnosisImageHelper;
 import utils.ModuleReportHelper;
 import utils.dataManager;
 import utils.permissionutils;
@@ -79,6 +82,7 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1264,6 +1268,7 @@ public class PdfGenerator extends evmenuactivity{
             String message = context != null ? context.getString(R.string.pdf_error_invalid_params) : "Invalid parameters";
             throw new IllegalArgumentException(message);
         }
+        PdfGenerator.context = context.getApplicationContext();
         JSONObject plan = childJson == null ? null : childJson.optJSONObject("treatmentPlan");
         if (plan == null) {
             throw new IllegalStateException(context.getString(R.string.pdf_error_missing_plan));
@@ -1306,6 +1311,62 @@ public class PdfGenerator extends evmenuactivity{
                     outputStream.flush();
                     outputStream.close();
                 } catch (IOException ignored) {
+                }
+            }
+        }
+    }
+
+    public static void writeChildInfoPdf(Context context, Uri uri, JSONObject childJson) throws Exception {
+        if (context == null || uri == null) {
+            String message = context != null ? context.getString(R.string.pdf_error_invalid_params) : "Invalid parameters";
+            throw new IllegalArgumentException(message);
+        }
+        PdfGenerator.context = context.getApplicationContext();
+        OutputStream outputStream = null;
+        android.graphics.pdf.PdfDocument document = new android.graphics.pdf.PdfDocument();
+        try {
+            Log.d("PdfGenerator", "writeChildInfoPdf start, uri=" + uri);
+            Log.d("PdfGenerator", "writeChildInfoPdf opening output stream");
+            outputStream = context.getContentResolver().openOutputStream(uri);
+            Log.d("PdfGenerator", "writeChildInfoPdf output stream opened=" + (outputStream != null));
+            if (outputStream == null) {
+                throw new IOException(context.getString(R.string.pdf_error_open_output));
+            }
+            JSONObject info = childJson == null ? null : childJson.optJSONObject("info");
+            Typeface chineseTypeface = loadChineseTypeface(context);
+            if (chineseTypeface == null) {
+                Log.w("PdfGenerator", "writeChildInfoPdf chinese typeface missing, fallback to Typeface.DEFAULT");
+                chineseTypeface = Typeface.DEFAULT;
+            }
+            Log.d("PdfGenerator", "writeChildInfoPdf typeface ready=" + (chineseTypeface != null));
+            TreatmentPlanStrings strings = TreatmentPlanStrings.from(context);
+            ChildInfoPdfRenderer renderer = new ChildInfoPdfRenderer(info, chineseTypeface, strings);
+            int totalPages = renderer.measurePageCount();
+            Log.d("PdfGenerator", "writeChildInfoPdf measured page count=" + totalPages);
+            Log.d("PdfGenerator", "writeChildInfoPdf rendering document");
+            renderer.render(document, totalPages);
+            Log.d("PdfGenerator", "writeChildInfoPdf writing document to output stream");
+            document.writeTo(outputStream);
+            Log.d("PdfGenerator", "writeChildInfoPdf completed successfully");
+        } catch (Exception e) {
+            Log.e("PdfGenerator", "writeChildInfoPdf failed", e);
+            throw e;
+        } finally {
+            Log.d("PdfGenerator", "writeChildInfoPdf entering finally");
+            try {
+                document.close();
+                Log.d("PdfGenerator", "writeChildInfoPdf document closed");
+            } catch (Exception ignored) {
+                Log.e("PdfGenerator", "writeChildInfoPdf close document failed", ignored);
+            }
+            if (outputStream != null) {
+                try {
+                    Log.d("PdfGenerator", "writeChildInfoPdf flushing output stream");
+                    outputStream.flush();
+                    Log.d("PdfGenerator", "writeChildInfoPdf closing output stream");
+                    outputStream.close();
+                } catch (IOException ignored) {
+                    Log.e("PdfGenerator", "writeChildInfoPdf close output stream failed", ignored);
                 }
             }
         }
@@ -1499,6 +1560,8 @@ public class PdfGenerator extends evmenuactivity{
         final String labelName;
         final String labelGender;
         final String labelBirthDate;
+        final String labelTestDate;
+        final String labelExaminer;
         final String labelPhone;
         final String labelAddress;
         final String labelFamilyStatus;
@@ -1553,6 +1616,8 @@ public class PdfGenerator extends evmenuactivity{
                 String labelName,
                 String labelGender,
                 String labelBirthDate,
+                String labelTestDate,
+                String labelExaminer,
                 String labelPhone,
                 String labelAddress,
                 String labelFamilyStatus,
@@ -1605,6 +1670,8 @@ public class PdfGenerator extends evmenuactivity{
             this.labelName = labelName;
             this.labelGender = labelGender;
             this.labelBirthDate = labelBirthDate;
+            this.labelTestDate = labelTestDate;
+            this.labelExaminer = labelExaminer;
             this.labelPhone = labelPhone;
             this.labelAddress = labelAddress;
             this.labelFamilyStatus = labelFamilyStatus;
@@ -1661,6 +1728,8 @@ public class PdfGenerator extends evmenuactivity{
                     context.getString(R.string.pdf_label_name),
                     context.getString(R.string.pdf_label_gender),
                     context.getString(R.string.pdf_label_birth_date),
+                    context.getString(R.string.pdf_label_test_date),
+                    context.getString(R.string.pdf_label_examiner),
                     context.getString(R.string.pdf_label_phone),
                     context.getString(R.string.pdf_label_address),
                     context.getString(R.string.pdf_label_family_status),
@@ -1826,13 +1895,17 @@ public class PdfGenerator extends evmenuactivity{
             this.totalPages = totalPages;
             this.pageNumber = 0;
             startPage();
-            drawPersonalInfo();
+            drawLeadingSections();
             drawDocumentBody();
             // TODO(隐藏需求): 频次建议与备注区块暂时隐藏，后续恢复时取消注释。
             // drawSchedule();
             // drawNotes();
             finishPage();
             return pageNumber;
+        }
+
+        protected void drawLeadingSections() {
+            drawPersonalInfo();
         }
 
         protected void drawDocumentBody() {
@@ -1910,6 +1983,46 @@ public class PdfGenerator extends evmenuactivity{
 
         private float getContentWidth() {
             return PAGE_WIDTH - MARGIN * 2f;
+        }
+
+        protected float getRendererContentWidth() {
+            return getContentWidth();
+        }
+
+        protected float getRendererMargin() {
+            return MARGIN;
+        }
+
+        protected float getRendererCursorY() {
+            return y;
+        }
+
+        protected void setRendererCursorY(float value) {
+            y = value;
+        }
+
+        protected void advanceRendererCursor(float delta) {
+            y += delta;
+        }
+
+        protected void ensureRendererSpace(float requiredHeight) {
+            ensureSpace(requiredHeight);
+        }
+
+        protected boolean isRendererMeasureOnly() {
+            return measureOnly;
+        }
+
+        protected Canvas getRendererCanvas() {
+            return canvas;
+        }
+
+        protected float measureRendererBodyTextHeight(String text, float width) {
+            return measureTextHeight(text, bodyPaint, width, Layout.Alignment.ALIGN_NORMAL);
+        }
+
+        protected float drawRendererBodyTextBlock(String text, float x, float top, float width, Layout.Alignment alignment) {
+            return drawTextBlock(text, bodyPaint, x, top, width, alignment);
         }
 
         private void drawDivider() {
@@ -2531,6 +2644,10 @@ public class PdfGenerator extends evmenuactivity{
             y += height + LINE_GAP;
         }
 
+        protected void drawInfoLine(String label, String value) {
+            drawLabelValue(label, value);
+        }
+
         private void drawBulletLine(String line) {
             float indentX = MARGIN + BULLET_INDENT;
             float width = getContentWidth() - BULLET_INDENT;
@@ -2793,6 +2910,16 @@ public class PdfGenerator extends evmenuactivity{
             return members;
         }
 
+        protected void drawFamilyMembersSection(String title, String emptyText) {
+            drawAccentSectionHeader(title);
+            List<MemberInfo> members = getFamilyMembers();
+            if (members.isEmpty()) {
+                drawParagraph(safeText(emptyText).isEmpty() ? strings.familyEmpty : emptyText);
+                return;
+            }
+            drawFamilyMembersCard(members);
+        }
+
         protected List<String> getList(JSONObject obj, String key) {
             List<String> result = new ArrayList<>();
             if (obj == null || key == null) {
@@ -2934,6 +3061,490 @@ public class PdfGenerator extends evmenuactivity{
                 this.metrics = metrics;
             }
         }
+    }
+
+    private static final class ChildInfoPdfRenderer extends TreatmentPlanPdfRenderer {
+        private static final String TAG = "PdfGenerator";
+        private static final float IMAGE_MAX_HEIGHT = 220f;
+        private static final float IMAGE_SIDE_MARGIN = 24f;
+        private static final float IMAGE_FRAME_PADDING = 8f;
+        private static final float IMAGE_ITEM_GAP = 16f;
+        private static final float IMAGE_LABEL_GAP = 6f;
+
+        private final JSONObject backgroundInfo;
+        private final Paint imageBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint imageFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint imageBitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+
+        ChildInfoPdfRenderer(JSONObject info, Typeface chineseTypeface, TreatmentPlanStrings strings) {
+            super(info, new JSONObject(), chineseTypeface, strings);
+            JSONObject bg = info == null ? null : info.optJSONObject("backgroundInfo");
+            this.backgroundInfo = bg == null ? new JSONObject() : bg;
+            imageBorderPaint.setColor(0xFFDDDDDD);
+            imageBorderPaint.setStyle(Paint.Style.STROKE);
+            imageBorderPaint.setStrokeWidth(1f);
+            imageFillPaint.setColor(0xFFFDFDFD);
+            imageFillPaint.setStyle(Paint.Style.FILL);
+        }
+
+        @Override
+        protected String getDocumentTitle() {
+            return "儿童信息档案";
+        }
+
+        @Override
+        protected void drawLeadingSections() {
+            drawAccentSectionHeader("儿童基本信息");
+            drawInfoLine(strings.labelName, info == null ? "" : info.optString("name", ""));
+            drawInfoLine(strings.labelGender, info == null ? "" : info.optString("gender", ""));
+            drawInfoLine(strings.labelBirthDate, info == null ? "" : info.optString("birthDate", ""));
+            drawInfoLine("年龄", calculateAgeText(info == null ? "" : info.optString("birthDate", "")));
+            drawInfoLine(getStringRes(R.string.pdf_label_test_date), info == null ? "" : info.optString("testDate", ""));
+            drawInfoLine(getStringRes(R.string.pdf_label_examiner), info == null ? "" : info.optString("examiner", ""));
+
+            drawAccentSectionHeader("联系方式");
+            drawInfoLine(strings.labelPhone, info == null ? "" : info.optString("phone", ""));
+            drawInfoLine(strings.labelAddress, info == null ? "" : info.optString("address", ""));
+
+            drawFamilyMembersSection("家庭成员", "暂无家庭成员信息");
+        }
+
+        @Override
+        protected void drawDocumentBody() {
+            drawAccentSectionHeader("儿童详细信息");
+            drawBackgroundSection("基本照护", buildBasicCareLines(optObject(backgroundInfo, "basicCare")));
+            drawBackgroundSection("出生史", buildBirthHistoryLines(optObject(backgroundInfo, "birthHistory")));
+            drawBackgroundSection("生长发育", buildGrowthDevelopmentLines(optObject(backgroundInfo, "growthDevelopment")));
+            drawBackgroundSection("已诊断疾病", buildDiagnosedDisordersLines(optObject(backgroundInfo, "diagnosedDisorders")));
+            drawBackgroundSection("一般发展", buildGeneralDevelopmentLines(optObject(backgroundInfo, "generalDevelopment")));
+            drawBackgroundSection("言语运动功能", buildSpeechMotorFunctionLines(optObject(backgroundInfo, "speechMotorFunction")));
+            drawBackgroundSection("表达方式", buildExpressionModeLines(optObject(backgroundInfo, "expressionMode")));
+            drawBackgroundSection("语言相关担忧", buildLanguageConcernLines(optObject(backgroundInfo, "languageConcern")));
+            drawMedicalDocumentsSection(MedicalDiagnosisImageHelper.optMedicalDocuments(backgroundInfo));
+        }
+
+        private void drawBackgroundSection(String title, List<String> lines) {
+            drawSubHeader(title);
+            if (lines == null || lines.isEmpty()) {
+                drawParagraph(placeholderText());
+                return;
+            }
+            for (String line : lines) {
+                drawParagraph(line);
+            }
+        }
+
+        private void drawMedicalDocumentsSection(JSONArray medicalDocuments) {
+            drawSubHeader("医学资料");
+            List<String> lines = new ArrayList<>();
+            int count = medicalDocuments == null ? 0 : medicalDocuments.length();
+            lines.add("图片数量：" + count);
+            // if (count <= 0) {
+            //     lines.add("文件名列表：暂无");
+            // } else {
+            //     lines.add("文件名列表：");
+            // }
+            for (String line : lines) {
+                drawParagraph(line);
+            }
+            if (count > 0) {
+                List<String> fileNames = new ArrayList<>();
+                for (int i = 0; i < medicalDocuments.length(); i++) {
+                    JSONObject item = medicalDocuments.optJSONObject(i);
+                    String fileName = MedicalDiagnosisImageHelper.getFileName(item);
+                    fileNames.add(fileName.isEmpty() ? "未命名文件" : fileName);
+                }
+                drawBulletSection(null, fileNames, false);
+                drawSubHeader("图片预览");
+                drawMedicalDocumentImages(medicalDocuments);
+            }
+        }
+
+        private void drawMedicalDocumentImages(JSONArray medicalDocuments) {
+            if (medicalDocuments == null || medicalDocuments.length() == 0) {
+                return;
+            }
+            for (int i = 0; i < medicalDocuments.length(); i++) {
+                JSONObject item = medicalDocuments.optJSONObject(i);
+                String displayName = item == null ? "" : MedicalDiagnosisImageHelper.getFileName(item);
+                if (displayName.isEmpty()) {
+                    displayName = "未命名文件";
+                }
+                String localPath = item == null ? "" : MedicalDiagnosisImageHelper.getLocalPath(item);
+                drawSingleMedicalImage(displayName, localPath, i + 1);
+            }
+        }
+
+        private void drawSingleMedicalImage(String displayName, String localPath, int index) {
+            String title = safeText(displayName);
+            if (title.isEmpty()) {
+                title = "医学资料图片 " + index;
+            }
+
+            float contentWidth = getRendererContentWidth();
+            float titleHeight = measureRendererBodyTextHeight(title, contentWidth);
+            float maxImageWidth = contentWidth - IMAGE_SIDE_MARGIN;
+            Bitmap bitmap = null;
+            try {
+                bitmap = decodeScaledBitmap(localPath, maxImageWidth, IMAGE_MAX_HEIGHT);
+                ImageLayoutResult layoutResult = bitmap == null
+                        ? new ImageLayoutResult(Math.min(maxImageWidth, 160f), 44f)
+                        : computeImageBounds(bitmap.getWidth(), bitmap.getHeight(), maxImageWidth, IMAGE_MAX_HEIGHT);
+
+                float frameWidth = layoutResult.drawWidth + IMAGE_FRAME_PADDING * 2f;
+                float frameHeight = layoutResult.drawHeight + IMAGE_FRAME_PADDING * 2f;
+                float requiredHeight = titleHeight + IMAGE_LABEL_GAP + frameHeight + IMAGE_ITEM_GAP;
+                ensureRendererSpace(requiredHeight);
+
+                drawRendererBodyTextBlock(title, getRendererMargin(), getRendererCursorY(), contentWidth, Layout.Alignment.ALIGN_NORMAL);
+                advanceRendererCursor(titleHeight + IMAGE_LABEL_GAP);
+
+                float frameLeft = getRendererMargin() + (contentWidth - frameWidth) / 2f;
+                float frameTop = getRendererCursorY();
+                RectF frameRect = new RectF(frameLeft, frameTop, frameLeft + frameWidth, frameTop + frameHeight);
+                if (!isRendererMeasureOnly()) {
+                    Canvas rendererCanvas = getRendererCanvas();
+                    rendererCanvas.drawRoundRect(frameRect, 6f, 6f, imageFillPaint);
+                    rendererCanvas.drawRoundRect(frameRect, 6f, 6f, imageBorderPaint);
+                    if (bitmap != null) {
+                        RectF imageRect = new RectF(
+                                frameLeft + IMAGE_FRAME_PADDING,
+                                frameTop + IMAGE_FRAME_PADDING,
+                                frameLeft + IMAGE_FRAME_PADDING + layoutResult.drawWidth,
+                                frameTop + IMAGE_FRAME_PADDING + layoutResult.drawHeight
+                        );
+                        rendererCanvas.drawBitmap(bitmap, null, imageRect, imageBitmapPaint);
+                    } else {
+                        drawRendererBodyTextBlock("图片加载失败：" + title,
+                                frameLeft + IMAGE_FRAME_PADDING,
+                                frameTop + IMAGE_FRAME_PADDING,
+                                frameWidth - IMAGE_FRAME_PADDING * 2f,
+                                Layout.Alignment.ALIGN_CENTER);
+                    }
+                }
+                advanceRendererCursor(frameHeight + IMAGE_ITEM_GAP);
+            } finally {
+                if (bitmap != null && !bitmap.isRecycled()) {
+                    bitmap.recycle();
+                }
+            }
+        }
+
+        private Bitmap decodeScaledBitmap(String localPath, float maxWidth, float maxHeight) {
+            String path = safeText(localPath);
+            if (path.isEmpty()) {
+                Log.e(TAG, "child info pdf image skipped: empty localPath");
+                return null;
+            }
+            File file = new File(path);
+            if (!file.exists() || !file.isFile()) {
+                Log.e(TAG, "child info pdf image skipped: file missing, path=" + path);
+                return null;
+            }
+
+            BitmapFactory.Options boundsOptions = new BitmapFactory.Options();
+            boundsOptions.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(path, boundsOptions);
+            if (boundsOptions.outWidth <= 0 || boundsOptions.outHeight <= 0) {
+                Log.e(TAG, "child info pdf image skipped: invalid bounds, path=" + path);
+                return null;
+            }
+
+            BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
+            decodeOptions.inSampleSize = computeInSampleSize(
+                    boundsOptions.outWidth,
+                    boundsOptions.outHeight,
+                    maxWidth,
+                    maxHeight
+            );
+            decodeOptions.inPreferredConfig = Bitmap.Config.RGB_565;
+            try {
+                Bitmap bitmap = BitmapFactory.decodeFile(path, decodeOptions);
+                if (bitmap == null) {
+                    Log.e(TAG, "child info pdf image skipped: decode returned null, path=" + path);
+                }
+                return bitmap;
+            } catch (OutOfMemoryError error) {
+                Log.e(TAG, "child info pdf image skipped: oom, path=" + path, error);
+                return null;
+            } catch (Exception e) {
+                Log.e(TAG, "child info pdf image skipped: decode failed, path=" + path, e);
+                return null;
+            }
+        }
+
+        private ImageLayoutResult computeImageBounds(int rawWidth, int rawHeight, float maxWidth, float maxHeight) {
+            if (rawWidth <= 0 || rawHeight <= 0) {
+                return new ImageLayoutResult(Math.min(maxWidth, 120f), 44f);
+            }
+            float scale = Math.min(Math.min(maxWidth / rawWidth, maxHeight / rawHeight), 1f);
+            return new ImageLayoutResult(rawWidth * scale, rawHeight * scale);
+        }
+
+        private int computeInSampleSize(int rawWidth, int rawHeight, float maxWidth, float maxHeight) {
+            int inSampleSize = 1;
+            if (rawWidth <= maxWidth && rawHeight <= maxHeight) {
+                return inSampleSize;
+            }
+            int halfWidth = rawWidth / 2;
+            int halfHeight = rawHeight / 2;
+            while ((halfWidth / inSampleSize) >= maxWidth && (halfHeight / inSampleSize) >= maxHeight) {
+                inSampleSize *= 2;
+            }
+            return Math.max(1, inSampleSize);
+        }
+
+        private static final class ImageLayoutResult {
+            final float drawWidth;
+            final float drawHeight;
+
+            ImageLayoutResult(float drawWidth, float drawHeight) {
+                this.drawWidth = drawWidth;
+                this.drawHeight = drawHeight;
+            }
+        }
+
+        private String calculateAgeText(String birthDate) {
+            String value = safeText(birthDate);
+            if (value.isEmpty()) {
+                return "";
+            }
+            try {
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.CHINA);
+                Date birth = format.parse(value);
+                if (birth == null) {
+                    return "";
+                }
+                Calendar birthCalendar = Calendar.getInstance();
+                birthCalendar.setTime(birth);
+                Calendar now = Calendar.getInstance();
+                int years = now.get(Calendar.YEAR) - birthCalendar.get(Calendar.YEAR);
+                int months = now.get(Calendar.MONTH) - birthCalendar.get(Calendar.MONTH);
+                int days = now.get(Calendar.DAY_OF_MONTH) - birthCalendar.get(Calendar.DAY_OF_MONTH);
+                if (days < 0) {
+                    months--;
+                }
+                if (months < 0) {
+                    years--;
+                    months += 12;
+                }
+                if (years < 0) {
+                    return "";
+                }
+                return years + "岁" + months + "个月";
+            } catch (Exception ignored) {
+                return "";
+            }
+        }
+    }
+
+    private static JSONObject optObject(JSONObject object, String key) {
+        if (object == null) {
+            return new JSONObject();
+        }
+        JSONObject result = object.optJSONObject(key);
+        return result == null ? new JSONObject() : result;
+    }
+
+    private static List<String> buildBasicCareLines(JSONObject section) {
+        List<String> lines = new ArrayList<>();
+        lines.add(labelValue("0-3岁主要照护者", joinSelected(
+                selectedLabel(section.optBoolean("caregiver0To3Parents"), "父母"),
+                selectedLabel(section.optBoolean("caregiver0To3Grandparents"), "祖父母"),
+                selectedLabel(section.optBoolean("caregiver0To3Nanny"), "保姆"),
+                section.optBoolean("caregiver0To3Other") ? appendDetail("其他", section.optString("caregiver0To3OtherText")) : null
+        )));
+        lines.add(labelValue("0-3岁主要语言环境", section.optString("language0To3")));
+        lines.add(labelValue("3-6岁主要照护者", joinSelected(
+                selectedLabel(section.optBoolean("caregiver3To6Parents"), "父母"),
+                selectedLabel(section.optBoolean("caregiver3To6Grandparents"), "祖父母"),
+                selectedLabel(section.optBoolean("caregiver3To6Nanny"), "保姆"),
+                section.optBoolean("caregiver3To6Other") ? appendDetail("其他", section.optString("caregiver3To6OtherText")) : null
+        )));
+        lines.add(labelValue("3-6岁主要语言环境", section.optString("language3To6")));
+        lines.add(labelValue("方言环境", section.optString("dialect")));
+        return lines;
+    }
+
+    private static List<String> buildBirthHistoryLines(JSONObject section) {
+        List<String> lines = new ArrayList<>();
+        lines.add(labelValue("生产方式", translateEnum(section.optString("deliveryMethod"))));
+        lines.add(labelValue("中耳炎", boolText(section.optBoolean("otitisMedia"))));
+        lines.add(labelValue("呼吸系统疾病", boolText(section.optBoolean("respiratoryDisease"))));
+        lines.add(labelValue("头部外伤", boolText(section.optBoolean("headInjury"))));
+        lines.add(labelValue("癫痫", boolText(section.optBoolean("epilepsy"))));
+        lines.add(labelValue("低出生体重", boolText(section.optBoolean("lowWeight"))));
+        lines.add(labelValue("出生体重低于2000克", boolText(section.optBoolean("lowWeightBelow2000"))));
+        lines.add(labelValue("出生体重低于1500克", boolText(section.optBoolean("lowWeightBelow1500"))));
+        lines.add(labelValue("入住保温箱", boolText(section.optBoolean("incubator"))));
+        lines.add(labelValue("保温箱天数", section.optString("incubatorDays")));
+        lines.add(labelValue("黄疸", boolText(section.optBoolean("jaundice"))));
+        lines.add(labelValue("脑膜炎", boolText(section.optBoolean("meningitis"))));
+        lines.add(labelValue("唇腭裂", boolText(section.optBoolean("cleftLipPalate"))));
+        lines.add(labelValue("脐带绕颈", boolText(section.optBoolean("umbilicalCordNeck"))));
+        lines.add(labelValue("缺氧", boolText(section.optBoolean("hypoxia"))));
+        lines.add(labelValue("长期用药", boolText(section.optBoolean("medication"))));
+        lines.add(labelValue("用药说明", section.optString("medicationText")));
+        lines.add(labelValue("其他情况", boolText(section.optBoolean("other"))));
+        lines.add(labelValue("其他说明", section.optString("otherText")));
+        return lines;
+    }
+
+    private static List<String> buildGrowthDevelopmentLines(JSONObject section) {
+        List<String> lines = new ArrayList<>();
+        lines.add(labelValue("喂养方式", translateEnum(section.optString("feedingMethod"))));
+        lines.add(labelValue("微笑发育", translateEnum(section.optString("smileStatus"))));
+        lines.add(labelValue("独坐发育", translateEnum(section.optString("sitStatus"))));
+        lines.add(labelValue("抬头发育", translateEnum(section.optString("headControlStatus"))));
+        lines.add(labelValue("爬行发育", translateEnum(section.optString("crawlStatus"))));
+        lines.add(labelValue("独走发育", translateEnum(section.optString("walkStatus"))));
+        lines.add(labelValue("咿呀发声", translateEnum(section.optString("vocalizationStatus"))));
+        lines.add(labelValue("单词表达", translateEnum(section.optString("singleWordStatus"))));
+        lines.add(labelValue("短语表达", translateEnum(section.optString("phraseStatus"))));
+        return lines;
+    }
+
+    private static List<String> buildDiagnosedDisordersLines(JSONObject section) {
+        List<String> lines = new ArrayList<>();
+        lines.add(labelValue("无明确诊断", boolText(section.optBoolean("none"))));
+        lines.add(labelValue("发育迟缓", boolText(section.optBoolean("developmentalDelay"))));
+        lines.add(labelValue("脑瘫", boolText(section.optBoolean("cerebralPalsy"))));
+        lines.add(labelValue("孤独症", boolText(section.optBoolean("autism"))));
+        lines.add(labelValue("唐氏综合征", boolText(section.optBoolean("downSyndrome"))));
+        lines.add(labelValue("智力障碍", boolText(section.optBoolean("intellectualDisability"))));
+        lines.add(labelValue("注意缺陷多动障碍", boolText(section.optBoolean("adhd"))));
+        lines.add(labelValue("其他诊断", boolText(section.optBoolean("other"))));
+        lines.add(labelValue("其他诊断说明", section.optString("otherText")));
+        return lines;
+    }
+
+    private static List<String> buildGeneralDevelopmentLines(JSONObject section) {
+        List<String> lines = new ArrayList<>();
+        lines.add(labelValue("视觉情况", translateEnum(section.optString("visionStatus"))));
+        lines.add(labelValue("听觉情况", translateEnum(section.optString("hearingStatus"))));
+        lines.add(labelValue("进食习惯", translateEnum(section.optString("eatingHabitStatus"))));
+        lines.add(labelValue("咀嚼困难", boolText(section.optBoolean("eatingHabitChewingDifficulty"))));
+        lines.add(labelValue("吞咽困难", boolText(section.optBoolean("eatingHabitSwallowingDifficulty"))));
+        return lines;
+    }
+
+    private static List<String> buildSpeechMotorFunctionLines(JSONObject section) {
+        List<String> lines = new ArrayList<>();
+        lines.add(labelValue("唇部功能", translateEnum(section.optString("lipsStatus"))));
+        lines.add(labelValue("舌部功能", translateEnum(section.optString("tongueStatus"))));
+        lines.add(labelValue("下颌功能", translateEnum(section.optString("jawStatus"))));
+        lines.add(labelValue("腭咽功能", translateEnum(section.optString("velopharyngealStatus"))));
+        lines.add(labelValue("轮替运动", translateEnum(section.optString("alternatingMotionStatus"))));
+        lines.add(labelValue("流涎控制", translateEnum(section.optString("salivaControlStatus"))));
+        lines.add(labelValue("呼吸功能", translateEnum(section.optString("breathingStatus"))));
+        lines.add(labelValue("嗓音情况", translateEnum(section.optString("voiceStatus"))));
+        lines.add(labelValue("言语进食功能", translateEnum(section.optString("speechEatingStatus"))));
+        lines.add(labelValue("咀嚼困难", boolText(section.optBoolean("speechEatingChewingDifficulty"))));
+        lines.add(labelValue("吞咽困难", boolText(section.optBoolean("speechEatingSwallowingDifficulty"))));
+        lines.add(labelValue("其他说明", section.optString("other")));
+        return lines;
+    }
+
+    private static List<String> buildExpressionModeLines(JSONObject section) {
+        List<String> lines = new ArrayList<>();
+        lines.add(labelValue("口语表达", boolText(section.optBoolean("spokenLanguage"))));
+        lines.add(labelValue("非口语表达", boolText(section.optBoolean("nonverbal"))));
+        lines.add(labelValue("音调变化表达", boolText(section.optBoolean("nonverbalVoicePitch"))));
+        lines.add(labelValue("身体动作表达", boolText(section.optBoolean("nonverbalBodyLanguage"))));
+        lines.add(labelValue("辅助设备表达", boolText(section.optBoolean("nonverbalAssistiveDevice"))));
+        lines.add(labelValue("辅助设备说明", section.optString("nonverbalAssistiveDeviceText")));
+        return lines;
+    }
+
+    private static List<String> buildLanguageConcernLines(JSONObject section) {
+        List<String> lines = new ArrayList<>();
+        lines.add(labelValue("两岁前是否会说词汇", translateEnum(section.optString("vocabByTwoYears"))));
+        lines.add(labelValue("两岁半前是否会说句子", translateEnum(section.optString("sentenceByTwoHalfYears"))));
+        lines.add(labelValue("家长认为语言正常", boolText(section.optBoolean("parentConcernNormal"))));
+        lines.add(labelValue("家长担心不会说话", boolText(section.optBoolean("parentConcernCannotSpeak"))));
+        lines.add(labelValue("家长担心说话不清", boolText(section.optBoolean("parentConcernUnclearSpeech"))));
+        lines.add(labelValue("家长担心听不懂", boolText(section.optBoolean("parentConcernCannotUnderstand"))));
+        lines.add(labelValue("家长担心反应慢", boolText(section.optBoolean("parentConcernSlowResponse"))));
+        lines.add(labelValue("家长主要诉求", section.optString("parentPrimaryRequest")));
+        return lines;
+    }
+
+    private static String translateEnum(String value) {
+        String key = value == null ? "" : value.trim();
+        if (key.isEmpty()) {
+            return "";
+        }
+        if ("natural".equals(key)) {
+            return "自然分娩";
+        }
+        if ("premature".equals(key)) {
+            return "早产";
+        }
+        if ("cesarean".equals(key)) {
+            return "剖宫产";
+        }
+        if ("major_illness".equals(key)) {
+            return "重大疾病史";
+        }
+        if ("breast".equals(key)) {
+            return "母乳喂养";
+        }
+        if ("formula".equals(key)) {
+            return "配方奶喂养";
+        }
+        if ("normal".equals(key)) {
+            return "正常";
+        }
+        if ("delayed".equals(key)) {
+            return "发育迟缓";
+        }
+        if ("abnormal".equals(key)) {
+            return "异常";
+        }
+        if ("yes".equals(key)) {
+            return "是";
+        }
+        if ("no".equals(key)) {
+            return "否";
+        }
+        return key;
+    }
+
+    private static String boolText(boolean value) {
+        return value ? "是" : "否";
+    }
+
+    private static String labelValue(String label, String value) {
+        String safeLabel = label == null ? "" : label.trim();
+        String safeValue = value == null ? "" : value.trim();
+        if (safeValue.isEmpty()) {
+            safeValue = "未填写";
+        }
+        return safeLabel + "：" + safeValue;
+    }
+
+    private static String selectedLabel(boolean selected, String label) {
+        return selected ? label : null;
+    }
+
+    private static String appendDetail(String label, String detail) {
+        String safeDetail = detail == null ? "" : detail.trim();
+        return safeDetail.isEmpty() ? label : label + "（" + safeDetail + "）";
+    }
+
+    private static String joinSelected(String... values) {
+        List<String> parts = new ArrayList<>();
+        if (values != null) {
+            for (String value : values) {
+                if (value != null && !value.trim().isEmpty()) {
+                    parts.add(value.trim());
+                }
+            }
+        }
+        if (parts.isEmpty()) {
+            return "暂无";
+        }
+        return TextUtils.join("、", parts);
     }
 
     private static final class OverallInterventionPdfRenderer extends TreatmentPlanPdfRenderer {
