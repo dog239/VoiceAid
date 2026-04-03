@@ -1,5 +1,6 @@
 package com.example.CCLEvaluation;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -13,16 +14,26 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import utils.ChildBackgroundInfoHelper;
+import utils.MedicalDiagnosisImageHelper;
 import utils.dataManager;
 
 public class ChildDetailEditActivity extends AppCompatActivity {
@@ -37,15 +48,26 @@ public class ChildDetailEditActivity extends AppCompatActivity {
     private ImageView btnBack;
     private Button btnEdit;
     private Button btnSave;
-    private Button btnUploadMedicalDocuments;
+    private Button btnChooseMedicalDocuments;
+    private Button btnTakeMedicalDocuments;
     private TextView tvMedicalDocumentsEmpty;
     private RecyclerView rvMedicalDocuments;
+    private MedicalDocumentImageAdapter medicalDocumentImageAdapter;
+
+    private final List<JSONObject> medicalDocumentImages = new ArrayList<>();
+    private final List<JSONObject> persistedMedicalDocumentImages = new ArrayList<>();
+    private final Set<String> deletedMedicalDocumentPaths = new HashSet<>();
+    private File currentCameraPhotoFile;
+
+    private ActivityResultLauncher<String> pickMultiplePhotosLauncher;
+    private ActivityResultLauncher<Uri> takePictureLauncher;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_child_detail_edit);
 
+        registerPhotoLaunchers();
         initViews();
         bindActions();
         loadChildData();
@@ -53,16 +75,49 @@ public class ChildDetailEditActivity extends AppCompatActivity {
         setEditingMode(false);
     }
 
+    private void registerPhotoLaunchers() {
+        pickMultiplePhotosLauncher = registerForActivityResult(new ActivityResultContracts.GetMultipleContents(), uris -> {
+            if (uris == null || uris.isEmpty()) {
+                Toast.makeText(this, "未选择图片。", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            handleSelectedPhotos(uris);
+        });
+
+        takePictureLauncher = registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
+            if (!success || currentCameraPhotoFile == null || !currentCameraPhotoFile.exists()) {
+                MedicalDiagnosisImageHelper.deleteFileQuietly(currentCameraPhotoFile);
+                currentCameraPhotoFile = null;
+                Toast.makeText(this, "拍照失败，请重试。", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            try {
+                JSONObject imageInfo = MedicalDiagnosisImageHelper.buildImageMetadata(currentCameraPhotoFile, "image/jpeg", "");
+                medicalDocumentImages.add(imageInfo);
+                currentCameraPhotoFile = null;
+                refreshMedicalDocumentsUi();
+                Toast.makeText(this, "拍照成功，保存后生效。", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                MedicalDiagnosisImageHelper.deleteFileQuietly(currentCameraPhotoFile);
+                currentCameraPhotoFile = null;
+                Toast.makeText(this, "图片处理失败，请重试。", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
     private void initViews() {
         formRoot = findViewById(R.id.layout_child_detail_content);
         btnBack = findViewById(R.id.btn_back);
         btnEdit = findViewById(R.id.btn_edit_child_detail);
         btnSave = findViewById(R.id.btn_save_child_detail);
-        btnUploadMedicalDocuments = findViewById(R.id.btn_upload_medical_documents);
+        btnChooseMedicalDocuments = findViewById(R.id.btn_choose_medical_documents);
+        btnTakeMedicalDocuments = findViewById(R.id.btn_take_medical_documents);
         tvMedicalDocumentsEmpty = findViewById(R.id.tv_medical_documents_empty);
         rvMedicalDocuments = findViewById(R.id.rv_medical_documents);
-        rvMedicalDocuments.setLayoutManager(new GridLayoutManager(this, 3));
+
+        rvMedicalDocuments.setLayoutManager(new GridLayoutManager(this, 2));
         rvMedicalDocuments.setNestedScrollingEnabled(false);
+        medicalDocumentImageAdapter = new MedicalDocumentImageAdapter(this::removeMedicalDocumentAt);
+        rvMedicalDocuments.setAdapter(medicalDocumentImageAdapter);
     }
 
     private void bindActions() {
@@ -83,14 +138,24 @@ public class ChildDetailEditActivity extends AppCompatActivity {
             }
             saveForm();
         });
-        btnUploadMedicalDocuments.setOnClickListener(v ->
-                Toast.makeText(this, "\u533B\u5B66\u8BCA\u65AD\u8D44\u6599\u4E0A\u4F20\u529F\u80FD\u6682\u672A\u63A5\u5165\u3002", Toast.LENGTH_SHORT).show());
+        btnChooseMedicalDocuments.setOnClickListener(v -> {
+            if (!isEditing) {
+                return;
+            }
+            pickMultiplePhotosLauncher.launch("image/*");
+        });
+        btnTakeMedicalDocuments.setOnClickListener(v -> {
+            if (!isEditing) {
+                return;
+            }
+            launchCamera();
+        });
     }
 
     private void loadChildData() {
         fName = getIntent().getStringExtra(EXTRA_FILE_NAME);
         if (TextUtils.isEmpty(fName)) {
-            Toast.makeText(this, "\u7F3A\u5C11\u513F\u7AE5\u8BB0\u5F55\u3002", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "缺少儿童记录。", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -98,13 +163,13 @@ public class ChildDetailEditActivity extends AppCompatActivity {
             childData = dataManager.getInstance().loadData(fName);
         } catch (Exception e) {
             childData = new JSONObject();
-            Toast.makeText(this, "\u8BFB\u53D6\u513F\u7AE5\u8BB0\u5F55\u5931\u8D25\u3002", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "读取儿童记录失败。", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void fillForm() {
         JSONObject info = optObject(childData, "info");
-        JSONObject backgroundInfo = optObject(info, "backgroundInfo");
+        JSONObject backgroundInfo = ChildBackgroundInfoHelper.optBackgroundInfo(info);
 
         JSONObject basicCare = optObject(backgroundInfo, "basicCare");
         setChecked(R.id.cb_caregiver_0_3_parents, basicCare.optBoolean("caregiver0To3Parents"));
@@ -203,12 +268,18 @@ public class ChildDetailEditActivity extends AppCompatActivity {
         setChecked(R.id.cb_parent_concern_slow_response, languageConcern.optBoolean("parentConcernSlowResponse"));
         setText(R.id.et_parent_primary_request, languageConcern.optString("parentPrimaryRequest"));
 
-        updateMedicalDocumentsHint(backgroundInfo.optJSONArray("medicalDocuments"));
+        persistedMedicalDocumentImages.clear();
+        persistedMedicalDocumentImages.addAll(MedicalDiagnosisImageHelper.toObjectList(
+                backgroundInfo.optJSONArray(MedicalDiagnosisImageHelper.FIELD_MEDICAL_DOCUMENTS)));
+        medicalDocumentImages.clear();
+        medicalDocumentImages.addAll(MedicalDiagnosisImageHelper.cloneList(persistedMedicalDocumentImages));
+        deletedMedicalDocumentPaths.clear();
+        refreshMedicalDocumentsUi();
     }
 
     private void saveForm() {
         if (TextUtils.isEmpty(fName)) {
-            Toast.makeText(this, "\u7F3A\u5C11\u513F\u7AE5\u8BB0\u5F55\u3002", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "缺少儿童记录。", Toast.LENGTH_SHORT).show();
             return;
         }
         try {
@@ -321,25 +392,105 @@ public class ChildDetailEditActivity extends AppCompatActivity {
             languageConcern.put("parentPrimaryRequest", getFieldText(R.id.et_parent_primary_request));
             backgroundInfo.put("languageConcern", languageConcern);
 
-            if (!backgroundInfo.has("medicalDocuments") || backgroundInfo.isNull("medicalDocuments")) {
-                backgroundInfo.put("medicalDocuments", new JSONArray());
-            }
+            saveMedicalDocumentsState(backgroundInfo);
 
             dataManager.getInstance().saveChildJson(fName, safeChildData);
             childData = safeChildData;
             setResult(RESULT_OK);
-            updateMedicalDocumentsHint(backgroundInfo.optJSONArray("medicalDocuments"));
-            Toast.makeText(this, "\u4FDD\u5B58\u6210\u529F\u3002", Toast.LENGTH_SHORT).show();
+            refreshMedicalDocumentsUi();
+            Toast.makeText(this, "保存成功。", Toast.LENGTH_SHORT).show();
             setEditingMode(false);
         } catch (Exception e) {
-            Toast.makeText(this, "\u4FDD\u5B58\u5931\u8D25\u3002", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "保存失败。", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void saveMedicalDocumentsState(JSONObject backgroundInfo) throws JSONException {
+        backgroundInfo.put(
+                MedicalDiagnosisImageHelper.FIELD_MEDICAL_DOCUMENTS,
+                MedicalDiagnosisImageHelper.toJsonArray(medicalDocumentImages)
+        );
+        for (String path : deletedMedicalDocumentPaths) {
+            if (!TextUtils.isEmpty(path)) {
+                MedicalDiagnosisImageHelper.deleteFileQuietly(new File(path));
+            }
+        }
+        persistedMedicalDocumentImages.clear();
+        persistedMedicalDocumentImages.addAll(MedicalDiagnosisImageHelper.cloneList(medicalDocumentImages));
+        deletedMedicalDocumentPaths.clear();
+    }
+
+    private void handleSelectedPhotos(List<Uri> uris) {
+        int addedCount = 0;
+        for (Uri uri : uris) {
+            if (uri == null) {
+                continue;
+            }
+            try {
+                JSONObject imageInfo = MedicalDiagnosisImageHelper.copyImageToAppStorage(this, uri, fName);
+                medicalDocumentImages.add(imageInfo);
+                addedCount++;
+            } catch (Exception ignored) {
+            }
+        }
+        refreshMedicalDocumentsUi();
+        if (addedCount > 0) {
+            Toast.makeText(this, "已追加 " + addedCount + " 张图片，保存后生效。", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "图片处理失败，请重试。", Toast.LENGTH_SHORT).show();
+        }
+    }
+    private void launchCamera() {
+        try {
+            currentCameraPhotoFile = MedicalDiagnosisImageHelper.createImageFile(this, fName, ".jpg");
+            Uri photoUri = FileProvider.getUriForFile(
+                    this,
+                    BuildConfig.APPLICATION_ID + ".file_provider",
+                    currentCameraPhotoFile
+            );
+            takePictureLauncher.launch(photoUri);
+        } catch (Exception e) {
+            currentCameraPhotoFile = null;
+            Toast.makeText(this, "无法打开相机，请稍后重试。", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void removeMedicalDocumentAt(int position) {
+        if (!isEditing || position < 0 || position >= medicalDocumentImages.size()) {
+            return;
+        }
+        JSONObject removed = medicalDocumentImages.remove(position);
+        String localPath = MedicalDiagnosisImageHelper.getLocalPath(removed);
+        if (wasPersistedMedicalDocument(localPath)) {
+            deletedMedicalDocumentPaths.add(localPath);
+        } else {
+            MedicalDiagnosisImageHelper.deleteImageFile(removed);
+        }
+        refreshMedicalDocumentsUi();
+    }
+
+    private boolean wasPersistedMedicalDocument(String localPath) {
+        if (TextUtils.isEmpty(localPath)) {
+            return false;
+        }
+        for (JSONObject item : persistedMedicalDocumentImages) {
+            if (localPath.equals(MedicalDiagnosisImageHelper.getLocalPath(item))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void refreshMedicalDocumentsUi() {
+        medicalDocumentImageAdapter.setItems(MedicalDiagnosisImageHelper.cloneList(medicalDocumentImages), isEditing);
+        updateMedicalDocumentsHint();
     }
 
     private void setEditingMode(boolean editing) {
         isEditing = editing;
         setFormEditable(editing);
         updateActionButtons();
+        refreshMedicalDocumentsUi();
     }
 
     private void updateActionButtons() {
@@ -370,7 +521,7 @@ public class ChildDetailEditActivity extends AppCompatActivity {
             editText.setClickable(editable);
         } else if (view instanceof CheckBox || view instanceof RadioButton) {
             view.setEnabled(editable);
-        } else if (id == R.id.btn_upload_medical_documents) {
+        } else if (id == R.id.btn_choose_medical_documents || id == R.id.btn_take_medical_documents) {
             view.setEnabled(editable);
             view.setAlpha(editable ? 1f : 0.6f);
         }
@@ -382,12 +533,14 @@ public class ChildDetailEditActivity extends AppCompatActivity {
         }
     }
 
-    private void updateMedicalDocumentsHint(@Nullable JSONArray medicalDocuments) {
-        int count = medicalDocuments == null ? 0 : medicalDocuments.length();
+    private void updateMedicalDocumentsHint() {
+        int count = medicalDocumentImages.size();
         if (count <= 0) {
-            tvMedicalDocumentsEmpty.setText("\u6682\u65E0\u5DF2\u4E0A\u4F20\u7684\u533B\u5B66\u8BCA\u65AD\u8D44\u6599\u56FE\u7247");
+            tvMedicalDocumentsEmpty.setText("暂无已上传的医学诊断资料图片");
+            tvMedicalDocumentsEmpty.setVisibility(View.VISIBLE);
         } else {
-            tvMedicalDocumentsEmpty.setText("\u5DF2\u4FDD\u5B58 " + count + " \u5F20\u533B\u5B66\u8BCA\u65AD\u8D44\u6599\u56FE\u7247");
+            tvMedicalDocumentsEmpty.setText("已保存 " + count + " 张医学诊断资料图片");
+            tvMedicalDocumentsEmpty.setVisibility(View.GONE);
         }
     }
 

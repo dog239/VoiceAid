@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -44,6 +45,7 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
     private SimpleDateFormat dateFormat;
     private String examinerName;
     private String existingFileName;
+    private View rootContainer;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -68,6 +70,7 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
         textPhone = findViewById(R.id.et_phone);
         genderGroup = findViewById(R.id.rg_gender);
         familyRecyclerView = findViewById(R.id.rv_family_members);
+        rootContainer = findViewById(R.id.child_info_root_container);
 
         dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         familyRecyclerView.setLayoutManager(new LinearLayoutManager(this) {
@@ -80,8 +83,11 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
         familyRecyclerView.setFocusable(false);
         familyRecyclerView.setHasFixedSize(false);
         familyRecyclerView.setItemAnimator(null);
-        familyMemberAdapter = new FamilyMemberAdapter(createDefaultMembers(), this::handleDeleteMember);
+        familyMemberAdapter = new FamilyMemberAdapter(new ArrayList<>(), this::handleDeleteMember);
         familyRecyclerView.setAdapter(familyMemberAdapter);
+        if (rootContainer != null) {
+            rootContainer.requestFocus();
+        }
     }
 
     private void initBaseInfo() {
@@ -268,7 +274,10 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
         textTestTime.setText(dateFormat.format(new Date()));
         textAddress.setText("");
         textPhone.setText("");
-        familyMemberAdapter.setMembers(createDefaultMembers());
+        familyMemberAdapter.setMembers(new ArrayList<>());
+        if (rootContainer != null) {
+            rootContainer.requestFocus();
+        }
     }
 
     private String getSelectedGender() {
@@ -310,8 +319,19 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
     }
 
     private ArrayList<FamilyMemberAdapter.FamilyMember> createDefaultMembers() {
-        ArrayList<FamilyMemberAdapter.FamilyMember> members = new ArrayList<>();
-        members.add(new FamilyMemberAdapter.FamilyMember());
-        return members;
+        return new ArrayList<>();
+    }
+
+    private void debugAddMemberButton() {
+        if (buttonAddMember == null) {
+            Log.d("childinfoactivity", "btn_add_member not found");
+            return;
+        }
+        buttonAddMember.post(() -> Log.d("childinfoactivity",
+                "btn_add_member visibility=" + buttonAddMember.getVisibility()
+                        + ", width=" + buttonAddMember.getWidth()
+                        + ", height=" + buttonAddMember.getHeight()
+                        + ", x=" + buttonAddMember.getX()
+                        + ", y=" + buttonAddMember.getY()));
     }
 }

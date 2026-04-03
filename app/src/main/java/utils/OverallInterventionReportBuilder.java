@@ -92,6 +92,7 @@ public final class OverallInterventionReportBuilder {
         childInfo.put("address", safeText(info.optString("address", "")));
         childInfo.put("familyStatus", safeText(info.optString("familyStatus", "")));
         childInfo.put("familyMembers", normalizeFamilyMembers(info.optJSONArray("familyMembers")));
+        childInfo.put("backgroundInfo", copyObject(info.optJSONObject("backgroundInfo")));
         return childInfo;
     }
 

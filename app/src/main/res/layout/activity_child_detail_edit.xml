@@ -226,7 +226,80 @@
 
         <LinearLayout android:id="@+id/section_diagnosed_disorders" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:background="@drawable/bg_plan_card_single" android:orientation="vertical" android:padding="16dp"><TextView android:id="@+id/tv_section_diagnosed_disorders_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x66FE;&#x88AB;&#x8BCA;&#x65AD;&#x7684;&#x969C;&#x788D;" android:textColor="#334155" android:textSize="18sp" android:textStyle="bold" /><LinearLayout android:id="@+id/group_diagnosed_disorders" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:background="@drawable/bg_search_input" android:orientation="vertical" android:padding="12dp"><CheckBox android:id="@+id/cb_disorder_none" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x65E0;" /><CheckBox android:id="@+id/cb_disorder_developmental_delay" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="&#x53D1;&#x5C55;&#x8FDF;&#x7F13;" /><CheckBox android:id="@+id/cb_disorder_cerebral_palsy" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="&#x8111;&#x6027;&#x75F2;&#x75FA;" /><CheckBox android:id="@+id/cb_disorder_autism" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="&#x81EA;&#x95ED;&#x75C7;" /><CheckBox android:id="@+id/cb_disorder_down_syndrome" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="&#x5510;&#x6C0F;&#x75C7;" /><CheckBox android:id="@+id/cb_disorder_intellectual_disability" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="&#x667A;&#x80FD;&#x969C;&#x788D;" /><CheckBox android:id="@+id/cb_disorder_adhd" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="&#x6CE8;&#x610F;&#x529B;&#x7F3A;&#x9677;&#x8FC7;&#x52A8;&#x75C7;" /><CheckBox android:id="@+id/cb_disorder_other" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="&#x5176;&#x4ED6;" /><EditText android:id="@+id/et_disorder_other" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="20dp" android:layout_marginTop="8dp" android:background="@drawable/bg_search_input" android:hint="&#x8BF7;&#x8865;&#x5145;&#x5176;&#x4ED6;&#x8BCA;&#x65AD;" android:inputType="text" android:maxLines="1" android:padding="12dp" android:textColor="#334155" android:textColorHint="#94A3B8" android:theme="@style/MyEditTextStyle" /></LinearLayout></LinearLayout>
 
-        <LinearLayout android:id="@+id/section_medical_documents" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:background="@drawable/bg_plan_card_single" android:orientation="vertical" android:padding="16dp"><TextView android:id="@+id/tv_section_medical_documents_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x533B;&#x5B66;&#x8BCA;&#x65AD;&#x8D44;&#x6599;" android:textColor="#334155" android:textSize="18sp" android:textStyle="bold" /><TextView android:id="@+id/tv_medical_documents_hint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="&#x652F;&#x6301;&#x591A;&#x5F20;&#x533B;&#x5B66;&#x8BCA;&#x65AD;&#x8D44;&#x6599;&#x56FE;&#x7247;&#x4E0A;&#x4F20;&#x4E0E;&#x5C55;&#x793A;" android:textColor="#64748B" android:textSize="14sp" /><Button android:id="@+id/btn_upload_medical_documents" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="&#x4E0A;&#x4F20;&#x533B;&#x5B66;&#x8BCA;&#x65AD;&#x8D44;&#x6599;&#x56FE;&#x7247;" app:backgroundTint="#0F766E" /><TextView android:id="@+id/tv_medical_documents_empty" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_search_input" android:gravity="center" android:minHeight="72dp" android:padding="16dp" android:text="&#x6682;&#x65E0;&#x5DF2;&#x4E0A;&#x4F20;&#x56FE;&#x7247;&#xFF0C;&#x540E;&#x7EED;&#x53EF;&#x5728;&#x6B64;&#x663E;&#x793A;&#x591A;&#x5F20;&#x533B;&#x5B66;&#x8BCA;&#x65AD;&#x8D44;&#x6599;" android:textColor="#64748B" android:textSize="14sp" /><androidx.recyclerview.widget.RecyclerView android:id="@+id/rv_medical_documents" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:minHeight="120dp" android:nestedScrollingEnabled="false" tools:itemCount="3" tools:listitem="@android:layout/simple_list_item_1" /></LinearLayout>
+        <LinearLayout
+            android:id="@+id/section_medical_documents"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_plan_card_single"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tv_section_medical_documents_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="&#x533B;&#x5B66;&#x8BCA;&#x65AD;&#x8D44;&#x6599;"
+                android:textColor="#334155"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_medical_documents_hint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="&#x652F;&#x6301;&#x591A;&#x5F20;&#x533B;&#x5B66;&#x8BCA;&#x65AD;&#x8D44;&#x6599;&#x56FE;&#x7247;&#x4E0A;&#x4F20;&#x4E0E;&#x5C55;&#x793A;"
+                android:textColor="#64748B"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_choose_medical_documents"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="相册选择"
+                    app:backgroundTint="#0F766E" />
+
+                <Button
+                    android:id="@+id/btn_take_medical_documents"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:text="拍照上传"
+                    app:backgroundTint="#0F766E" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_medical_documents_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_search_input"
+                android:gravity="center"
+                android:minHeight="72dp"
+                android:padding="16dp"
+                android:text="&#x6682;&#x65E0;&#x5DF2;&#x4E0A;&#x4F20;&#x56FE;&#x7247;&#xFF0C;&#x540E;&#x7EED;&#x53EF;&#x5728;&#x6B64;&#x663E;&#x793A;&#x591A;&#x5F20;&#x533B;&#x5B66;&#x8BCA;&#x65AD;&#x8D44;&#x6599;"
+                android:textColor="#64748B"
+                android:textSize="14sp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_medical_documents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:nestedScrollingEnabled="false"
+                tools:itemCount="3"
+                tools:listitem="@layout/item_medical_document_image" />
+        </LinearLayout>
 
         <LinearLayout android:id="@+id/section_general_development" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:background="@drawable/bg_plan_card_single" android:orientation="vertical" android:padding="16dp"><TextView android:id="@+id/tv_section_general_development_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x4E00;&#x822C;&#x53D1;&#x5C55;" android:textColor="#334155" android:textSize="18sp" android:textStyle="bold" /><LinearLayout android:id="@+id/field_vision_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:orientation="vertical"><TextView android:id="@+id/tv_vision_status_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x89C6;&#x529B;" android:textColor="#475569" android:textSize="15sp" /><RadioGroup android:id="@+id/rg_vision_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="horizontal"><RadioButton android:id="@+id/rb_vision_normal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x6B63;&#x5E38;" /><RadioButton android:id="@+id/rb_vision_abnormal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="24dp" android:text="&#x5F02;&#x5E38;" /></RadioGroup></LinearLayout><LinearLayout android:id="@+id/field_hearing_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:orientation="vertical"><TextView android:id="@+id/tv_hearing_status_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x542C;&#x529B;" android:textColor="#475569" android:textSize="15sp" /><RadioGroup android:id="@+id/rg_hearing_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="horizontal"><RadioButton android:id="@+id/rb_hearing_normal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x6B63;&#x5E38;" /><RadioButton android:id="@+id/rb_hearing_abnormal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="24dp" android:text="&#x5F02;&#x5E38;" /></RadioGroup></LinearLayout><LinearLayout android:id="@+id/field_eating_habit_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:orientation="vertical"><TextView android:id="@+id/tv_eating_habit_status_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x8FDB;&#x98DF;&#x4E60;&#x60EF;" android:textColor="#475569" android:textSize="15sp" /><RadioGroup android:id="@+id/rg_eating_habit_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="horizontal"><RadioButton android:id="@+id/rb_eating_habit_normal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x6B63;&#x5E38;" /><RadioButton android:id="@+id/rb_eating_habit_abnormal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="24dp" android:text="&#x5F02;&#x5E38;" /></RadioGroup><LinearLayout android:id="@+id/container_eating_habit_abnormal_options" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="20dp" android:layout_marginTop="8dp" android:orientation="vertical"><CheckBox android:id="@+id/cb_eating_habit_chewing_difficulty" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#x5480;&#x56BC;&#x56F0;&#x96BE;" /><CheckBox android:id="@+id/cb_eating_habit_swallowing_difficulty" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="&#x541E;&#x54BD;&#x56F0;&#x96BE;" /></LinearLayout></LinearLayout></LinearLayout>
 

@@ -12,4 +12,7 @@
     <external-files-path
         name="audio"
         path="NarrateTest2/"/>
+    <external-files-path
+        name="pictures"
+        path="Pictures/"/>
 </paths>

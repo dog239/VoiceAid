@@ -9,8 +9,12 @@
     tools:context="com.example.CCLEvaluation.childinfoactivity">
 
     <LinearLayout
+        android:id="@+id/child_info_root_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:descendantFocusability="beforeDescendants"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         android:orientation="vertical"
         android:padding="16dp">
 
