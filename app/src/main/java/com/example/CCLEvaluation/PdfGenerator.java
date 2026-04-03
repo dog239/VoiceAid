@@ -684,152 +684,331 @@ public class PdfGenerator extends evmenuactivity{
                 document.add(new Paragraph("三、词汇能力评估", simsunBold));
                 document.add(new Paragraph("（一）记录表", simsunBold));
                 document.add(new Paragraph(" ", simsun));
-
-                // 创建合并的记录表表格
-                PdfPTable tableVocabulary = new PdfPTable(4);
-                tableVocabulary.setWidthPercentage(100);
-                tableVocabulary.setSpacingBefore(10f);
-                tableVocabulary.setSpacingAfter(15f);
-
+                
+                // 1. 词汇理解结果表格
+                document.add(new Paragraph("(1) 词汇理解结果", simsunBold));
+                document.add(new Paragraph(" ", simsun));
+                
+                PdfPTable tableRE = new PdfPTable(5);
+                tableRE.setWidthPercentage(100);
+                tableRE.setSpacingBefore(10f);
+                tableRE.setSpacingAfter(15f);
+                
                 // 设置列宽比例
-                float[] columnWidths = {1f, 2f, 2f, 2f};
-                tableVocabulary.setWidths(columnWidths);
-
+                float[] columnWidthsRE = {1f, 2f, 2f, 1.5f, 1.5f};
+                tableRE.setWidths(columnWidthsRE);
+                
                 // 添加表头
-                addHeaderCell(tableVocabulary, "序号", simsun, 1);
-                addHeaderCell(tableVocabulary, "测试点", simsun, 1);
-                addHeaderCell(tableVocabulary, "目标词", simsun, 1);
-                addHeaderCell(tableVocabulary, "结果", simsun, 1);
-
-                // 合并的词汇测试数据
-                String[] testPoints = {"名词", "动词", "形容词", "分类名词（名词上位词）"};
-                String[] targets = {"勺子/杯子", "跑/睡觉", "红/蓝色", "动物/水果"};
-                int[] RE_scores = new int[7];
-                int[] E_scores = new int[7];
-
-                for (int i = 0; i < testPoints.length; i++) {
-                    addDataCell(tableVocabulary, String.valueOf(i + 1), simsun, 1);
-                    addDataCell(tableVocabulary, testPoints[i], simsun, 1);
-                    addDataCell(tableVocabulary, targets[i], simsun, 1);
-
-                    // 结果显示
-                    int correctCount = 0;
-
-                    // 检查词汇理解结果
+                addHeaderCell(tableRE, "序号", simsun, 1);
+                addHeaderCell(tableRE, "测试点", simsun, 1);
+                addHeaderCell(tableRE, "目标词", simsun, 1);
+                addHeaderCell(tableRE, "结果", simsun, 1);
+                addHeaderCell(tableRE, "答题时长", simsun, 1);
+                
+                // 词汇理解测试点和目标词
+                String[] reTestPoints = {"名词", "名词", "动词", "动词", "形容词", "分类名词（名词上位词）", "形容词"};
+                String[] reTargets = {"勺子", "眼睛", "跑", "吃", "红", "动物", "大"};
+                
+                int reCorrect = 0;
+                for (int i = 0; i < reTestPoints.length; i++) {
+                    addDataCell(tableRE, String.valueOf(i + 1), simsun, 1);
+                    addDataCell(tableRE, reTestPoints[i], simsun, 1);
+                    addDataCell(tableRE, reTargets[i], simsun, 1);
+                    
+                    String result = "错误";
+                    String time = "00:00";
+                    
                     if (i < jsonArrayRE.length()) {
                         JSONObject reObject = jsonArrayRE.optJSONObject(i);
-                        if (reObject != null && reObject.has("result") && !reObject.isNull("result")) {
-                            if (reObject.optBoolean("result", false)) {
-                                correctCount++;
-                                RE_scores[i] = 1;
+                        if (reObject != null) {
+                            if (reObject.has("result") && !reObject.isNull("result")) {
+                                if (reObject.optBoolean("result", false)) {
+                                    result = "正确";
+                                    reCorrect++;
+                                }
+                            }
+                            if (reObject.has("time") && !reObject.isNull("time")) {
+                                time = reObject.optString("time", "00:00");
                             }
                         }
                     }
-
-                    // 检查词汇表达结果
+                    
+                    addDataCell(tableRE, result, simsun, 1);
+                    addDataCell(tableRE, time, simsun, 1);
+                }
+                
+                // 添加词汇理解结果汇总
+                addDataCell(tableRE, "", simsun, 2);
+                addDataCell(tableRE, "词汇理解结果", simsun, 2);
+                addDataCell(tableRE, reCorrect + "/" + reTestPoints.length, simsun, 1);
+                
+                document.add(tableRE);
+                document.add(new Paragraph(" ", simsun));
+                
+                // 2. 词汇表达结果表格
+                document.add(new Paragraph("(2) 词汇表达结果", simsunBold));
+                document.add(new Paragraph(" ", simsun));
+                
+                PdfPTable tableE = new PdfPTable(5);
+                tableE.setWidthPercentage(100);
+                tableE.setSpacingBefore(10f);
+                tableE.setSpacingAfter(15f);
+                
+                // 设置列宽比例
+                float[] columnWidthsE = {1f, 2f, 2f, 1.5f, 1.5f};
+                tableE.setWidths(columnWidthsE);
+                
+                // 添加表头
+                addHeaderCell(tableE, "序号", simsun, 1);
+                addHeaderCell(tableE, "测试点", simsun, 1);
+                addHeaderCell(tableE, "目标词", simsun, 1);
+                addHeaderCell(tableE, "结果", simsun, 1);
+                addHeaderCell(tableE, "答题时长", simsun, 1);
+                
+                // 词汇表达测试点和目标词
+                String[] eTestPoints = {"名词", "名词", "动词", "动词", "形容词", "分类名词（名词上位词）", "形容词"};
+                String[] eTargets = {"杯子", "耳朵", "睡觉", "喝水", "蓝色", "水果", "长"};
+                
+                int eCorrect = 0;
+                for (int i = 0; i < eTestPoints.length; i++) {
+                    addDataCell(tableE, String.valueOf(i + 1), simsun, 1);
+                    addDataCell(tableE, eTestPoints[i], simsun, 1);
+                    addDataCell(tableE, eTargets[i], simsun, 1);
+                    
+                    String result = "错误";
+                    String time = "00:00";
+                    
                     if (i < jsonArrayE.length()) {
                         JSONObject eObject = jsonArrayE.optJSONObject(i);
-                        if (eObject != null && eObject.has("result") && !eObject.isNull("result")) {
-                            if (eObject.optBoolean("result", false)) {
-                                correctCount++;
-                                E_scores[i] = 1;
+                        if (eObject != null) {
+                            if (eObject.has("result") && !eObject.isNull("result")) {
+                                if (eObject.optBoolean("result", false)) {
+                                    result = "正确";
+                                    eCorrect++;
+                                }
+                            }
+                            if (eObject.has("time") && !eObject.isNull("time")) {
+                                time = eObject.optString("time", "00:00");
                             }
                         }
                     }
-
-                    String result = "";
-                    if (correctCount == 2) {
-                        result = "对";
-                    } else if (correctCount == 0) {
-                        result = "错";
-                    } else {
-                        result = "部分对";
-                    }
-                    addDataCell(tableVocabulary, result, simsun, 1);
+                    
+                    addDataCell(tableE, result, simsun, 1);
+                    addDataCell(tableE, time, simsun, 1);
                 }
-                document.add(tableVocabulary);
+                
+                // 添加词汇表达结果汇总
+                addDataCell(tableE, "", simsun, 2);
+                addDataCell(tableE, "词汇表达结果", simsun, 2);
+                addDataCell(tableE, eCorrect + "/" + eTestPoints.length, simsun, 1);
+                
+                document.add(tableE);
+                document.add(new Paragraph(" ", simsun));
 
                 // （二）评估结果
                 document.add(new Paragraph("（二）评估结果", simsunBold));
-                int totalCorrect = (int)(countre + counte);
-                double totalScore = totalCorrect / 14.0 * 100;
-                document.add(new Paragraph("本次评估率：" + String.format("%.2f%%", totalScore), simsun));
+                double reRate = reTestPoints.length > 0 ? (double)reCorrect / reTestPoints.length * 100 : 0;
+                double eRate = eTestPoints.length > 0 ? (double)eCorrect / eTestPoints.length * 100 : 0;
+                document.add(new Paragraph("词汇理解正确率：" + String.format("%.2f%%", reRate), simsun));
+                document.add(new Paragraph("词汇表达正确率：" + String.format("%.2f%%", eRate), simsun));
                 document.add(new Paragraph(" ", simsun));
 
-                // 统计各类型词的得分
-                int nounScore = 0, verbScore = 0, adjScore = 0, categoryScore = 0;
-                // 词汇理解中的得分
-                nounScore += RE_scores[0]; // 名词
-                verbScore += RE_scores[1]; // 动词
-                adjScore += RE_scores[2];   // 形容词
-                categoryScore += RE_scores[3];             // 分类名词
-                // 词汇表达中的得分
-                nounScore += E_scores[0];    // 名词
-                verbScore += E_scores[1];    // 动词
-                adjScore += E_scores[2];     // 形容词
-                categoryScore += E_scores[3];              // 分类名词
+                // （三）评估建议
+                document.add(new Paragraph("（三）评估建议", simsunBold));
+                document.add(new Paragraph("词汇部分主要考察对语言基本概念的理解和表达，包含名词、动词、形容词和分类概念名词的表达。根据测评结果显示，", simsun));
+                
+                // 统计各词类的正确率
+                // 分类名词：索引5（词汇理解）和索引5（词汇表达）
+                int categoryTotal = 2;
+                int categoryCorrect = 0;
+                if (jsonArrayRE.length() > 5) {
+                    JSONObject obj = jsonArrayRE.optJSONObject(5);
+                    if (obj != null && obj.optBoolean("result", false)) categoryCorrect++;
+                }
+                if (jsonArrayE.length() > 5) {
+                    JSONObject obj = jsonArrayE.optJSONObject(5);
+                    if (obj != null && obj.optBoolean("result", false)) categoryCorrect++;
+                }
+                
+                // 形容词：索引4,6（词汇理解）和索引4,6（词汇表达）
+                int adjTotal = 4;
+                int adjCorrect = 0;
+                if (jsonArrayRE.length() > 4) {
+                    JSONObject obj = jsonArrayRE.optJSONObject(4);
+                    if (obj != null && obj.optBoolean("result", false)) adjCorrect++;
+                }
+                if (jsonArrayRE.length() > 6) {
+                    JSONObject obj = jsonArrayRE.optJSONObject(6);
+                    if (obj != null && obj.optBoolean("result", false)) adjCorrect++;
+                }
+                if (jsonArrayE.length() > 4) {
+                    JSONObject obj = jsonArrayE.optJSONObject(4);
+                    if (obj != null && obj.optBoolean("result", false)) adjCorrect++;
+                }
+                if (jsonArrayE.length() > 6) {
+                    JSONObject obj = jsonArrayE.optJSONObject(6);
+                    if (obj != null && obj.optBoolean("result", false)) adjCorrect++;
+                }
+                
+                // 动词：索引2,3（词汇理解）和索引2,3（词汇表达）
+                int verbTotal = 4;
+                int verbCorrect = 0;
+                if (jsonArrayRE.length() > 2) {
+                    JSONObject obj = jsonArrayRE.optJSONObject(2);
+                    if (obj != null && obj.optBoolean("result", false)) verbCorrect++;
+                }
+                if (jsonArrayRE.length() > 3) {
+                    JSONObject obj = jsonArrayRE.optJSONObject(3);
+                    if (obj != null && obj.optBoolean("result", false)) verbCorrect++;
+                }
+                if (jsonArrayE.length() > 2) {
+                    JSONObject obj = jsonArrayE.optJSONObject(2);
+                    if (obj != null && obj.optBoolean("result", false)) verbCorrect++;
+                }
+                if (jsonArrayE.length() > 3) {
+                    JSONObject obj = jsonArrayE.optJSONObject(3);
+                    if (obj != null && obj.optBoolean("result", false)) verbCorrect++;
+                }
+                
+                // 名词：索引0,1（词汇理解）和索引0,1（词汇表达）
+                int nounTotal = 4;
+                int nounCorrect = 0;
+                if (jsonArrayRE.length() > 0) {
+                    JSONObject obj = jsonArrayRE.optJSONObject(0);
+                    if (obj != null && obj.optBoolean("result", false)) nounCorrect++;
+                }
+                if (jsonArrayRE.length() > 1) {
+                    JSONObject obj = jsonArrayRE.optJSONObject(1);
+                    if (obj != null && obj.optBoolean("result", false)) nounCorrect++;
+                }
+                if (jsonArrayE.length() > 0) {
+                    JSONObject obj = jsonArrayE.optJSONObject(0);
+                    if (obj != null && obj.optBoolean("result", false)) nounCorrect++;
+                }
+                if (jsonArrayE.length() > 1) {
+                    JSONObject obj = jsonArrayE.optJSONObject(1);
+                    if (obj != null && obj.optBoolean("result", false)) nounCorrect++;
+                }
+                
+                // 生成与App显示完全一致的评估建议文本
+                StringBuilder suggestionText = new StringBuilder();
+                suggestionText.append("孩子");
+                
+                // 按App显示的顺序：分类名词、形容词、动词
+                boolean hasGoodWords = false;
+                if (categoryCorrect >= categoryTotal / 2.0) {
+                    suggestionText.append("分类名词（名词上位词）");
+                    hasGoodWords = true;
+                }
+                
+                if (adjCorrect >= adjTotal / 2.0) {
+                    if (hasGoodWords) suggestionText.append("、");
+                    suggestionText.append("形容词");
+                    hasGoodWords = true;
+                }
+                
+                if (verbCorrect >= verbTotal / 2.0) {
+                    if (hasGoodWords) suggestionText.append("、");
+                    suggestionText.append("动词");
+                    hasGoodWords = true;
+                }
+                
+                if (nounCorrect >= nounTotal / 2.0) {
+                    if (hasGoodWords) suggestionText.append("、");
+                    suggestionText.append("名词");
+                    hasGoodWords = true;
+                }
+                
+                if (hasGoodWords) {
+                    suggestionText.append("掌握较好");
+                }
+                
+                // 添加"但各测试点掌握得不够好，需要针对性的学习"，与App显示一致
+                suggestionText.append("，但各测试点掌握得不够好，需要针对性的学习");
+                
+                suggestionText.append("。");
+                
+                document.add(new Paragraph(suggestionText.toString(), simsun));
+                
 
-                // 找出得分最高和最低的词类
-                String bestWordType = "名词", worstWordType = "名词";
-                int maxScore = nounScore;
-                int minScore = nounScore;
-
-                if (verbScore > maxScore) {
-                    maxScore = verbScore;
-                    bestWordType = "动词";
-                }
-                if (adjScore > maxScore) {
-                    maxScore = adjScore;
-                    bestWordType = "形容词";
-                }
-                if (categoryScore > maxScore) {
-                    maxScore = categoryScore;
-                    bestWordType = "分类名词";
-                }
-
-                if (verbScore < minScore) {
-                    minScore = verbScore;
-                    worstWordType = "动词";
-                }
-                if (adjScore < minScore) {
-                    minScore = adjScore;
-                    worstWordType = "形容词";
-                }
-                if (categoryScore < minScore) {
-                    minScore = categoryScore;
-                    worstWordType = "分类名词";
-                }
-
-                // 评估建议
-                document.add(new Paragraph("（二）评估建议", simsunBold));
-                document.add(new Paragraph("词汇部分主要考察对语言基本概念的理解和表达，包含名词、动词、形容词和分类概念名词的表达。根据测评结果显示，孩子在词汇理解和表达方面的综合表现如下：", simsun));
-                document.add(new Paragraph(" ", simsun));
-                document.add(new Paragraph("1. 优势分析：孩子" + bestWordType + "词掌握较好，显示出在这方面的语言能力较强。", simsun));
-                document.add(new Paragraph("2. 不足分析：孩子" + worstWordType + "词掌握得不够好，需要针对性的学习和训练。", simsun));
-                document.add(new Paragraph(" ", simsun));
-                document.add(new Paragraph("具体建议：", simsun));
-                document.add(new Paragraph("1. 针对掌握较好的" + bestWordType + "词，可以进一步扩展相关词汇，提高词汇量和语言运用能力。", simsun));
-                document.add(new Paragraph("2. 针对掌握不够好的" + worstWordType + "词，建议通过以下方式加强训练：", simsun));
-                document.add(new Paragraph("   - 实物教学：使用具体物品帮助孩子理解和记忆词汇", simsun));
-                document.add(new Paragraph("   - 图片配对：通过图片与词汇的配对游戏增强记忆", simsun));
-                document.add(new Paragraph("   - 情境对话：在日常生活情境中反复使用相关词汇", simsun));
-                document.add(new Paragraph("3. 每天安排15-20分钟的词汇练习时间，保持学习的连续性和系统性。", simsun));
-                document.add(new Paragraph("4. 在日常生活中多与孩子交流，鼓励孩子用语言表达自己的需求和想法，提供丰富的语言环境。", simsun));
-                document.add(new Paragraph("5. 定期进行词汇能力评估，跟踪孩子的进步情况，及时调整学习策略。", simsun));
-                document.add(new Paragraph(" ", simsun));
             }
 
             if (showPrelinguistic) {
                 document.add(new Paragraph("二、前语言能力测试模块（模块二）", simsunBold));
                 document.add(new Paragraph("场景：" + plSceneLabel, simsun));
                 document.add(new Paragraph("得分：" + plTotalScore + "/10", simsun));
-                document.add(new Paragraph("（一）前语言能力评估结果", simsunBold));
+                
+                // （一）记录表
+                document.add(new Paragraph("（一）记录表", simsunBold));
+                document.add(new Paragraph(" ", simsun));
+                
+                // 创建前语言能力测试点表格
+                PdfPTable tablePL = new PdfPTable(3);
+                tablePL.setWidthPercentage(100);
+                tablePL.setSpacingBefore(10f);
+                tablePL.setSpacingAfter(15f);
+                
+                // 添加表头
+                addHeaderCell(tablePL, "序号", simsun, 1);
+                addHeaderCell(tablePL, "技能", simsun, 1);
+                addHeaderCell(tablePL, "得分", simsun, 1);
+                
+                // 加载前语言能力评估数据
+                JSONArray plDataArray = null;
+                if (evaluations.has("PL_A")) {
+                    plDataArray = evaluations.optJSONArray("PL_A");
+                } else if (evaluations.has("PL_B")) {
+                    plDataArray = evaluations.optJSONArray("PL_B");
+                } else if (evaluations.has("PL")) {
+                    plDataArray = evaluations.optJSONArray("PL");
+                }
+                
+                // 技能列表
+                String[] plSkills = ImageUrls.PL_SKILLS;
+                String[] plPrompts = "B".equals(plSceneLabel) ? ImageUrls.PL_PROMPTS_B : ImageUrls.PL_PROMPTS_A;
+                
+                // 添加技能数据行
+                for (int i = 0; i < plSkills.length; i++) {
+                    int plScore = 0;
+                    if (plDataArray != null && i < plDataArray.length()) {
+                        JSONObject item = plDataArray.optJSONObject(i);
+                        if (item != null) {
+                            plScore = item.optInt("score", 0);
+                        }
+                    }
+                    addDataCell(tablePL, String.valueOf(i + 1), simsun, 1);
+                    addDataCell(tablePL, plSkills[i], simsun, 1);
+                    addDataCell(tablePL, String.valueOf(plScore), simsun, 1);
+                }
+                
+                // 添加总分行
+                PdfPCell totalCell = new PdfPCell(new Phrase("总分", simsunBold));
+                totalCell.setColspan(2);
+                totalCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                totalCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                totalCell.setFixedHeight(22.5f);
+                tablePL.addCell(totalCell);
+                
+                PdfPCell totalScoreCell = new PdfPCell(new Phrase(plTotalScore + "/10", simsun));
+                totalScoreCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                totalScoreCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                totalScoreCell.setFixedHeight(22.5f);
+                tablePL.addCell(totalScoreCell);
+                
+                document.add(tablePL);
+                
+                // （二）前语言能力评估结果
+                document.add(new Paragraph("（二）前语言能力评估结果", simsunBold));
                 document.add(new Paragraph(plSummaryText, simsun));
-                document.add(new Paragraph("（二）评估建议", simsunBold));
-                String option1Line = (plSuggestionOption == 1 ? "● " : "○ ") + plOption1Text;
-                String option2Line = (plSuggestionOption == 2 ? "● " : "○ ") + plOption2Text;
-                document.add(new Paragraph(option1Line, simsun));
-                document.add(new Paragraph(option2Line, simsun));
+                
+                // （三）评估建议
+                document.add(new Paragraph("（三）评估建议", simsunBold));
+                // 只显示勾选的选项
+                if (plSuggestionOption == 1) {
+                    document.add(new Paragraph("● " + plOption1Text, simsun));
+                } else if (plSuggestionOption == 2) {
+                    document.add(new Paragraph("● " + plOption2Text, simsun));
+                }
                 document.add(new Paragraph(" ", simsun));
             }
 
@@ -844,10 +1023,6 @@ public class PdfGenerator extends evmenuactivity{
                 tableSyntax.setWidthPercentage(100);
                 tableSyntax.setSpacingBefore(10f);
                 tableSyntax.setSpacingAfter(15f);
-
-                // 设置列宽比例
-                float[] syntaxColumnWidths = {1f, 2f, 2f, 2f};
-                tableSyntax.setWidths(syntaxColumnWidths);
 
                 // 添加表头
                 addHeaderCell(tableSyntax, "序号", simsun, 1);
@@ -871,12 +1046,66 @@ public class PdfGenerator extends evmenuactivity{
                     {"12", "复合句表达", "3", ""}
                 };
 
+                // 加载RG（句法理解）和SE（句法表达）数据
+                JSONArray rgArray = evaluations.optJSONArray("RG");
+                JSONArray seArray = evaluations.optJSONArray("SE");
+                
                 // 计算每个测试点的正确率
+                ArrayList<String> weaknessList = new ArrayList<>();
+                ArrayList<String> inProgressList = new ArrayList<>();
+                
                 for (int i = 0; i < syntaxTestPoints.length; i++) {
+                    int totalQuestions = Integer.parseInt(syntaxTestPoints[i][2]);
+                    int correctCount = 0;
+                    
+                    // 检查RG数据（前6个测试点）
+                    if (i < 6 && rgArray != null) {
+                        for (int j = 0; j < rgArray.length(); j++) {
+                            JSONObject item = rgArray.optJSONObject(j);
+                            if (item != null) {
+                                int groupNumber = item.optInt("groupNumber", 0);
+                                if (groupNumber == i + 1) {
+                                    boolean result = item.optBoolean("result", false);
+                                    if (result) {
+                                        correctCount++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 检查SE数据（后6个测试点）
+                    if (i >= 6 && seArray != null) {
+                        for (int j = 0; j < seArray.length(); j++) {
+                            JSONObject item = seArray.optJSONObject(j);
+                            if (item != null) {
+                                int groupNumber = item.optInt("groupNumber", 0);
+                                if (groupNumber == i - 5) {
+                                    boolean result = item.optBoolean("result", false);
+                                    if (result) {
+                                        correctCount++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 计算正确率
+                    String accuracy = totalQuestions > 0 ? String.format("%.1f%%", (double) correctCount / totalQuestions * 100) : "0%";
+                    syntaxTestPoints[i][3] = accuracy;
+                    
+                    // 确定需要重点关注的能力和不稳定的能力
+                    double accuracyValue = totalQuestions > 0 ? (double) correctCount / totalQuestions : 0;
+                    if (accuracyValue == 0) {
+                        weaknessList.add(syntaxTestPoints[i][1]);
+                    } else if (accuracyValue <= 0.33) {
+                        inProgressList.add(syntaxTestPoints[i][1]);
+                    }
+                    
                     addDataCell(tableSyntax, syntaxTestPoints[i][0], simsun, 1);
                     addDataCell(tableSyntax, syntaxTestPoints[i][1], simsun, 1);
                     addDataCell(tableSyntax, syntaxTestPoints[i][2], simsun, 1);
-                    addDataCell(tableSyntax, syntaxTestPoints[i][3], simsun, 1);
+                    addDataCell(tableSyntax, accuracy, simsun, 1);
                 }
                 document.add(tableSyntax);
 
@@ -905,28 +1134,80 @@ public class PdfGenerator extends evmenuactivity{
                     }
                     document.add(new Paragraph(" ", simsun));
 
-                    // 模拟需要重点关注的能力和不稳定的能力
+                    // 显示需要重点关注的能力
                     document.add(new Paragraph("1. 【需要重点关注的能力】", simsun));
-                    document.add(new Paragraph("   - 复合句理解能力", simsun));
-                    document.add(new Paragraph("   - 条件句表达能力", simsun));
+                    if (!weaknessList.isEmpty()) {
+                        for (String ability : weaknessList) {
+                            document.add(new Paragraph("   - " + ability, simsun));
+                        }
+                    } else {
+                        document.add(new Paragraph("   暂无需要重点关注的能力", simsun));
+                    }
                     document.add(new Paragraph(" ", simsun));
 
+                    // 显示不稳定的能力
                     document.add(new Paragraph("2. 【不稳定的能力】", simsun));
-                    document.add(new Paragraph("   - 疑问句理解能力", simsun));
-                    document.add(new Paragraph("   - 比较句表达能力", simsun));
+                    if (!inProgressList.isEmpty()) {
+                        for (String ability : inProgressList) {
+                            document.add(new Paragraph("   - " + ability, simsun));
+                        }
+                    } else {
+                        document.add(new Paragraph("   暂无不稳定的能力", simsun));
+                    }
                     document.add(new Paragraph(" ", simsun));
                 }
 
                 document.add(new Paragraph("具体建议：", simsun));
-                document.add(new Paragraph("1. 针对需要重点关注的能力：", simsun));
-                document.add(new Paragraph("   - 复合句理解：通过简单的因果关系句子开始，逐步引导孩子理解复杂的句子结构", simsun));
-                document.add(new Paragraph("   - 条件句表达：使用'如果...就...'等常见条件句结构，在日常生活中反复练习", simsun));
-                document.add(new Paragraph(" ", simsun));
-
-                document.add(new Paragraph("2. 针对不稳定的能力：", simsun));
-                document.add(new Paragraph("   - 疑问句理解：通过实物和图片，帮助孩子理解不同类型的疑问句", simsun));
-                document.add(new Paragraph("   - 比较句表达：使用具体的事物进行比较，如大小、多少、高矮等", simsun));
-                document.add(new Paragraph(" ", simsun));
+                
+                // 针对需要重点关注的能力
+                if (!weaknessList.isEmpty()) {
+                    document.add(new Paragraph("1. 针对需要重点关注的能力：", simsun));
+                    for (String ability : weaknessList) {
+                        if (ability.contains("复合句")) {
+                            document.add(new Paragraph("   - 复合句理解：通过简单的因果关系句子开始，逐步引导孩子理解复杂的句子结构", simsun));
+                        } else if (ability.contains("条件句")) {
+                            document.add(new Paragraph("   - 条件句表达：使用'如果...就...'等常见条件句结构，在日常生活中反复练习", simsun));
+                        } else if (ability.contains("疑问句")) {
+                            document.add(new Paragraph("   - 疑问句理解：通过实物和图片，帮助孩子理解不同类型的疑问句", simsun));
+                        } else if (ability.contains("比较句")) {
+                            document.add(new Paragraph("   - 比较句表达：使用具体的事物进行比较，如大小、多少、高矮等", simsun));
+                        } else if (ability.contains("简单动词短语")) {
+                            document.add(new Paragraph("   - 简单动词短语理解：通过动作示范和图片，帮助孩子理解动词短语的含义", simsun));
+                        } else if (ability.contains("简单名词短语")) {
+                            document.add(new Paragraph("   - 简单名词短语理解：通过实物和图片，帮助孩子理解名词短语的含义", simsun));
+                        } else if (ability.contains("否定句")) {
+                            document.add(new Paragraph("   - 否定句理解：通过对比和示范，帮助孩子理解否定句的含义", simsun));
+                        } else if (ability.contains("因果句")) {
+                            document.add(new Paragraph("   - 因果句表达：通过日常生活中的例子，帮助孩子理解因果关系", simsun));
+                        }
+                    }
+                    document.add(new Paragraph(" ", simsun));
+                }
+                
+                // 针对不稳定的能力
+                if (!inProgressList.isEmpty()) {
+                    document.add(new Paragraph("2. 针对不稳定的能力：", simsun));
+                    for (String ability : inProgressList) {
+                        if (ability.contains("复合句")) {
+                            document.add(new Paragraph("   - 复合句理解：通过简单的因果关系句子开始，逐步引导孩子理解复杂的句子结构", simsun));
+                        } else if (ability.contains("条件句")) {
+                            document.add(new Paragraph("   - 条件句表达：使用'如果...就...'等常见条件句结构，在日常生活中反复练习", simsun));
+                        } else if (ability.contains("疑问句")) {
+                            document.add(new Paragraph("   - 疑问句理解：通过实物和图片，帮助孩子理解不同类型的疑问句", simsun));
+                        } else if (ability.contains("比较句")) {
+                            document.add(new Paragraph("   - 比较句表达：使用具体的事物进行比较，如大小、多少、高矮等", simsun));
+                        } else if (ability.contains("简单动词短语")) {
+                            document.add(new Paragraph("   - 简单动词短语理解：通过动作示范和图片，帮助孩子理解动词短语的含义", simsun));
+                        } else if (ability.contains("简单名词短语")) {
+                            document.add(new Paragraph("   - 简单名词短语理解：通过实物和图片，帮助孩子理解名词短语的含义", simsun));
+                        } else if (ability.contains("否定句")) {
+                            document.add(new Paragraph("   - 否定句理解：通过对比和示范，帮助孩子理解否定句的含义", simsun));
+                        } else if (ability.contains("因果句")) {
+                            document.add(new Paragraph("   - 因果句表达：通过日常生活中的例子，帮助孩子理解因果关系", simsun));
+                        }
+                    }
+                    document.add(new Paragraph(" ", simsun));
+                }
 
                 document.add(new Paragraph("3. 日常语言训练建议：", simsun));
                 document.add(new Paragraph("   - 日常对话中多使用正确的语法结构，为孩子提供良好的语言示范", simsun));
@@ -955,7 +1236,24 @@ public class PdfGenerator extends evmenuactivity{
 
                 // 读取社交能力评估数据
                 JSONArray socialArray = evaluations.optJSONArray("SOCIAL");
-                if (socialArray != null && socialArray.length() > 0) {
+                // 同时读取SOCIAL1到SOCIAL6数组
+                JSONArray socialArray1 = evaluations.optJSONArray("SOCIAL1");
+                JSONArray socialArray2 = evaluations.optJSONArray("SOCIAL2");
+                JSONArray socialArray3 = evaluations.optJSONArray("SOCIAL3");
+                JSONArray socialArray4 = evaluations.optJSONArray("SOCIAL4");
+                JSONArray socialArray5 = evaluations.optJSONArray("SOCIAL5");
+                JSONArray socialArray6 = evaluations.optJSONArray("SOCIAL6");
+                
+                // 检查是否有任何社交能力数据
+                boolean hasSocialData = (socialArray != null && socialArray.length() > 0) ||
+                        (socialArray1 != null && socialArray1.length() > 0) ||
+                        (socialArray2 != null && socialArray2.length() > 0) ||
+                        (socialArray3 != null && socialArray3.length() > 0) ||
+                        (socialArray4 != null && socialArray4.length() > 0) ||
+                        (socialArray5 != null && socialArray5.length() > 0) ||
+                        (socialArray6 != null && socialArray6.length() > 0);
+                
+                if (hasSocialData) {
                     // 按组分类统计结果
                     Map<Integer, ArrayList<JSONObject>> groupSocialData = new HashMap<>();
                     ArrayList<String> weaknessList = new ArrayList<>();
@@ -968,10 +1266,39 @@ public class PdfGenerator extends evmenuactivity{
                         ArrayList<JSONObject> groupDetails = new ArrayList<>();
                         boolean hasCompletedQuestions = false;
 
-                        for (int i = 0; i < 10; i++) {
-                            int questionIndex = (group - 1) * 10 + i;
-                            if (questionIndex < socialArray.length()) {
-                                JSONObject object = socialArray.optJSONObject(questionIndex);
+                        // 根据组号选择对应的数组
+                        JSONArray currentArray = null;
+                        switch (group) {
+                            case 1:
+                                currentArray = socialArray1;
+                                break;
+                            case 2:
+                                currentArray = socialArray2;
+                                break;
+                            case 3:
+                                currentArray = socialArray3;
+                                break;
+                            case 4:
+                                currentArray = socialArray4;
+                                break;
+                            case 5:
+                                currentArray = socialArray5;
+                                break;
+                            case 6:
+                                currentArray = socialArray6;
+                                break;
+                            default:
+                                currentArray = socialArray;
+                        }
+
+                        // 如果当前数组为空，尝试使用SOCIAL数组
+                        if (currentArray == null || currentArray.length() == 0) {
+                            currentArray = socialArray;
+                        }
+
+                        if (currentArray != null) {
+                            for (int i = 0; i < currentArray.length(); i++) {
+                                JSONObject object = currentArray.optJSONObject(i);
                                 if (object != null && object.has("score") && !object.isNull("score")) {
                                     hasCompletedQuestions = true;
                                     socialCompletedQuestions++;
@@ -1070,10 +1397,6 @@ public class PdfGenerator extends evmenuactivity{
                     document.add(new Paragraph(" ", simsun));
                     document.add(new Paragraph(overallEvaluation, simsun));
                     document.add(new Paragraph(" ", simsun));
-                    document.add(new Paragraph("评价准则如下：根据测试结果显示：", simsun));
-                    document.add(new Paragraph("选1：如果大于等于6/10，基本达标。", simsun));
-                    document.add(new Paragraph("选2：小于6/10，则尚未达标。", simsun));
-                    document.add(new Paragraph(" ", simsun));
                     document.add(new Paragraph("总分：" + socialTotalScore + "/" + (socialCompletedQuestions * 2), simsun));
                     document.add(new Paragraph(" ", simsun));
 
@@ -1100,122 +1423,513 @@ public class PdfGenerator extends evmenuactivity{
             }
 
             if (showArticulation) {
-                PdfPTable table31 = new PdfPTable(1);
-                table31.setWidthPercentage(100);
-                table31.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-                addHeaderCell2(table31,"塞音",simsunSmall,1,BaseColor.ORANGE,30f);
-                addHeaderCell2(table31,"鼻音",simsunSmall,1,BaseColor.ORANGE,15f);
-                addHeaderCell2(table31,"边音",simsunSmall,1,BaseColor.ORANGE,15f);
-                addHeaderCell2(table31,"擦音",simsunSmall,1,BaseColor.ORANGE,30f);
-                addHeaderCell2(table31,"塞擦音",simsunSmall,1,BaseColor.ORANGE,30f);
+                document.add(new Paragraph("一、构音评估", simsunBold));
+                document.add(new Paragraph("（一）记录表", simsunBold));
+                document.add(new Paragraph(" ", simsun));
 
-                PdfPTable table32 = new PdfPTable(1);
-                table32.setWidthPercentage(100);
-                table32.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-                addDataCell2(table32,"不送气",simsunSmall,1,15f);
-                addDataCell2(table32,"送气",simsunSmall,1,15f);
-                addDataCell2(table32,"",simsunSmall,1,15f);
-                addDataCell2(table32,"",simsunSmall,1,15f);
-                addDataCell2(table32,"",simsunSmall,1,15f);
-                addDataCell2(table32,"",simsunSmall,1,15f);
-                addDataCell2(table32,"不送气",simsunSmall,1,15f);
-                addDataCell2(table32,"送气",simsunSmall,1,15f);
+                // 创建构音评估表格，与界面显示一致
+                PdfPTable tableArticulation = new PdfPTable(12);
+                tableArticulation.setWidthPercentage(100);
+                tableArticulation.setSpacingBefore(10f);
+                tableArticulation.setSpacingAfter(15f);
+                
+                // 设置表格列宽，确保所有字段都能完整显示
+                float[] columnWidths = {0.5f, 1f, 1f, 0.8f, 1f, 0.8f, 0.8f, 0.8f, 1f, 1f, 1f, 0.8f};
+                tableArticulation.setWidths(columnWidths);
 
-                PdfPTable table33 = new PdfPTable(3);
-                table33.setWidthPercentage(100);
-                table33.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-                addDataCell2(table33,"b",simsunSmall,1,15f);
-                addDataCell2(table33,scoreA[0], simsunSmall,2,15f);
-                addDataCell2(table33,"p",simsunSmall,1,15f);
-                addDataCell2(table33,scoreA[1], simsunSmall,2,15f);
-                addDataCell2(table33,"m",simsunSmall,1,15f);
-                addDataCell2(table33,scoreA[2], simsunSmall,2,15f);
-                addHeaderCell2(table33,"",simsunSmall,3,BLUE,75f);
+                // 添加表头
+                addHeaderCell(tableArticulation, "序号", simsun, 1);
+                addHeaderCell(tableArticulation, "词汇", simsun, 1);
+                addHeaderCell(tableArticulation, "拼音", simsun, 1);
+                addHeaderCell(tableArticulation, "声母", simsun, 1);
+                addHeaderCell(tableArticulation, "韵母", simsun, 1);
+                addHeaderCell(tableArticulation, "韵头", simsun, 1);
+                addHeaderCell(tableArticulation, "韵腹", simsun, 1);
+                addHeaderCell(tableArticulation, "韵尾", simsun, 1);
+                addHeaderCell(tableArticulation, "错误类型", simsun, 1);
+                addHeaderCell(tableArticulation, "音系历程", simsun, 1);
+                addHeaderCell(tableArticulation, "是否可诱发", simsun, 1);
+                addHeaderCell(tableArticulation, "录音", simsun, 1);
 
-                PdfPTable table34 = new PdfPTable(3);
-                table34.setWidthPercentage(100);
-                table34.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-                addHeaderCell2(table34,"",simsunSmall,3,BaseColor.BLUE,60f);
-                addDataCell2(table34,"f",simsunSmall,1,15f);
-                addDataCell2(table34,scoreA[3], simsunSmall,2,15f);
-                addHeaderCell2(table34,"",simsunSmall,3,BaseColor.BLUE,45f);
+                // 加载构音评估数据
+                JSONArray aArrayData = evaluations.optJSONArray("A");
+                if (aArrayData != null && aArrayData.length() > 0) {
+                    // 按原始顺序添加数据行，使用词条序号
+                    for (int i = 0; i < aArrayData.length(); i++) {
+                        JSONObject object = aArrayData.optJSONObject(i);
+                        if (object == null) continue;
 
-                PdfPTable table35 = new PdfPTable(3);
-                table35.setWidthPercentage(100);
-                table35.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-                addDataCell2(table35,"d",simsunSmall,1,15f);
-                addDataCell2(table35,scoreA[4], simsunSmall,2,15f);
-                addDataCell2(table35,"t",simsunSmall,1,15f);
-                addDataCell2(table35,scoreA[5], simsunSmall,2,15f);
-                addDataCell2(table35,"n",simsunSmall,1,15f);
-                addDataCell2(table35,scoreA[6], simsunSmall,2,15f);
-                addDataCell2(table35,"l",simsunSmall,1,15f);
-                addDataCell2(table35,scoreA[7], simsunSmall,2,15f);
-                addHeaderCell2(table35,"",simsunSmall,3,BaseColor.BLUE,60f);
+                        // 提取数据
+                        String word = object.optString("target", "");
+                        String pinyin = object.optString("targetPinyin", "");
+                        // 如果targetPinyin为空，尝试从ImageUrls获取拼音
+                        if (pinyin.isEmpty() && !word.isEmpty()) {
+                            pinyin = utils.ImageUrls.getAPinyin(word);
+                        }
+                        
+                        // 从targetWord中提取声母、韵母等信息
+                        JSONArray targetWord = object.optJSONArray("targetWord");
+                        String initial = "", vowel = "", vowelHead = "", vowelBody = "", vowelTail = "";
+                        if (targetWord != null && targetWord.length() > 0) {
+                            JSONObject charPhonology = targetWord.optJSONObject(0);
+                            if (charPhonology != null) {
+                                JSONObject phonology = charPhonology.optJSONObject("phonology");
+                                if (phonology != null) {
+                                    initial = phonology.optString("initial", "");
+                                    vowelHead = phonology.optString("medial", ""); // 韵头
+                                    vowelBody = phonology.optString("nucleus", ""); // 韵腹
+                                    vowelTail = phonology.optString("coda", ""); // 韵尾
+                                    // 构建完整韵母
+                                    vowel = vowelHead + vowelBody + vowelTail;
+                                }
+                            }
+                        }
 
-                PdfPTable table36 = new PdfPTable(9);
-                table36.setWidthPercentage(100);
-                table36.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-                addHeaderCell2(table36,"",simsunSmall,9,BaseColor.BLUE,60f);
-                addDataCell2(table36,"s",simsunSmall,1,15f);
-                addDataCell2(table36,scoreA[8], simsunSmall,2,15f);
-                addDataCell2(table36,"x",simsunSmall,1,15f);
-                addDataCell2(table36,scoreA[9], simsunSmall,2,15f);
-                addDataCell2(table36,"sh",simsunSmall,1,15f);
-                addDataCell2(table36,scoreA[10], simsunSmall,2,15f);
-                addHeaderCell2(table36,"",simsunSmall,6,BaseColor.BLUE,15f);
-                addDataCell2(table36,"r",simsunSmall,1,15f);
-                addDataCell2(table36,scoreA[11], simsunSmall,2,15f);
-                addDataCell2(table36,"z",simsunSmall,1,15f);
-                addDataCell2(table36,scoreA[12], simsunSmall,2,15f);
-                addDataCell2(table36,"j",simsunSmall,1,15f);
-                addDataCell2(table36,scoreA[13], simsunSmall,2,15f);
-                addDataCell2(table36,"zh",simsunSmall,1,15f);
-                addDataCell2(table36,scoreA[14], simsunSmall,2,15f);
-                addDataCell2(table36,"c",simsunSmall,1,15f);
-                addDataCell2(table36,scoreA[15], simsunSmall,2,15f);
-                addDataCell2(table36,"q",simsunSmall,1,15f);
-                addDataCell2(table36,scoreA[16], simsunSmall,2,15f);
-                addDataCell2(table36,"ch",simsunSmall,1,15f);
-                addDataCell2(table36,scoreA[17], simsunSmall,2,15f);
+                        // 提取错误类型、音系历程和是否可诱发
+                        String errorType = object.optString("errorType", "");
+                        if (errorType.isEmpty()) {
+                            errorType = object.optString("phonologicalError", "");
+                        }
+                        String phonologyProcess = object.optString("phonologyProcess", "");
+                        if (phonologyProcess.isEmpty()) {
+                            phonologyProcess = object.optString("phonologicalProcess", "");
+                        }
+                        String canElicit = object.optString("canElicit", "");
+                        if (canElicit.isEmpty()) {
+                            // 从answerPhonology中提取isInducible字段，这是用户实际选择的可诱发状态
+                            JSONArray answerPhonology = object.optJSONArray("answerPhonology");
+                            if (answerPhonology != null && answerPhonology.length() > 0) {
+                                for (int j = 0; j < answerPhonology.length(); j++) {
+                                    JSONObject charPhonology = answerPhonology.optJSONObject(j);
+                                    if (charPhonology != null) {
+                                        JSONObject phonology = charPhonology.optJSONObject("phonology");
+                                        if (phonology != null) {
+                                            boolean isInducible = phonology.optBoolean("isInducible", false);
+                                            if (isInducible) {
+                                                canElicit = "可诱发";
+                                                break; // 只要有一个字符可诱发，就显示可诱发
+                                            }
+                                        }
+                                    }
+                                }
+                                // 如果没有找到可诱发的，显示不可诱发
+                                if (canElicit.isEmpty()) {
+                                    canElicit = "不可诱发";
+                                }
+                            } else {
+                                // 如果answerPhonology为空，尝试从targetWord中提取
+                                if (targetWord != null && targetWord.length() > 0) {
+                                    for (int j = 0; j < targetWord.length(); j++) {
+                                        JSONObject charPhonology = targetWord.optJSONObject(j);
+                                        if (charPhonology != null) {
+                                            JSONObject phonology = charPhonology.optJSONObject("phonology");
+                                            if (phonology != null) {
+                                                boolean isInducible = phonology.optBoolean("isInducible", false);
+                                                if (isInducible) {
+                                                    canElicit = "可诱发";
+                                                    break; // 只要有一个字符可诱发，就显示可诱发
+                                                }
+                                            }
+                                        }
+                                    }
+                                    // 如果没有找到可诱发的，显示不可诱发
+                                    if (canElicit.isEmpty()) {
+                                        canElicit = "不可诱发";
+                                    }
+                                } else {
+                                    canElicit = "不可诱发";
+                                }
+                            }
+                        }
+                        String audioPath = object.optString("audioPath", "");
 
+                        // 添加数据行，使用数组索引+1作为词条序号
+                        addDataCell(tableArticulation, String.valueOf(i + 1), simsun, 1);
+                        addDataCell(tableArticulation, word, simsun, 1);
+                        addDataCell(tableArticulation, pinyin, simsun, 1);
+                        addDataCell(tableArticulation, initial, simsun, 1);
+                        addDataCell(tableArticulation, vowel, simsun, 1);
+                        addDataCell(tableArticulation, vowelHead, simsun, 1);
+                        addDataCell(tableArticulation, vowelBody, simsun, 1);
+                        addDataCell(tableArticulation, vowelTail, simsun, 1);
+                        addDataCell(tableArticulation, errorType, simsun, 1);
+                        addDataCell(tableArticulation, phonologyProcess, simsun, 1);
+                        addDataCell(tableArticulation, canElicit, simsun, 1);
+                        addDataCell(tableArticulation, audioPath.isEmpty() ? "无" : "有", simsun, 1);
+                    }
+                } else {
+                    // 无数据时显示空行
+                    addDataCell(tableArticulation, "", simsun, 12);
+                }
 
+                document.add(tableArticulation);
 
-                PdfPTable table37 = new PdfPTable(3);
-                table37.setWidthPercentage(100);
-                table37.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-                addDataCell2(table37,"g",simsunSmall,1,15f);
-                addDataCell2(table37,scoreA[18], simsunSmall,2,15f);
-                addDataCell2(table37,"k",simsunSmall,1,15f);
-                addDataCell2(table37,scoreA[19], simsunSmall,2,15f);
-                addHeaderCell2(table37,"",simsunSmall,3,BaseColor.BLUE,30f);
-                addDataCell2(table37,"h",simsunSmall,1,15f);
-                addDataCell2(table37,scoreA[20], simsunSmall,2,15f);
-                addHeaderCell2(table37,"",simsunSmall,3,BaseColor.BLUE,45f);
+                // （二）评估结果
+                document.add(new Paragraph("（二）评估结果", simsunBold));
+                document.add(new Paragraph(" ", simsun));
 
-                PdfPTable table3 = new PdfPTable(9);
-                table3.setWidthPercentage(100);
-                table3.setSpacingBefore(15f);
-                table3.setSpacingAfter(15f);
-                addHeaderCell2(table3,"构音（A）",simsun,9, LIGHT_GRAY,15f);
-                addHeaderCell2(table3,"发音方式",simsunSmall,2, BaseColor.PINK,15f);
-                addHeaderCell2(table3,"发音部位",simsunSmall,7, BaseColor.YELLOW,15f);
-                addHeaderCell2(table3,"",simsunSmall,2, BaseColor.PINK,15f);
-                addHeaderCell2(table3,"双唇",simsunSmall,1, BaseColor.YELLOW,15f);
-                addHeaderCell2(table3,"唇齿音",simsunSmall,1, BaseColor.YELLOW,15f);
-                addHeaderCell2(table3,"舌尖中",simsunSmall,1, BaseColor.YELLOW,15f);
-                addHeaderCell2(table3,"舌尖前",simsunSmall,1, BaseColor.YELLOW,15f);
-                addHeaderCell2(table3,"舌面前",simsunSmall,1, BaseColor.YELLOW,15f);
-                addHeaderCell2(table3,"舌尖后",simsunSmall,1, BaseColor.YELLOW,15f);
-                addHeaderCell2(table3,"舌根",simsunSmall,1, BaseColor.YELLOW,15f);
-                addTableCell(table3,table31,1,120f);
-                addTableCell(table3,table32,1,120f);
-                addTableCell(table3,table33,1,120f);
-                addTableCell(table3,table34,1,120f);
-                addTableCell(table3,table35,1,120f);
-                addTableCell(table3,table36,3,120f);
-                addTableCell(table3,table37,1,120f);
-                document.add(table3);
+                // 计算声母正确率
+                int totalInitial = 0, correctInitial = 0;
+                JSONArray aArray = evaluations.optJSONArray("A");
+                if (aArray != null) {
+                    for (int i = 0; i < aArray.length(); i++) {
+                        JSONObject item = aArray.optJSONObject(i);
+                        if (item == null) continue;
+                        JSONArray targets = item.optJSONArray("targetWord");
+                        JSONArray answers = item.optJSONArray("answerPhonology");
+                        if (targets != null) {
+                            for (int idx = 0; idx < targets.length(); idx++) {
+                                JSONObject target = targets.optJSONObject(idx);
+                                String targetInitial = "";
+                                if (target != null) {
+                                    JSONObject phonology = target.optJSONObject("phonology");
+                                    if (phonology != null) {
+                                        targetInitial = phonology.optString("initial", "");
+                                    }
+                                }
+                                if (!targetInitial.isEmpty()) {
+                                    totalInitial++;
+                                    JSONObject answer = answers != null ? answers.optJSONObject(idx) : null;
+                                    String answerInitial = "";
+                                    if (answer != null) {
+                                        JSONObject phonology = answer.optJSONObject("phonology");
+                                        if (phonology != null) {
+                                            answerInitial = phonology.optString("initial", "");
+                                        }
+                                    }
+                                    if (targetInitial.equals(answerInitial)) {
+                                        correctInitial++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                double initialRate = totalInitial > 0 ? (correctInitial * 100.0 / totalInitial) : 0;
+                String speechClarity = "";
+                if (initialRate >= 85) {
+                    speechClarity = "轻度";
+                } else if (initialRate >= 65) {
+                    speechClarity = "轻中度";
+                } else if (initialRate >= 50) {
+                    speechClarity = "中重度";
+                } else {
+                    speechClarity = "重度";
+                }
+
+                document.add(new Paragraph("声母正确率：" + String.format("%.2f%%", initialRate), simsun));
+                document.add(new Paragraph("语音清晰度等级：" + speechClarity, simsun));
+                document.add(new Paragraph(" ", simsun));
+
+                // 1. 声母正确率统计表
+                document.add(new Paragraph("1. 声母正确率统计表", simsunBold));
+                document.add(new Paragraph(" ", simsun));
+
+                // 创建声母统计表
+                PdfPTable initialTable = new PdfPTable(2);
+                initialTable.setWidthPercentage(100);
+                initialTable.setSpacingBefore(10f);
+                initialTable.setSpacingAfter(15f);
+
+                // 声母列表
+                String[] initials = {"b", "p", "m", "f", "d", "t", "n", "l", "g", "k", "h", "j", "q", "x", "zh", "ch", "sh", "r", "z", "c", "s"};
+                
+                // 计算每个声母的正确率
+                for (String initial : initials) {
+                    int count = 0, correct = 0;
+                    if (aArray != null) {
+                        for (int i = 0; i < aArray.length(); i++) {
+                            JSONObject item = aArray.optJSONObject(i);
+                            if (item == null) continue;
+                            JSONArray targets = item.optJSONArray("targetWord");
+                            JSONArray answers = item.optJSONArray("answerPhonology");
+                            if (targets != null) {
+                                for (int idx = 0; idx < targets.length(); idx++) {
+                                    JSONObject target = targets.optJSONObject(idx);
+                                    if (target != null) {
+                                        JSONObject phonology = target.optJSONObject("phonology");
+                                        if (phonology != null && initial.equals(phonology.optString("initial", ""))) {
+                                            count++;
+                                            JSONObject answer = answers != null ? answers.optJSONObject(idx) : null;
+                                            if (answer != null) {
+                                                JSONObject answerPhonology = answer.optJSONObject("phonology");
+                                                if (answerPhonology != null && initial.equals(answerPhonology.optString("initial", ""))) {
+                                                    correct++;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    String rate = count > 0 ? (correct + "/" + count) : "0/0";
+                    addDataCell(initialTable, initial, simsun, 1);
+                    addDataCell(initialTable, rate, simsun, 1);
+                }
+
+                document.add(initialTable);
+                document.add(new Paragraph(" ", simsun));
+
+                // 2. 韵母正确率统计表
+                document.add(new Paragraph("2. 韵母正确率统计表", simsunBold));
+                document.add(new Paragraph(" ", simsun));
+
+                // 单韵母
+                document.add(new Paragraph("单韵母", simsunBold));
+                PdfPTable singleVowelTable = new PdfPTable(2);
+                singleVowelTable.setWidthPercentage(100);
+                singleVowelTable.setSpacingBefore(10f);
+                singleVowelTable.setSpacingAfter(15f);
+
+                String[] singleVowels = {"a", "o", "e", "i", "u", "ü", "er"};
+                for (String vowel : singleVowels) {
+                    int count = 0, correct = 0;
+                    if (aArray != null) {
+                        for (int i = 0; i < aArray.length(); i++) {
+                            JSONObject item = aArray.optJSONObject(i);
+                            if (item == null) continue;
+                            JSONArray targets = item.optJSONArray("targetWord");
+                            JSONArray answers = item.optJSONArray("answerPhonology");
+                            if (targets != null) {
+                                for (int idx = 0; idx < targets.length(); idx++) {
+                                    JSONObject target = targets.optJSONObject(idx);
+                                    if (target != null) {
+                                        JSONObject phonology = target.optJSONObject("phonology");
+                                        if (phonology != null) {
+                                            String medial = phonology.optString("medial", "");
+                                            String nucleus = phonology.optString("nucleus", "");
+                                            String coda = phonology.optString("coda", "");
+                                            String targetVowel = medial + nucleus + coda;
+                                            if (vowel.equals(targetVowel)) {
+                                                count++;
+                                                JSONObject answer = answers != null ? answers.optJSONObject(idx) : null;
+                                                if (answer != null) {
+                                                    JSONObject answerPhonology = answer.optJSONObject("phonology");
+                                                    if (answerPhonology != null) {
+                                                        String answerMedial = answerPhonology.optString("medial", "");
+                                                        String answerNucleus = answerPhonology.optString("nucleus", "");
+                                                        String answerCoda = answerPhonology.optString("coda", "");
+                                                        String answerVowel = answerMedial + answerNucleus + answerCoda;
+                                                        if (vowel.equals(answerVowel)) {
+                                                            correct++;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    String rate = count > 0 ? (correct + "/" + count) : "0/0";
+                    addDataCell(singleVowelTable, vowel, simsun, 1);
+                    addDataCell(singleVowelTable, rate, simsun, 1);
+                }
+
+                document.add(singleVowelTable);
+                document.add(new Paragraph(" ", simsun));
+
+                // 复合韵母
+                document.add(new Paragraph("复合韵母", simsunBold));
+                PdfPTable compoundVowelTable = new PdfPTable(2);
+                compoundVowelTable.setWidthPercentage(100);
+                compoundVowelTable.setSpacingBefore(10f);
+                compoundVowelTable.setSpacingAfter(15f);
+
+                String[] compoundVowels = {"ai", "ei", "ui", "ao", "ou", "iu", "ie", "üe", "er", "an", "en", "in", "un", "ün", "ang", "eng", "ing", "ong"};
+                for (String vowel : compoundVowels) {
+                    int count = 0, correct = 0;
+                    if (aArray != null) {
+                        for (int i = 0; i < aArray.length(); i++) {
+                            JSONObject item = aArray.optJSONObject(i);
+                            if (item == null) continue;
+                            JSONArray targets = item.optJSONArray("targetWord");
+                            JSONArray answers = item.optJSONArray("answerPhonology");
+                            if (targets != null) {
+                                for (int idx = 0; idx < targets.length(); idx++) {
+                                    JSONObject target = targets.optJSONObject(idx);
+                                    if (target != null) {
+                                        JSONObject phonology = target.optJSONObject("phonology");
+                                        if (phonology != null) {
+                                            String medial = phonology.optString("medial", "");
+                                            String nucleus = phonology.optString("nucleus", "");
+                                            String coda = phonology.optString("coda", "");
+                                            String targetVowel = medial + nucleus + coda;
+                                            if (vowel.equals(targetVowel)) {
+                                                count++;
+                                                JSONObject answer = answers != null ? answers.optJSONObject(idx) : null;
+                                                if (answer != null) {
+                                                    JSONObject answerPhonology = answer.optJSONObject("phonology");
+                                                    if (answerPhonology != null) {
+                                                        String answerMedial = answerPhonology.optString("medial", "");
+                                                        String answerNucleus = answerPhonology.optString("nucleus", "");
+                                                        String answerCoda = answerPhonology.optString("coda", "");
+                                                        String answerVowel = answerMedial + answerNucleus + answerCoda;
+                                                        if (vowel.equals(answerVowel)) {
+                                                            correct++;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    String rate = count > 0 ? (correct + "/" + count) : "0/0";
+                    addDataCell(compoundVowelTable, vowel, simsun, 1);
+                    addDataCell(compoundVowelTable, rate, simsun, 1);
+                }
+
+                document.add(compoundVowelTable);
+                document.add(new Paragraph(" ", simsun));
+
+                // 鼻音韵母
+                document.add(new Paragraph("鼻音韵母", simsunBold));
+                PdfPTable nasalVowelTable = new PdfPTable(2);
+                nasalVowelTable.setWidthPercentage(100);
+                nasalVowelTable.setSpacingBefore(10f);
+                nasalVowelTable.setSpacingAfter(15f);
+
+                String[] nasalVowels = {"an", "en", "in", "un", "ün", "ang", "eng", "ing", "ong", "ian", "uan", "üan", "iang", "uang"};
+                for (String vowel : nasalVowels) {
+                    int count = 0, correct = 0;
+                    if (aArray != null) {
+                        for (int i = 0; i < aArray.length(); i++) {
+                            JSONObject item = aArray.optJSONObject(i);
+                            if (item == null) continue;
+                            JSONArray targets = item.optJSONArray("targetWord");
+                            JSONArray answers = item.optJSONArray("answerPhonology");
+                            if (targets != null) {
+                                for (int idx = 0; idx < targets.length(); idx++) {
+                                    JSONObject target = targets.optJSONObject(idx);
+                                    if (target != null) {
+                                        JSONObject phonology = target.optJSONObject("phonology");
+                                        if (phonology != null) {
+                                            String medial = phonology.optString("medial", "");
+                                            String nucleus = phonology.optString("nucleus", "");
+                                            String coda = phonology.optString("coda", "");
+                                            String targetVowel = medial + nucleus + coda;
+                                            if (vowel.equals(targetVowel)) {
+                                                count++;
+                                                JSONObject answer = answers != null ? answers.optJSONObject(idx) : null;
+                                                if (answer != null) {
+                                                    JSONObject answerPhonology = answer.optJSONObject("phonology");
+                                                    if (answerPhonology != null) {
+                                                        String answerMedial = answerPhonology.optString("medial", "");
+                                                        String answerNucleus = answerPhonology.optString("nucleus", "");
+                                                        String answerCoda = answerPhonology.optString("coda", "");
+                                                        String answerVowel = answerMedial + answerNucleus + answerCoda;
+                                                        if (vowel.equals(answerVowel)) {
+                                                            correct++;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    String rate = count > 0 ? (correct + "/" + count) : "0/0";
+                    addDataCell(nasalVowelTable, vowel, simsun, 1);
+                    addDataCell(nasalVowelTable, rate, simsun, 1);
+                }
+
+                document.add(nasalVowelTable);
+                document.add(new Paragraph(" ", simsun));
+
+                // 3. 错误韵母
+                document.add(new Paragraph("3. 错误韵母", simsunBold));
+                document.add(new Paragraph(" ", simsun));
+
+                // 收集错误韵母
+                StringBuilder errorVowels = new StringBuilder();
+                if (aArray != null) {
+                    for (int i = 0; i < aArray.length(); i++) {
+                        JSONObject item = aArray.optJSONObject(i);
+                        if (item == null) continue;
+                        JSONArray targets = item.optJSONArray("targetWord");
+                        JSONArray answers = item.optJSONArray("answerPhonology");
+                        if (targets != null) {
+                            for (int idx = 0; idx < targets.length(); idx++) {
+                                JSONObject target = targets.optJSONObject(idx);
+                                if (target != null) {
+                                    JSONObject phonology = target.optJSONObject("phonology");
+                                    if (phonology != null) {
+                                        String medial = phonology.optString("medial", "");
+                                        String nucleus = phonology.optString("nucleus", "");
+                                        String coda = phonology.optString("coda", "");
+                                        String targetVowel = medial + nucleus + coda;
+                                        if (!targetVowel.isEmpty()) {
+                                            JSONObject answer = answers != null ? answers.optJSONObject(idx) : null;
+                                            if (answer != null) {
+                                                JSONObject answerPhonology = answer.optJSONObject("phonology");
+                                                if (answerPhonology != null) {
+                                                    String answerMedial = answerPhonology.optString("medial", "");
+                                                    String answerNucleus = answerPhonology.optString("nucleus", "");
+                                                    String answerCoda = answerPhonology.optString("coda", "");
+                                                    String answerVowel = answerMedial + answerNucleus + answerCoda;
+                                                    if (!targetVowel.equals(answerVowel)) {
+                                                        if (errorVowels.length() > 0) {
+                                                            errorVowels.append(", ");
+                                                        }
+                                                        errorVowels.append(targetVowel);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (errorVowels.length() > 0) {
+                    document.add(new Paragraph("错误韵母：" + errorVowels.toString(), simsun));
+                } else {
+                    document.add(new Paragraph("错误韵母：无", simsun));
+                }
+                document.add(new Paragraph(" ", simsun));
+
+                // 4. 诊断（直接勾选）- 显示保存的诊断文本
+                document.add(new Paragraph("4. 诊断（直接勾选）", simsunBold));
+                document.add(new Paragraph(" ", simsun));
+
+                // 加载保存的诊断勾选状态
+                String savedDiagnosis = safeText(evaluations.optString("clinical_diagnosis", ""));
+                
+                if (!savedDiagnosis.isEmpty()) {
+                    document.add(new Paragraph(savedDiagnosis, simsun));
+                } else {
+                    document.add(new Paragraph("未选择", simsun));
+                }
+                document.add(new Paragraph(" ", simsun));
+
+                // 5. 语言清晰度等级
+                document.add(new Paragraph("5. 语言清晰度等级：" + speechClarity, simsunBold));
+                document.add(new Paragraph("声母正确率：" + String.format("%.2f%%", initialRate), simsun));
+                document.add(new Paragraph(" ", simsun));
+
+                // 6. 干预建议 - 显示保存的干预建议文本
+                document.add(new Paragraph("6. 干预建议", simsunBold));
+                document.add(new Paragraph(" ", simsun));
+
+                // 加载保存的干预建议状态
+                String savedSuggestions = safeText(evaluations.optString("assessment_suggestions", ""));
+                
+                if (!savedSuggestions.isEmpty()) {
+                    document.add(new Paragraph(savedSuggestions, simsun));
+                } else {
+                    document.add(new Paragraph("未选择", simsun));
+                }
+                document.add(new Paragraph(" ", simsun));
             }
 
             document.close();
@@ -1255,6 +1969,10 @@ public class PdfGenerator extends evmenuactivity{
         }
         return moduleType.trim().toLowerCase();
     }
+    
+    private static String safeText(String value) {
+        return value == null ? "" : value.trim();
+    }
 
     private static JSONObject filterEvaluationsForModule(JSONObject source, String moduleType) throws JSONException {
         JSONObject output = source == null ? new JSONObject() : new JSONObject(source.toString());
@@ -1268,6 +1986,12 @@ public class PdfGenerator extends evmenuactivity{
             return output;
         }
         JSONObject filtered = new JSONObject();
+        // 复制全局字段，包括诊断和干预建议
+        filtered.put("clinical_diagnosis", evaluations.optString("clinical_diagnosis", ""));
+        filtered.put("assessment_suggestions", evaluations.optString("assessment_suggestions", ""));
+        filtered.put("speech_intelligibility", evaluations.optString("speech_intelligibility", ""));
+        filtered.put("initial_accuracy", evaluations.optString("initial_accuracy", ""));
+        
         switch (moduleKey) {
             case "articulation":
                 filtered.put("A", evaluations.optJSONArray("A"));
