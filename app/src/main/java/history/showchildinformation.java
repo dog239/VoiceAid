@@ -12,7 +12,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.CCLEvaluation.evmenuactivity;
+import com.example.CCLEvaluation.AssessmentModulesActivity;
+import com.example.CCLEvaluation.ChildDetailEditActivity;
 import com.example.CCLEvaluation.FamilyMemberAdapter;
 import com.example.CCLEvaluation.R;
 
@@ -29,6 +30,7 @@ public class showchildinformation extends AppCompatActivity {
     private Button buttonSave;
     private Button buttonDelete;
     private Button buttonAddMember;
+    private Button buttonAddBackgroundInfo;
     private EditText textName;
     private EditText textBirth;
     private EditText textTestTime;
@@ -37,6 +39,7 @@ public class showchildinformation extends AppCompatActivity {
     private RadioButton genderMale;
     private RadioButton genderFemale;
     private RecyclerView familyRecyclerView;
+    private FamilyMemberAdapter familyMemberAdapter;
     private String fName;
     private int position;
 
@@ -45,9 +48,43 @@ public class showchildinformation extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_child_info);
 
+        initViews();
+        fName = getIntent().getStringExtra("fName");
+        familyRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        familyMemberAdapter = new FamilyMemberAdapter(getFamilyMembers(null), ignored -> {});
+        familyMemberAdapter.setReadOnly(true);
+        familyRecyclerView.setAdapter(familyMemberAdapter);
+
+        setReadOnly(textName);
+        setReadOnly(textBirth);
+        setReadOnly(textTestTime);
+        setReadOnly(textAddress);
+        setReadOnly(textPhone);
+        genderMale.setEnabled(false);
+        genderFemale.setEnabled(false);
+        buttonAddMember.setVisibility(View.GONE);
+
+        buttonSave.setText("\u8FDB\u5165\u6D4B\u8BD5");
+        buttonDelete.setText("\u5220\u9664\u513F\u7AE5\u4FE1\u606F");
+        buttonSave.setOnClickListener(v -> openAssessment());
+        buttonDelete.setOnClickListener(v -> {
+            position = getIntent().getIntExtra("position", -1);
+            showLogoutConfirmationDialog(fName, position);
+        });
+        buttonAddBackgroundInfo.setOnClickListener(v -> openBackgroundEditor());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadChildInfo();
+    }
+
+    private void initViews() {
         buttonSave = findViewById(R.id.btn_save);
         buttonDelete = findViewById(R.id.btn_delete);
         buttonAddMember = findViewById(R.id.btn_add_member);
+        buttonAddBackgroundInfo = findViewById(R.id.btn_add_background_info);
         textName = findViewById(R.id.et_name);
         textBirth = findViewById(R.id.et_birth);
         textTestTime = findViewById(R.id.et_test_time);
@@ -56,68 +93,46 @@ public class showchildinformation extends AppCompatActivity {
         genderMale = findViewById(R.id.rb_gender_male);
         genderFemale = findViewById(R.id.rb_gender_female);
         familyRecyclerView = findViewById(R.id.rv_family_members);
+    }
 
-        fName = getIntent().getStringExtra("fName");
+    private void loadChildInfo() {
         try {
             JSONObject data = dataManager.getInstance().loadData(fName);
-            JSONObject object = data.optJSONObject("info");
-            if (object == null) {
-                object = new JSONObject();
+            JSONObject info = data.optJSONObject("info");
+            if (info == null) {
+                info = new JSONObject();
             }
-            textName.setText(object.optString("name", ""));
-            textBirth.setText(object.optString("birthDate", ""));
-            textTestTime.setText(object.optString("testDate", ""));
-            textAddress.setText(object.optString("address", ""));
-            textPhone.setText(object.optString("phone", ""));
-            String gender = object.optString("gender", "");
-            if ("男".equals(gender)) {
-                genderMale.setChecked(true);
-            } else if ("女".equals(gender)) {
-                genderFemale.setChecked(true);
-            }
+            textName.setText(info.optString("name", ""));
+            textBirth.setText(info.optString("birthDate", ""));
+            textTestTime.setText(info.optString("testDate", ""));
+            textAddress.setText(info.optString("address", ""));
+            textPhone.setText(info.optString("phone", ""));
 
-            familyRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-            FamilyMemberAdapter familyMemberAdapter = new FamilyMemberAdapter(
-                    getFamilyMembers(object.optJSONArray("familyMembers")),
-                    position -> {}
-            );
-            familyMemberAdapter.setReadOnly(true);
-            familyRecyclerView.setAdapter(familyMemberAdapter);
+            String gender = info.optString("gender", "");
+            genderMale.setChecked("\u7537".equals(gender));
+            genderFemale.setChecked("\u5973".equals(gender));
 
-            setReadOnly(textName);
-            setReadOnly(textBirth);
-            setReadOnly(textTestTime);
-            setReadOnly(textAddress);
-            setReadOnly(textPhone);
-            genderMale.setEnabled(false);
-            genderFemale.setEnabled(false);
-            buttonAddMember.setVisibility(View.GONE);
+            familyMemberAdapter.setMembers(getFamilyMembers(info.optJSONArray("familyMembers")));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            Toast.makeText(this, "Failed to load child info.", Toast.LENGTH_SHORT).show();
         }
+    }
 
-        buttonSave.setText("进入测试");
-        buttonDelete.setText("删除儿童信息");
-        buttonSave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(showchildinformation.this, com.example.CCLEvaluation.AssessmentModulesActivity.class);
-                intent.putExtra("fName", fName);
-                String Uid = getIntent().getStringExtra("Uid");
-                intent.putExtra("Uid", Uid);
-                Boolean old1 = getIntent().getBooleanExtra("old1", false);
-                intent.putExtra("old1", old1);
-                startActivity(intent);
-                finish();
-            }
-        });
-        buttonDelete.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                position = getIntent().getIntExtra("position", -1);
-                showLogoutConfirmationDialog(fName, position);
-            }
-        });
+    private void openBackgroundEditor() {
+        Intent intent = new Intent(this, ChildDetailEditActivity.class);
+        intent.putExtra(ChildDetailEditActivity.EXTRA_FILE_NAME, fName);
+        startActivity(intent);
+    }
+
+    private void openAssessment() {
+        Intent intent = new Intent(showchildinformation.this, AssessmentModulesActivity.class);
+        intent.putExtra("fName", fName);
+        String uid = getIntent().getStringExtra("Uid");
+        intent.putExtra("Uid", uid);
+        boolean old1 = getIntent().getBooleanExtra("old1", false);
+        intent.putExtra("old1", old1);
+        startActivity(intent);
+        finish();
     }
 
     private void clearStudentInfoAudio(String fname, int position) throws Exception {
@@ -141,14 +156,14 @@ public class showchildinformation extends AppCompatActivity {
         index.remove(String.valueOf(number));
         index.put("number", number - 1);
         dataManager.getInstance().saveData("Index.json", index);
-        Toast.makeText(this, "儿童信息已删除", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Child deleted.", Toast.LENGTH_SHORT).show();
     }
 
     private void showLogoutConfirmationDialog(String fname, int position) {
         dialogUtils.showDialog(this,
-                "提示信息",
-                "您确定要删除该学生的全部信息和答题记录吗？",
-                "确认", () -> {
+                "\u63D0\u793A\u4FE1\u606F",
+                "\u60A8\u786E\u5B9A\u8981\u5220\u9664\u8BE5\u513F\u7AE5\u7684\u5168\u90E8\u4FE1\u606F\u548C\u7B54\u9898\u8BB0\u5F55\u5417\uFF1F",
+                "\u786E\u8BA4", () -> {
                     try {
                         clearStudentInfoAudio(fname, position);
                     } catch (Exception e) {
@@ -157,7 +172,7 @@ public class showchildinformation extends AppCompatActivity {
                     Intent intent = new Intent(showchildinformation.this, historylist.class);
                     startActivity(intent);
                     finish();
-                }, "取消", null);
+                }, "\u53D6\u6D88", null);
     }
 
     private void setReadOnly(EditText editText) {

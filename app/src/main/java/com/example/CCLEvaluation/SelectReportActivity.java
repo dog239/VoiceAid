@@ -27,7 +27,6 @@ import bean.AssessmentModule;
 import utils.ImageUrls;
 import utils.NetInteractUtils;
 import utils.OverallInterventionReportBuilder;
-import utils.ReportPipeline;
 import utils.dataManager;
 
 public class SelectReportActivity extends AppCompatActivity {

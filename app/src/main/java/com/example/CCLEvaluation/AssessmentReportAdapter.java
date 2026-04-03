@@ -56,7 +56,6 @@ public class AssessmentReportAdapter extends RecyclerView.Adapter<AssessmentRepo
         TextView title;
         TextView status;
         TextView desc;
-        TextView date;
         TextView reportStatus;
         ImageView arrow;
 
@@ -66,7 +65,6 @@ public class AssessmentReportAdapter extends RecyclerView.Adapter<AssessmentRepo
             title = itemView.findViewById(R.id.title);
             status = itemView.findViewById(R.id.status);
             desc = itemView.findViewById(R.id.desc);
-            date = itemView.findViewById(R.id.date);
             reportStatus = itemView.findViewById(R.id.report_status);
             arrow = itemView.findViewById(R.id.arrow);
         }
@@ -82,14 +80,11 @@ public class AssessmentReportAdapter extends RecyclerView.Adapter<AssessmentRepo
                 status.setTextColor(itemView.getContext().getResources().getColor(R.color.teal_700));
                 status.setBackgroundResource(R.drawable.bg_chip_primary_light);
                 
-                date.setText(module.getLastTestDate());
-                date.setVisibility(View.VISIBLE);
             } else {
                 status.setText("待完成");
                 status.setTextColor(itemView.getContext().getResources().getColor(R.color.warm_gray));
                 status.setBackgroundResource(R.drawable.bg_chip_primary_light); // Using same bg for now
                 
-                date.setVisibility(View.GONE);
             }
 
             // Set report generation status

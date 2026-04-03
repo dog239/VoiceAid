@@ -5,6 +5,8 @@ import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,20 +19,21 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.json.JSONObject;
 
-import utils.dataManager;
-import utils.NetInteractUtils;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import utils.NetInteractUtils;
+import utils.dataManager;
+
 public class childinfoactivity extends AppCompatActivity implements View.OnClickListener {
 
     private Button buttonSave;
     private Button buttonDelete;
     private Button buttonAddMember;
+    private Button buttonAddBackgroundInfo;
     private EditText textName;
     private EditText textBirth;
     private EditText textTestTime;
@@ -41,17 +44,25 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
     private FamilyMemberAdapter familyMemberAdapter;
     private SimpleDateFormat dateFormat;
     private String examinerName;
-
+    private String existingFileName;
+    private View rootContainer;
 
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_child_info);
+
+        initViews();
+        initBaseInfo();
+        bindEvents();
+    }
+
+    private void initViews() {
         buttonSave = findViewById(R.id.btn_save);
         buttonDelete = findViewById(R.id.btn_delete);
         buttonAddMember = findViewById(R.id.btn_add_member);
-
+        buttonAddBackgroundInfo = findViewById(R.id.btn_add_background_info);
         textName = findViewById(R.id.et_name);
         textBirth = findViewById(R.id.et_birth);
         textTestTime = findViewById(R.id.et_test_time);
@@ -59,23 +70,39 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
         textPhone = findViewById(R.id.et_phone);
         genderGroup = findViewById(R.id.rg_gender);
         familyRecyclerView = findViewById(R.id.rv_family_members);
+        rootContainer = findViewById(R.id.child_info_root_container);
 
         dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        familyRecyclerView.setLayoutManager(new LinearLayoutManager(this) {
+            @Override
+            public boolean canScrollVertically() {
+                return false;
+            }
+        });
+        familyRecyclerView.setNestedScrollingEnabled(false);
+        familyRecyclerView.setFocusable(false);
+        familyRecyclerView.setHasFixedSize(false);
+        familyRecyclerView.setItemAnimator(null);
+        familyMemberAdapter = new FamilyMemberAdapter(new ArrayList<>(), this::handleDeleteMember);
+        familyRecyclerView.setAdapter(familyMemberAdapter);
+        if (rootContainer != null) {
+            rootContainer.requestFocus();
+        }
+    }
+
+    private void initBaseInfo() {
         textBirth.setKeyListener(null);
         textBirth.setOnClickListener(v -> showBirthDatePicker());
         textTestTime.setText(dateFormat.format(new Date()));
 
-        familyRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        familyMemberAdapter = new FamilyMemberAdapter(createDefaultMembers(), this::handleDeleteMember);
-        familyRecyclerView.setAdapter(familyMemberAdapter);
-
         SharedPreferences prefs = getSharedPreferences("login_prefs", MODE_PRIVATE);
         examinerName = prefs.getString("Username", "");
+
         String uid = getIntent().getStringExtra("Uid");
-        if ((examinerName == null || examinerName.trim().isEmpty()) && uid != null && !uid.isEmpty()) {
+        if ((examinerName == null || examinerName.trim().isEmpty()) && !TextUtils.isEmpty(uid)) {
             NetInteractUtils.getInstance(this).setUserInfoCallback(user -> {
                 try {
-                    org.json.JSONObject obj = new org.json.JSONObject(user);
+                    JSONObject obj = new JSONObject(user);
                     String username = obj.optString("Username", "");
                     if (!username.trim().isEmpty()) {
                         prefs.edit().putString("Username", username).apply();
@@ -87,62 +114,143 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
             NetInteractUtils.getInstance(this).getUserInfo(uid);
         }
 
+        existingFileName = getIntent().getStringExtra("fName");
+        if (!TextUtils.isEmpty(existingFileName)) {
+            reloadBasicInfo();
+        }
+    }
+
+    private void bindEvents() {
         buttonSave.setOnClickListener(this);
         buttonDelete.setOnClickListener(this);
         buttonAddMember.setOnClickListener(v ->
                 familyMemberAdapter.addMember(new FamilyMemberAdapter.FamilyMember()));
+        buttonAddBackgroundInfo.setOnClickListener(v -> openBackgroundInfoEditor());
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!TextUtils.isEmpty(existingFileName)) {
+            reloadBasicInfo();
+        }
     }
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.btn_save){
-            String tNa = textName.getText().toString().trim();
-            String tB = textBirth.getText().toString().trim();
-            String tTestDate = textTestTime.getText().toString().trim();
-            String tAddr = textAddress.getText().toString().trim();
-            String tPhone = textPhone.getText().toString().trim();
-            String tGender = getSelectedGender();
-            try {
-                JSONObject info = new JSONObject();
-                info.put("name", tNa);
-                info.put("gender", tGender);
-                info.put("birthDate", tB);
-                info.put("address", tAddr);
-                info.put("phone", tPhone);
-                info.put("familyMembers", FamilyMemberAdapter.toJsonArray(familyMemberAdapter.getMembers()));
-                info.put("testDate", tTestDate.isEmpty() ? dateFormat.format(new Date()) : tTestDate);
-
-                SharedPreferences prefs = getSharedPreferences("login_prefs", MODE_PRIVATE);
-                String cachedName = prefs.getString("Username", "");
-                String examiner = (cachedName == null || cachedName.trim().isEmpty()) ? examinerName : cachedName;
-                info.put("examiner", examiner == null ? "" : examiner);
-
-                JSONObject data = dataManager.getInstance().createData(info);
-                String baseName = tNa.isEmpty() ? "child" : tNa;
-                String fName = dataManager.getInstance().saveData(baseName + System.currentTimeMillis() + ".json", data);
-                dataManager.getInstance().createIndex(fName,"Index");
-
-                String Uid = getIntent().getStringExtra("Uid");
-                if (Uid != null && !Uid.isEmpty()) {
-                    Toast.makeText(this, "正在上传测评...", Toast.LENGTH_SHORT).show();
-                    NetInteractUtils.getInstance(this).setUploadEvaluationCallback(childUserID -> {
-                        startAssessment(fName, Uid, childUserID);
-                    });
-                    NetInteractUtils.getInstance(this).uploadEvaluation(Uid, data.toString());
-                } else {
-                    startAssessment(fName, null, null);
-                }
-            } catch (Exception e) {
-                Toast.makeText(this, "保存失败", Toast.LENGTH_SHORT).show();
-                throw new RuntimeException(e);
-            }
-
-        } else if (v.getId()==R.id.btn_delete) {
+        if (v.getId() == R.id.btn_save) {
+            saveAndStartAssessment();
+        } else if (v.getId() == R.id.btn_delete) {
             clearForm();
-            Toast.makeText(this, "已清空", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Cleared.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void saveAndStartAssessment() {
+        try {
+            String fName = upsertCurrentChildRecord();
+            JSONObject data = dataManager.getInstance().loadData(fName);
+
+            String uid = getIntent().getStringExtra("Uid");
+            if (!TextUtils.isEmpty(uid)) {
+                Toast.makeText(this, "Uploading assessment...", Toast.LENGTH_SHORT).show();
+                NetInteractUtils.getInstance(this).setUploadEvaluationCallback(childUserID ->
+                        startAssessment(fName, uid, childUserID));
+                NetInteractUtils.getInstance(this).uploadEvaluation(uid, data.toString());
+            } else {
+                startAssessment(fName, null, null);
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Failed to save.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private JSONObject buildInfoJson(String name,
+                                     String birthDate,
+                                     String testDate,
+                                     String address,
+                                     String phone,
+                                     String gender) throws Exception {
+        JSONObject info = new JSONObject();
+        info.put("name", name);
+        info.put("gender", gender);
+        info.put("birthDate", birthDate);
+        info.put("address", address);
+        info.put("phone", phone);
+        info.put("familyMembers", FamilyMemberAdapter.toJsonArray(familyMemberAdapter.getMembers()));
+        info.put("testDate", testDate.isEmpty() ? dateFormat.format(new Date()) : testDate);
+
+        SharedPreferences prefs = getSharedPreferences("login_prefs", MODE_PRIVATE);
+        String cachedName = prefs.getString("Username", "");
+        String examiner = (cachedName == null || cachedName.trim().isEmpty()) ? examinerName : cachedName;
+        info.put("examiner", examiner == null ? "" : examiner);
+        return info;
+    }
+
+    private void openBackgroundInfoEditor() {
+        try {
+            existingFileName = upsertCurrentChildRecord();
+        } catch (Exception e) {
+            Toast.makeText(this, "Failed to prepare child record.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(this, ChildDetailEditActivity.class);
+        intent.putExtra(ChildDetailEditActivity.EXTRA_FILE_NAME, existingFileName);
+        startActivity(intent);
+    }
+
+    private String upsertCurrentChildRecord() throws Exception {
+        String name = textName.getText().toString().trim();
+        String birthDate = textBirth.getText().toString().trim();
+        String testDate = textTestTime.getText().toString().trim();
+        String address = textAddress.getText().toString().trim();
+        String phone = textPhone.getText().toString().trim();
+        String gender = getSelectedGender();
+
+        JSONObject info = buildInfoJson(name, birthDate, testDate, address, phone, gender);
+        if (TextUtils.isEmpty(existingFileName)) {
+            JSONObject data = dataManager.getInstance().createData(info);
+            String baseName = name.isEmpty() ? "child" : name;
+            existingFileName = dataManager.getInstance().saveData(baseName + System.currentTimeMillis() + ".json", data);
+            dataManager.getInstance().createIndex(existingFileName, "Index");
+            return existingFileName;
         }
 
+        JSONObject data = dataManager.getInstance().loadData(existingFileName);
+        JSONObject savedInfo = data.optJSONObject("info");
+        if (savedInfo != null && savedInfo.has("backgroundInfo")) {
+            info.put("backgroundInfo", savedInfo.optJSONObject("backgroundInfo"));
+        }
+        data.put("info", info);
+        dataManager.getInstance().saveChildJson(existingFileName, data);
+        return existingFileName;
+    }
+
+    private void reloadBasicInfo() {
+        try {
+            JSONObject data = dataManager.getInstance().loadData(existingFileName);
+            JSONObject info = data.optJSONObject("info");
+            if (info == null) {
+                return;
+            }
+            textName.setText(info.optString("name", ""));
+            textBirth.setText(info.optString("birthDate", ""));
+            textTestTime.setText(info.optString("testDate", dateFormat.format(new Date())));
+            textAddress.setText(info.optString("address", ""));
+            textPhone.setText(info.optString("phone", ""));
+
+            String gender = info.optString("gender", "");
+            if ("\u7537".equals(gender)) {
+                genderGroup.check(R.id.rb_gender_male);
+            } else if ("\u5973".equals(gender)) {
+                genderGroup.check(R.id.rb_gender_female);
+            } else {
+                genderGroup.clearCheck();
+            }
+
+            familyMemberAdapter.setMembers(FamilyMemberAdapter.fromJsonArray(info.optJSONArray("familyMembers")));
+        } catch (Exception ignored) {
+        }
     }
 
     private void startAssessment(String fName, String uid, String childUserID) {
@@ -166,16 +274,19 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
         textTestTime.setText(dateFormat.format(new Date()));
         textAddress.setText("");
         textPhone.setText("");
-        familyMemberAdapter.setMembers(createDefaultMembers());
+        familyMemberAdapter.setMembers(new ArrayList<>());
+        if (rootContainer != null) {
+            rootContainer.requestFocus();
+        }
     }
 
     private String getSelectedGender() {
         int checkedId = genderGroup.getCheckedRadioButtonId();
         if (checkedId == R.id.rb_gender_male) {
-            return "男";
+            return "\u7537";
         }
         if (checkedId == R.id.rb_gender_female) {
-            return "女";
+            return "\u5973";
         }
         return "";
     }
@@ -208,8 +319,19 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
     }
 
     private ArrayList<FamilyMemberAdapter.FamilyMember> createDefaultMembers() {
-        ArrayList<FamilyMemberAdapter.FamilyMember> members = new ArrayList<>();
-        members.add(new FamilyMemberAdapter.FamilyMember());
-        return members;
+        return new ArrayList<>();
+    }
+
+    private void debugAddMemberButton() {
+        if (buttonAddMember == null) {
+            Log.d("childinfoactivity", "btn_add_member not found");
+            return;
+        }
+        buttonAddMember.post(() -> Log.d("childinfoactivity",
+                "btn_add_member visibility=" + buttonAddMember.getVisibility()
+                        + ", width=" + buttonAddMember.getWidth()
+                        + ", height=" + buttonAddMember.getHeight()
+                        + ", x=" + buttonAddMember.getX()
+                        + ", y=" + buttonAddMember.getY()));
     }
 }

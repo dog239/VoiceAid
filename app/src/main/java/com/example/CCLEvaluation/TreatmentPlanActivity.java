@@ -210,14 +210,17 @@ public class TreatmentPlanActivity extends AppCompatActivity {
     }
 
     private boolean shouldOpenOverallIntervention(JSONObject childData) {
-        if (OverallInterventionReportBuilder.REPORT_MODE_OVERALL_INTERVENTION.equals(reportMode)) {
-            return OverallInterventionReportBuilder.isReady(childData);
-        }
-        return shouldShowOverallIntervention(childData);
+        return isOverallInterventionMode()
+                && OverallInterventionReportBuilder.isReady(childData);
     }
 
     private boolean shouldShowOverallIntervention(JSONObject childData) {
-        return OverallInterventionReportBuilder.isReady(childData);
+        return isOverallInterventionMode()
+                && OverallInterventionReportBuilder.isReady(childData);
+    }
+
+    private boolean isOverallInterventionMode() {
+        return OverallInterventionReportBuilder.REPORT_MODE_OVERALL_INTERVENTION.equals(reportMode);
     }
 
     private void initOverallInterventionUi() {

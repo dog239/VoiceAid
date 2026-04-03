@@ -49,6 +49,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+
     <!-- Modules List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/modules_recycler"
