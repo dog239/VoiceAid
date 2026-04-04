@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -86,36 +87,41 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         counter = findViewById(R.id.counter);
         timer = findViewById(R.id.timer);
 
-        //必须加载数据
-        final Handler handler = new Handler(Looper.getMainLooper());
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                boolean success = false;
-                try {
-                    initData();
-                    success = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                final boolean finalSuccess = success;
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (finalSuccess) {
-                            // 检查是否是社交模块或前语言模块，如果是则隐藏计时器
-                            if (testactivity.this.resolvedKey != null && (testactivity.this.resolvedKey.equals("SOCIAL") || MODULE_PL.equals(testactivity.this.resolvedKey) || FORMAT_PL.equals(testactivity.this.resolvedKey) || FORMAT_PL.equals(format))) {
-                                if (timer != null) {
-                                    timer.setVisibility(View.GONE);
-                                }
-                            }
-                        } else {
-                            Toast.makeText(testactivity.this, "数据加载失败！", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+        // 显示加载界面
+        View loadingView = findViewById(R.id.loading_view);
+        if (loadingView != null) {
+            loadingView.setVisibility(View.VISIBLE);
+        }
+        
+        // 隐藏ViewPager，直到数据加载完成
+        viewPager.setVisibility(View.GONE);
+        
+        // 直接在主线程中执行initData，因为它包含UI操作
+        try {
+            // 执行数据加载和UI初始化
+            initData();
+            
+            // 隐藏加载界面
+            if (loadingView != null) {
+                loadingView.setVisibility(View.GONE);
             }
-        }).start();
+            
+            // 显示ViewPager
+            viewPager.setVisibility(View.VISIBLE);
+            
+            // 检查是否是社交模块或前语言模块，如果是则隐藏计时器
+            if (this.resolvedKey != null && (this.resolvedKey.equals("SOCIAL") || MODULE_PL.equals(this.resolvedKey) || FORMAT_PL.equals(this.resolvedKey) || FORMAT_PL.equals(format))) {
+                if (timer != null) {
+                    timer.setVisibility(View.GONE);
+                }
+            }
+            
+            // 数据加载成功，显示提示
+            Toast.makeText(this, "数据加载成功！", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "数据加载失败！", Toast.LENGTH_SHORT).show();
+        }
 
         exit.setOnClickListener(this);
 
@@ -241,7 +247,47 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             scene = "A";
         }
         fName = intent.getStringExtra("fName");
-        JSONObject evaluations = dataManager.getInstance().loadData(fName).getJSONObject("evaluations");
+        JSONObject data = dataManager.getInstance().loadData(fName);
+        JSONObject evaluations;
+        if (data.has("evaluations")) {
+            evaluations = data.getJSONObject("evaluations");
+        } else {
+            // 如果没有evaluations字段，创建一个新的
+            evaluations = new JSONObject();
+            try {
+                // 为所有模块创建空的JSONArray
+                evaluations.put("A", new JSONArray());
+                evaluations.put("E", new JSONArray());
+                evaluations.put("NWR", new JSONArray());
+                evaluations.put("PN", new JSONArray());
+                evaluations.put("PL", new JSONArray());
+                evaluations.put("PST", new JSONArray());
+                evaluations.put("RE", new JSONArray());
+                evaluations.put("RG", new JSONArray());
+                evaluations.put("SE", new JSONArray());
+                evaluations.put("S", new JSONArray());
+                evaluations.put("SOCIAL", new JSONArray());
+                // 为每个社交能力测试组创建独立的JSONArray
+                for (int i = 1; i <= 6; i++) {
+                    evaluations.put("SOCIAL" + i, new JSONArray());
+                }
+                // 为每个句法理解测试组创建独立的JSONArray
+                for (int i = 1; i <= 4; i++) {
+                    evaluations.put("RG" + i, new JSONArray());
+                }
+                // 为每个句法表达测试组创建独立的JSONArray
+                for (int i = 1; i <= 4; i++) {
+                    evaluations.put("SE" + i, new JSONArray());
+                }
+                // 保存回数据文件
+                data.put("evaluations", evaluations);
+                dataManager.getInstance().saveChildJson(fName, data);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                // 如果创建失败，使用空的JSONObject
+                evaluations = new JSONObject();
+            }
+        }
         this.resolvedKey = moduleKey != null ? moduleKey : format;
             if (this.resolvedKey == null)
                 return;
@@ -1948,26 +1994,35 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                         
                         // 所有题目完成后，生成模块报告
                         if (finalShouldNavigate) {
-                            if (key.equals("SOCIAL")) {
-                                // 社交能力评估的特殊逻辑
-                                if (finalTotalScore < 12 && currentGroup != 1) {
-                                    // 总分小于12且不是第一组，跳转到社交能力评估选择界面，限制只能选上一组
-                                    Intent intent = new Intent(testactivity.this, SocialGroupSelectActivity.class);
-                                    intent.putExtra("fName", finalFName);
-                                    intent.putExtra("Uid", getIntent().getStringExtra("Uid"));
-                                    intent.putExtra("childID", getIntent().getStringExtra("childID"));
-                                    intent.putExtra("currentGroup", currentGroup);
-                                    startActivity(intent);
-                                } else {
-                                    // 总分大于等于12，或者是第一组，跳转到评估模块选择界面
-                                    Intent intent = new Intent(testactivity.this, AssessmentModulesActivity.class);
-                                    intent.putExtra("fName", finalFName);
-                                    startActivity(intent);
+                            // 显示测评已完成提示
+                            Toast.makeText(testactivity.this, "测评已完成！", Toast.LENGTH_SHORT).show();
+                            
+                            // 延迟跳转，让用户有时间看到提示
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (key.equals("SOCIAL")) {
+                                        // 社交能力评估的特殊逻辑
+                                        if (finalTotalScore < 12 && currentGroup != 1) {
+                                            // 总分小于12且不是第一组，跳转到社交能力评估选择界面，限制只能选上一组
+                                            Intent intent = new Intent(testactivity.this, SocialGroupSelectActivity.class);
+                                            intent.putExtra("fName", finalFName);
+                                            intent.putExtra("Uid", getIntent().getStringExtra("Uid"));
+                                            intent.putExtra("childID", getIntent().getStringExtra("childID"));
+                                            intent.putExtra("currentGroup", currentGroup);
+                                            startActivity(intent);
+                                        } else {
+                                            // 总分大于等于12，或者是第一组，跳转到评估模块选择界面
+                                            Intent intent = new Intent(testactivity.this, AssessmentModulesActivity.class);
+                                            intent.putExtra("fName", finalFName);
+                                            startActivity(intent);
+                                        }
+                                    } else {
+                                        // 其他模块的跳转逻辑
+                                        generateModuleReport();
+                                    }
                                 }
-                            } else {
-                                // 其他模块的跳转逻辑
-                                generateModuleReport();
-                            }
+                            }, 1000); // 1秒延迟
                         }
                     }
                 });

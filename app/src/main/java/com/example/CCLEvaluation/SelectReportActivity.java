@@ -1,6 +1,8 @@
 package com.example.CCLEvaluation;
 
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -10,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,8 +23,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import bean.AssessmentModule;
 import utils.ImageUrls;
@@ -39,6 +46,22 @@ public class SelectReportActivity extends AppCompatActivity {
     private String childUser;
     private JSONObject data;
     private MaterialButton btnViewOverall;
+    private MaterialButton btnExportReport;
+    private static final int REQUEST_EXPORT_ASSESSMENT_PDF = 3101;
+    private final List<ExportOption> pendingExports = new ArrayList<>();
+    private ExportOption currentExport;
+
+    private static class ExportOption {
+        final String moduleType;
+        final String label;
+        final boolean ready;
+
+        ExportOption(String moduleType, String label, boolean ready) {
+            this.moduleType = moduleType;
+            this.label = label;
+            this.ready = ready;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +91,11 @@ public class SelectReportActivity extends AppCompatActivity {
 
         btnViewOverall = findViewById(R.id.btn_view_overall);
         btnViewOverall.setOnClickListener(v -> onOverallReportClick());
+
+        btnExportReport = findViewById(R.id.btn_export_report);
+        if (btnExportReport != null) {
+            btnExportReport.setOnClickListener(v -> onExportReportClick());
+        }
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
         bottomNav.setSelectedItemId(R.id.nav_reports);
@@ -393,6 +421,130 @@ public class SelectReportActivity extends AppCompatActivity {
         intent.putExtra(TreatmentPlanActivity.EXTRA_REPORT_MODE,
                 OverallInterventionReportBuilder.REPORT_MODE_OVERALL_INTERVENTION);
         startActivity(intent);
+    }
+
+    private void onExportReportClick() {
+        refreshData();
+        if (data == null) {
+            Toast.makeText(this, "暂无评估数据", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        List<ExportOption> options = buildExportOptions();
+        if (options.isEmpty()) {
+            Toast.makeText(this, "暂无可导出的测评模块", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] labels = new String[options.size()];
+        boolean[] checked = new boolean[options.size()];
+        for (int i = 0; i < options.size(); i++) {
+            ExportOption option = options.get(i);
+            labels[i] = option.ready ? option.label : option.label + "（未完成）";
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("选择要导出的测评报告");
+        builder.setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> checked[which] = isChecked);
+        builder.setPositiveButton("导出", (dialog, which) -> startExportSelections(options, checked));
+        builder.setNegativeButton("取消", null);
+        builder.show();
+    }
+
+    private List<ExportOption> buildExportOptions() {
+        List<ExportOption> options = new ArrayList<>();
+        options.add(new ExportOption("articulation", "构音评估报告",
+                checkCompletion("A", ImageUrls.A_imageUrls.length)));
+        options.add(new ExportOption("prelinguistic", "前语言评估报告",
+                checkCompletion("PL", ImageUrls.PL_SKILLS.length)));
+        options.add(new ExportOption("vocabulary", "词汇评估报告", isVocabularyReportReady()));
+        options.add(new ExportOption("syntax", "句法评估报告", checkSyntaxCompletion()));
+        options.add(new ExportOption("social", "社交评估报告", checkSocialCompletion()));
+        return options;
+    }
+
+    private void startExportSelections(List<ExportOption> options, boolean[] checked) {
+        pendingExports.clear();
+        boolean hasNotReady = false;
+        for (int i = 0; i < options.size(); i++) {
+            if (!checked[i]) {
+                continue;
+            }
+            ExportOption option = options.get(i);
+            if (option.ready) {
+                pendingExports.add(option);
+            } else {
+                hasNotReady = true;
+            }
+        }
+        if (pendingExports.isEmpty()) {
+            Toast.makeText(this, hasNotReady ? "所选模块尚未完成" : "未选择导出模块", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        exportNextModule();
+    }
+
+    private void exportNextModule() {
+        if (pendingExports.isEmpty()) {
+            currentExport = null;
+            Toast.makeText(this, "导出成功", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        currentExport = pendingExports.remove(0);
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/pdf");
+        intent.putExtra(Intent.EXTRA_TITLE, buildAssessmentPdfFileName(data, currentExport));
+        startActivityForResult(intent, REQUEST_EXPORT_ASSESSMENT_PDF);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent dataIntent) {
+        super.onActivityResult(requestCode, resultCode, dataIntent);
+        if (requestCode == REQUEST_EXPORT_ASSESSMENT_PDF) {
+            if (resultCode != RESULT_OK || dataIntent == null) {
+                pendingExports.clear();
+                currentExport = null;
+                return;
+            }
+            Uri uri = dataIntent.getData();
+            if (uri == null || currentExport == null) {
+                Toast.makeText(this, "未获取保存位置", Toast.LENGTH_SHORT).show();
+                pendingExports.clear();
+                currentExport = null;
+                return;
+            }
+            try {
+                ContentResolver resolver = getContentResolver();
+                OutputStream outputStream = resolver.openOutputStream(uri);
+                if (outputStream == null) {
+                    throw new IllegalStateException("无法打开输出流");
+                }
+                new PdfGenerator(this);
+                PdfGenerator.generateEvaluationPdf(outputStream, fName, currentExport.moduleType);
+                outputStream.flush();
+                outputStream.close();
+                exportNextModule();
+            } catch (Exception e) {
+                Toast.makeText(this, "导出失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                pendingExports.clear();
+                currentExport = null;
+            }
+        }
+    }
+
+    private String buildAssessmentPdfFileName(JSONObject data, ExportOption option) {
+        String name = "未命名";
+        String date = "";
+        if (data != null) {
+            JSONObject info = data.optJSONObject("info");
+            if (info != null) {
+                name = info.optString("name", name);
+                date = info.optString("testDate", "");
+            }
+        }
+        if (date == null || date.trim().isEmpty()) {
+            date = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
+        }
+        String raw = name + "_" + option.label + "_" + date + ".pdf";
+        return raw.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 
     private boolean isVocabularyReportReady() {

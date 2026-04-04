@@ -441,6 +441,66 @@ public class resultactivity extends AppCompatActivity implements View.OnClickLis
                 if (!savedClarity.isEmpty() && speechClarity != null) {
                     speechClarity.setText(savedClarity);
                 }
+                
+                // 加载保存的诊断勾选状态
+                String savedDiagnosis = safeText(evaluations.optString("clinical_diagnosis", ""));
+                if (!savedDiagnosis.isEmpty()) {
+                    if (diagNormal != null) {
+                        diagNormal.setChecked(savedDiagnosis.contains(diagNormal.getText().toString()));
+                    }
+                    if (diagPhonology != null) {
+                        diagPhonology.setChecked(savedDiagnosis.contains(diagPhonology.getText().toString()));
+                    }
+                    if (diagTone != null) {
+                        diagTone.setChecked(savedDiagnosis.contains(diagTone.getText().toString()));
+                    }
+                }
+                
+                // 加载保存的干预建议状态
+                String savedSuggestions = safeText(evaluations.optString("assessment_suggestions", ""));
+                if (!savedSuggestions.isEmpty()) {
+                    if (suggestNone != null) {
+                        suggestNone.setChecked(savedSuggestions.contains(suggestNone.getText().toString()));
+                    }
+                    if (suggestFollow != null) {
+                        suggestFollow.setChecked(savedSuggestions.contains(suggestFollow.getText().toString()));
+                    }
+                    if (suggestTrad != null) {
+                        suggestTrad.setChecked(savedSuggestions.contains(suggestTrad.getText().toString()));
+                    }
+                    if (suggestPhono != null) {
+                        suggestPhono.setChecked(savedSuggestions.contains(suggestPhono.getText().toString()));
+                    }
+                    if (suggestMore != null) {
+                        suggestMore.setChecked(savedSuggestions.contains(suggestMore.getText().toString()));
+                    }
+                    
+                    // 加载填空内容
+                    if (followMonths != null) {
+                        // 提取"x个月后复测"中的数字
+                        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+)个月后复测");
+                        java.util.regex.Matcher matcher = pattern.matcher(savedSuggestions);
+                        if (matcher.find()) {
+                            followMonths.setText(matcher.group(1));
+                        }
+                    }
+                    if (tradFreq != null) {
+                        // 提取"x次/周"中的数字
+                        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+)次/周");
+                        java.util.regex.Matcher matcher = pattern.matcher(savedSuggestions);
+                        if (matcher.find()) {
+                            tradFreq.setText(matcher.group(1));
+                        }
+                    }
+                    if (phonoFreq != null) {
+                        // 提取"x次/周"中的数字
+                        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+)次/周");
+                        java.util.regex.Matcher matcher = pattern.matcher(savedSuggestions);
+                        if (matcher.find()) {
+                            phonoFreq.setText(matcher.group(1));
+                        }
+                    }
+                }
             }
             
             // 隐藏硬编码的需要重点关注的能力标题
