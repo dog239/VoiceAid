@@ -197,6 +197,338 @@ public class PdfGenerator extends evmenuactivity{
         }
     }
 
+    // 根据组别和题目编号确定RG测试点
+    private static int getRGTestPoint(int group, int num) {
+        // 简单动词短语理解
+        if ((group == 1 && num >= 1 && num <= 3) || 
+            (group == 2 && num >= 1 && num <= 3) || 
+            (group == 3 && num >= 1 && num <= 3) || 
+            (group == 4 && num >= 1 && num <= 3)) {
+            return 1;
+        }
+        // 简单名词短语理解
+        if ((group == 1 && num >= 4 && num <= 6) || 
+            (group == 2 && num >= 4 && num <= 6) || 
+            (group == 3 && num >= 4 && num <= 6) || 
+            (group == 4 && num >= 4 && num <= 6)) {
+            return 2;
+        }
+        // 疑问句理解
+        if ((group == 1 && num >= 13 && num <= 15) || 
+            (group == 2 && num >= 7 && num <= 9) || 
+            (group == 3 && num >= 10 && num <= 12) || 
+            (group == 4 && num >= 7 && num <= 9)) {
+            return 3;
+        }
+        // 否定句理解
+        if ((group == 1 && num >= 10 && num <= 12) || 
+            (group == 2 && num >= 13 && num <= 15) || 
+            (group == 3 && num >= 7 && num <= 9) || 
+            (group == 4 && num >= 4 && num <= 6)) {
+            return 4;
+        }
+        // 比较句理解
+        if ((group == 1 && num >= 4 && num <= 6) || 
+            (group == 2 && num >= 16 && num <= 18) || 
+            (group == 3 && num >= 4 && num <= 6) || 
+            (group == 4 && num >= 10 && num <= 15)) {
+            return 5;
+        }
+        // 复合句理解
+        if ((group == 1 && num >= 7 && num <= 9) || 
+            (group == 2 && num >= 10 && num <= 12) || 
+            (group == 3 && num >= 13 && num <= 15) || 
+            (group == 4 && num >= 10 && num <= 15)) {
+            return 6;
+        }
+        return 0;
+    }
+
+    // 根据组别和题目编号确定SE测试点
+    private static int getSETestPoint(int group, int num) {
+        // 简单句表达
+        if ((group == 1 && num >= 1 && num <= 5) || 
+            (group == 2 && num >= 10 && num <= 15) || 
+            (group == 3 && num >= 1 && num <= 3) || 
+            (group == 4 && num >= 1 && num <= 3)) {
+            return 1;
+        }
+        // 疑问句表达
+        if ((group == 1 && num >= 13 && num <= 15) || 
+            (group == 2 && num >= 4 && num <= 9) || 
+            (group == 3 && num >= 10 && num <= 12) || 
+            (group == 4 && num >= 4 && num <= 6)) {
+            return 2;
+        }
+        // 因果句表达
+        if ((group == 1 && num >= 10 && num <= 12) || 
+            (group == 2 && num >= 1 && num <= 3) || 
+            (group == 3 && num >= 13 && num <= 15) || 
+            (group == 4 && num >= 1 && num <= 3)) {
+            return 3;
+        }
+        // 条件句表达
+        if ((group == 1 && num >= 7 && num <= 9) || 
+            (group == 2 && num >= 10 && num <= 12) || 
+            (group == 3 && num >= 7 && num <= 9) || 
+            (group == 4 && num >= 10 && num <= 12)) {
+            return 4;
+        }
+        // 比较句表达
+        if ((group == 1 && num >= 4 && num <= 6) || 
+            (group == 2 && num >= 13 && num <= 15) || 
+            (group == 3 && num >= 4 && num <= 6) || 
+            (group == 4 && num >= 13 && num <= 15)) {
+            return 5;
+        }
+        // 复合句表达
+        if ((group == 1 && num >= 1 && num <= 3) || 
+            (group == 2 && num >= 10 && num <= 12) || 
+            (group == 3 && num >= 16 && num <= 18) || 
+            (group == 4 && num >= 7 && num <= 9)) {
+            return 6;
+        }
+        return 0;
+    }
+
+    // 根据format、组别和题目编号确定测试语法点
+    private static String getTestLanguage(String format, int group, int questionNumber) {
+        // 句法理解部分
+        if (format != null && format.equals("RG")) {
+            switch (group) {
+                case 1:
+                    switch (questionNumber) {
+                        case 1:
+                        case 2:
+                        case 3:
+                            return "主谓结构";
+                        case 4:
+                        case 5:
+                        case 6:
+                            return "动宾结构";
+                        case 7:
+                        case 8:
+                        case 9:
+                            return "主谓宾";
+                        case 10:
+                        case 11:
+                        case 12:
+                            return "否定句";
+                        case 13:
+                        case 14:
+                        case 15:
+                            return "一般疑问句";
+                        case 16:
+                        case 17:
+                        case 18:
+                            return "特殊疑问句";
+                        case 19:
+                        case 20:
+                        case 21:
+                            return "形容词+名词";
+                        default:
+                            return "";
+                    }
+                case 2:
+                    switch (questionNumber) {
+                        case 1:
+                        case 2:
+                        case 3:
+                            return "多重修饰";
+                        case 4:
+                        case 5:
+                        case 6:
+                            return "双宾结构";
+                        case 7:
+                        case 8:
+                        case 9:
+                            return "是不是问句";
+                        case 10:
+                        case 11:
+                        case 12:
+                            return "地点疑问句";
+                        case 13:
+                        case 14:
+                        case 15:
+                            return "副词都";
+                        case 16:
+                        case 17:
+                        case 18:
+                            return "语序";
+                        default:
+                            return "";
+                    }
+                case 3:
+                    switch (questionNumber) {
+                        case 1:
+                        case 2:
+                        case 3:
+                            return "被动句";
+                        case 4:
+                        case 5:
+                        case 6:
+                            return "比较句";
+                        case 7:
+                        case 8:
+                        case 9:
+                            return "了（完成体）";
+                        case 10:
+                        case 11:
+                        case 12:
+                            return "因果复句";
+                        case 13:
+                        case 14:
+                        case 15:
+                            return "转折句";
+                        case 16:
+                        case 17:
+                        case 18:
+                            return "时间顺序句";
+                        default:
+                            return "";
+                    }
+                case 4:
+                    switch (questionNumber) {
+                        case 1:
+                        case 2:
+                        case 3:
+                            return "着（持续体）";
+                        case 4:
+                        case 5:
+                        case 6:
+                            return "双重否定";
+                        case 7:
+                        case 8:
+                        case 9:
+                            return "条件句（排除）";
+                        case 10:
+                        case 11:
+                        case 12:
+                        case 13:
+                        case 14:
+                        case 15:
+                            return "篇章理解能力";
+                        default:
+                            return "";
+                    }
+                default:
+                    return "";
+            }
+        }
+        // 句法表达部分
+        else if (format != null && format.equals("SE")) {
+            switch (group) {
+                case 1:
+                    switch (questionNumber) {
+                        case 1:
+                        case 2:
+                        case 3:
+                            return "主谓结构";
+                        case 4:
+                        case 5:
+                        case 6:
+                            return "动宾结构";
+                        case 7:
+                        case 8:
+                        case 9:
+                            return "形容词+名词";
+                        case 10:
+                        case 11:
+                        case 12:
+                            return "主谓宾";
+                        case 13:
+                        case 14:
+                        case 15:
+                            return "否定句";
+                        default:
+                            return "";
+                    }
+                case 2:
+                    switch (questionNumber) {
+                        case 1:
+                        case 2:
+                        case 3:
+                            return "双宾结构";
+                        case 4:
+                        case 5:
+                        case 6:
+                            return "一般疑问句";
+                        case 7:
+                        case 8:
+                        case 9:
+                            return "特殊疑问句";
+                        case 10:
+                        case 11:
+                        case 12:
+                            return "地点/方位";
+                        case 13:
+                        case 14:
+                        case 15:
+                            return "多重修饰";
+                        default:
+                            return "";
+                    }
+                case 3:
+                    switch (questionNumber) {
+                        case 1:
+                        case 2:
+                        case 3:
+                            return "被动句";
+                        case 4:
+                        case 5:
+                        case 6:
+                            return "了（完成体）";
+                        case 7:
+                        case 8:
+                        case 9:
+                            return "副词都";
+                        case 10:
+                        case 11:
+                        case 12:
+                            return "语序";
+                        case 13:
+                        case 14:
+                        case 15:
+                            return "时间顺序句";
+                        default:
+                            return "";
+                    }
+                case 4:
+                    switch (questionNumber) {
+                        case 1:
+                        case 2:
+                        case 3:
+                            return "因果复句";
+                        case 4:
+                        case 5:
+                        case 6:
+                            return "转折句";
+                        case 7:
+                        case 8:
+                        case 9:
+                            return "正在/在/着（进行体）";
+                        case 10:
+                        case 11:
+                        case 12:
+                            return "假设条件句";
+                        case 13:
+                        case 14:
+                        case 15:
+                            return "比较句";
+                        case 16:
+                            return "看图讲故事";
+                        default:
+                            return "";
+                    }
+                default:
+                    return "";
+            }
+        }
+        else {
+            return "";
+        }
+    }
+
 
     @SuppressLint("NewApi")
     public static void generatePdf(OutputStream outputStream, String fname) {
@@ -235,7 +567,7 @@ public class PdfGenerator extends evmenuactivity{
             boolean showArticulation = includeAll || "articulation".equals(moduleKey);
             boolean showPrelinguistic = includeAll || "prelinguistic".equals(moduleKey);
             boolean showVocabulary = includeAll || "vocabulary".equals(moduleKey);
-            boolean showSyntax = includeAll || "syntax".equals(moduleKey);
+            boolean showSyntax = includeAll || "syntax".equals(moduleKey) || "syntax_comprehension".equals(moduleKey) || "syntax_expression".equals(moduleKey);
             boolean showSocial = includeAll || "social".equals(moduleKey);
 
             name = info == null ? "" : info.optString("name", "");
@@ -342,23 +674,26 @@ public class PdfGenerator extends evmenuactivity{
             }
 //        RG
             double countrg = 0;
-            JSONArray jsonArrayRG = evaluations.optJSONArray("RG");
-            if (jsonArrayRG == null) {
-                jsonArrayRG = new JSONArray();
-            }
-            for (int i = 0; i < jsonArrayRG.length(); i++) {
-                JSONObject object = jsonArrayRG.optJSONObject(i);
-                if (object == null) {
-                    continue;
-                }
-                String time = object.optString("time", "");
-                if (!time.isEmpty() && !"null".equals(time)) {
-                    if (object.optBoolean("result", false)) {
-                        countrg++;
+            double lenthrg = 0;
+            // 检查所有RG组的数据
+            for (int group = 1; group <= 4; group++) {
+                JSONArray jsonArrayRG = evaluations.optJSONArray("RG" + group);
+                if (jsonArrayRG != null) {
+                    for (int i = 0; i < jsonArrayRG.length(); i++) {
+                        JSONObject object = jsonArrayRG.optJSONObject(i);
+                        if (object == null) {
+                            continue;
+                        }
+                        String time = object.optString("time", "");
+                        if (!time.isEmpty() && !"null".equals(time)) {
+                            if (object.optBoolean("result", false)) {
+                                countrg++;
+                            }
+                            lenthrg++;
+                        }
                     }
                 }
             }
-            double lenthrg = jsonArrayRG.length();
             if (lenthrg == 0) {
                 scoreRG = " ";
             } else {
@@ -1023,119 +1358,232 @@ public class PdfGenerator extends evmenuactivity{
                 document.add(new Paragraph("（一）记录表", simsunBold));
                 document.add(new Paragraph(" ", simsun));
 
-                // 创建句法能力测试点表格
-                PdfPTable tableSyntax = new PdfPTable(4);
+                // 创建详细的题目明细表格
+                PdfPTable tableSyntax = new PdfPTable(5);
                 tableSyntax.setWidthPercentage(100);
                 tableSyntax.setSpacingBefore(10f);
                 tableSyntax.setSpacingAfter(15f);
 
                 // 添加表头
-                addHeaderCell(tableSyntax, "序号", simsun, 1);
-                addHeaderCell(tableSyntax, "测试点", simsun, 1);
-                addHeaderCell(tableSyntax, "题目数量", simsun, 1);
-                addHeaderCell(tableSyntax, "正确率", simsun, 1);
-
-                // 定义句法理解和表达的测试点
-                String[][] syntaxTestPoints = {
-                    {"1", "简单动词短语理解", "5", ""},
-                    {"2", "简单名词短语理解", "3", ""},
-                    {"3", "疑问句理解", "3", ""},
-                    {"4", "否定句理解", "3", ""},
-                    {"5", "比较句理解", "3", ""},
-                    {"6", "复合句理解", "4", ""},
-                    {"7", "简单句表达", "5", ""},
-                    {"8", "疑问句表达", "3", ""},
-                    {"9", "因果句表达", "3", ""},
-                    {"10", "条件句表达", "3", ""},
-                    {"11", "比较句表达", "3", ""},
-                    {"12", "复合句表达", "3", ""}
-                };
+                addHeaderCell(tableSyntax, "测试组别", simsun, 1);
+                addHeaderCell(tableSyntax, "题号", simsun, 1);
+                addHeaderCell(tableSyntax, "例句", simsun, 1);
+                addHeaderCell(tableSyntax, "测试结果", simsun, 1);
+                addHeaderCell(tableSyntax, "对应测试语法点", simsun, 1);
 
                 // 加载RG（句法理解）和SE（句法表达）数据
-                JSONArray rgArray = evaluations.optJSONArray("RG");
-                JSONArray seArray = evaluations.optJSONArray("SE");
+                // 遍历所有组的数据，与SyntaxResultActivity保持一致
+                Map<Integer, Integer> rgCorrectCount = new HashMap<>();
+                Map<Integer, Integer> seCorrectCount = new HashMap<>();
+                Map<Integer, Integer> rgTotalCount = new HashMap<>();
+                Map<Integer, Integer> seTotalCount = new HashMap<>();
+
+                // 初始化计数映射
+                for (int i = 1; i <= 6; i++) {
+                    rgCorrectCount.put(i, 0);
+                    rgTotalCount.put(i, 0);
+                }
+                for (int i = 1; i <= 6; i++) {
+                    seCorrectCount.put(i, 0);
+                    seTotalCount.put(i, 0);
+                }
+
+                // 收集题目详情
+                ArrayList<JSONObject> questionDetails = new ArrayList<>();
+
+                // 根据模块类型决定处理哪些数据
+                if ("syntax_comprehension".equals(moduleKey) || "syntax".equals(moduleKey)) {
+                    // 处理RG组数据
+                    for (int group = 1; group <= 4; group++) {
+                        JSONArray jsonArrayRG = evaluations.optJSONArray("RG" + group);
+                        if (jsonArrayRG != null) {
+                            for (int j = 0; j < jsonArrayRG.length(); j++) {
+                                JSONObject item = jsonArrayRG.optJSONObject(j);
+                                if (item != null) {
+                                    String time = item.optString("time", "");
+                                    // 即使没有time字段也处理，因为App显示了所有题目
+                                    int questionNum = j + 1; // 使用连续的编号
+                                    int testPoint = getRGTestPoint(group, questionNum);
+                                    if (testPoint > 0 && testPoint <= 6) {
+                                        rgTotalCount.put(testPoint, rgTotalCount.get(testPoint) + 1);
+                                        if (item.optBoolean("result", false)) {
+                                            rgCorrectCount.put(testPoint, rgCorrectCount.get(testPoint) + 1);
+                                        }
+                                    }
+                                    // 添加题目详情
+                                    JSONObject detail = new JSONObject();
+                                    try {
+                                        detail.put("group", group);
+                                        detail.put("num", questionNum);
+                                        detail.put("question", item.optString("question", ""));
+                                        detail.put("result", item.optBoolean("result", false));
+                                        detail.put("testLanguage", getTestLanguage("RG", group, questionNum));
+                                        questionDetails.add(detail);
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ("syntax_expression".equals(moduleKey) || "syntax".equals(moduleKey)) {
+                    // 处理SE组数据
+                    for (int group = 1; group <= 4; group++) {
+                        JSONArray jsonArraySE = evaluations.optJSONArray("SE" + group);
+                        if (jsonArraySE != null) {
+                            for (int j = 0; j < jsonArraySE.length(); j++) {
+                                JSONObject item = jsonArraySE.optJSONObject(j);
+                                if (item != null) {
+                                    String time = item.optString("time", "");
+                                    // 即使没有time字段也处理，因为App显示了所有题目
+                                    int questionNum = j + 1; // 使用连续的编号
+                                    int testPoint = getSETestPoint(group, questionNum);
+                                    if (testPoint > 0 && testPoint <= 6) {
+                                        seTotalCount.put(testPoint, seTotalCount.get(testPoint) + 1);
+                                        if (item.optBoolean("result", false)) {
+                                            seCorrectCount.put(testPoint, seCorrectCount.get(testPoint) + 1);
+                                        }
+                                    }
+                                    // 添加题目详情
+                                    JSONObject detail = new JSONObject();
+                                    try {
+                                        detail.put("group", group);
+                                        detail.put("num", questionNum);
+                                        detail.put("question", item.optString("question", ""));
+                                        detail.put("result", item.optBoolean("result", false));
+                                        detail.put("testLanguage", getTestLanguage("SE", group, questionNum));
+                                        questionDetails.add(detail);
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 // 计算每个测试点的正确率
                 ArrayList<String> weaknessList = new ArrayList<>();
                 ArrayList<String> inProgressList = new ArrayList<>();
 
-                for (int i = 0; i < syntaxTestPoints.length; i++) {
-                    int totalQuestions = Integer.parseInt(syntaxTestPoints[i][2]);
-                    int correctCount = 0;
+                // 按测试点名称统计正确数和总数
+                Map<String, Integer> testPointCorrectCount = new HashMap<>();
+                Map<String, Integer> testPointTotalCount = new HashMap<>();
 
-                    // 检查RG数据（前6个测试点）
-                    if (i < 6 && rgArray != null) {
-                        for (int j = 0; j < rgArray.length(); j++) {
-                            JSONObject item = rgArray.optJSONObject(j);
-                            if (item != null) {
-                                int groupNumber = item.optInt("groupNumber", 0);
-                                if (groupNumber == i + 1) {
-                                    boolean result = item.optBoolean("result", false);
-                                    if (result) {
-                                        correctCount++;
-                                    }
-                                }
+                // 显示题目详情并统计数据
+                for (JSONObject detail : questionDetails) {
+                    try {
+                        int group = detail.getInt("group");
+                        int questionNum = detail.getInt("num");
+                        String question = detail.getString("question");
+                        boolean result = detail.getBoolean("result");
+                        String testLanguage = detail.getString("testLanguage");
+
+                        addDataCell(tableSyntax, String.valueOf(group), simsun, 1);
+                        addDataCell(tableSyntax, String.valueOf(questionNum), simsun, 1);
+                        addDataCell(tableSyntax, question, simsun, 1);
+                        addDataCell(tableSyntax, result ? "正确" : "错误", simsun, 1);
+                        addDataCell(tableSyntax, testLanguage, simsun, 1);
+
+                        // 统计测试点数据
+                        if (!testLanguage.isEmpty()) {
+                            testPointTotalCount.put(testLanguage, testPointTotalCount.getOrDefault(testLanguage, 0) + 1);
+                            if (result) {
+                                testPointCorrectCount.put(testLanguage, testPointCorrectCount.getOrDefault(testLanguage, 0) + 1);
                             }
                         }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
-
-                    // 检查SE数据（后6个测试点）
-                    if (i >= 6 && seArray != null) {
-                        for (int j = 0; j < seArray.length(); j++) {
-                            JSONObject item = seArray.optJSONObject(j);
-                            if (item != null) {
-                                int groupNumber = item.optInt("groupNumber", 0);
-                                if (groupNumber == i - 5) {
-                                    boolean result = item.optBoolean("result", false);
-                                    if (result) {
-                                        correctCount++;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 计算正确率
-                    String accuracy = totalQuestions > 0 ? String.format("%.1f%%", (double) correctCount / totalQuestions * 100) : "0%";
-                    syntaxTestPoints[i][3] = accuracy;
-
-                    // 确定需要重点关注的能力和不稳定的能力
-                    double accuracyValue = totalQuestions > 0 ? (double) correctCount / totalQuestions : 0;
-                    if (accuracyValue == 0) {
-                        weaknessList.add(syntaxTestPoints[i][1]);
-                    } else if (accuracyValue <= 0.33) {
-                        inProgressList.add(syntaxTestPoints[i][1]);
-                    }
-
-                    addDataCell(tableSyntax, syntaxTestPoints[i][0], simsun, 1);
-                    addDataCell(tableSyntax, syntaxTestPoints[i][1], simsun, 1);
-                    addDataCell(tableSyntax, syntaxTestPoints[i][2], simsun, 1);
-                    addDataCell(tableSyntax, accuracy, simsun, 1);
                 }
                 document.add(tableSyntax);
 
-                document.add(new Paragraph("（二）句法理解能力结果", simsunBold));
-                document.add(new Paragraph("测试结果：" + scoreRG, simsun));
-                document.add(new Paragraph(" ", simsun));
+                // 计算需要重点关注的能力和不稳定的能力
+                // 手动统计篇章理解能力的正确数和总数
+                int discourseCorrect = 0;
+                int discourseTotal = 0;
 
-                document.add(new Paragraph("（三）句法表达能力结果", simsunBold));
-                document.add(new Paragraph("测试结果：" + scoreSE, simsun));
-                document.add(new Paragraph(" ", simsun));
+                // 遍历所有测试点
+                for (String testPoint : testPointTotalCount.keySet()) {
+                    int correct = testPointCorrectCount.getOrDefault(testPoint, 0);
+                    int total = testPointTotalCount.get(testPoint);
 
-                document.add(new Paragraph("（四）句法能力综合评估", simsunBold));
-                document.add(new Paragraph("综合结果：" + scoreSyntax, simsun));
-                document.add(new Paragraph(" ", simsun));
+                    // 处理篇章理解能力
+                    if (testPoint.equals("篇章理解能力")) {
+                        discourseCorrect = correct;
+                        discourseTotal = total;
+                    } 
+                    // 处理其他测试点
+                    else {
+                        if (correct == 0 && !weaknessList.contains(testPoint)) {
+                            weaknessList.add(testPoint);
+                        } else if (correct <= total / 3 && !inProgressList.contains(testPoint)) {
+                            inProgressList.add(testPoint);
+                        }
+                    }
+                }
+
+                // 特殊处理篇章理解能力（6小问）
+                if (discourseTotal > 0) {
+                    if (discourseCorrect == 0 && !weaknessList.contains("篇章理解能力")) {
+                        weaknessList.add("篇章理解能力");
+                    } else if (discourseCorrect <= 2 && !inProgressList.contains("篇章理解能力")) {
+                        inProgressList.add("篇章理解能力");
+                    }
+                }
+
+                // 根据模块类型显示相应的结果
+                if ("syntax_comprehension".equals(moduleKey)) {
+                    document.add(new Paragraph("（二）句法理解能力结果", simsunBold));
+                    document.add(new Paragraph("测试结果：" + scoreRG, simsun));
+                    document.add(new Paragraph(" ", simsun));
+                } else if ("syntax_expression".equals(moduleKey)) {
+                    document.add(new Paragraph("（二）句法表达能力结果", simsunBold));
+                    document.add(new Paragraph("测试结果：" + scoreSE, simsun));
+                    document.add(new Paragraph(" ", simsun));
+                } else {
+                    document.add(new Paragraph("（二）句法理解能力结果", simsunBold));
+                    document.add(new Paragraph("测试结果：" + scoreRG, simsun));
+                    document.add(new Paragraph(" ", simsun));
+
+                    document.add(new Paragraph("（三）句法表达能力结果", simsunBold));
+                    document.add(new Paragraph("测试结果：" + scoreSE, simsun));
+                    document.add(new Paragraph(" ", simsun));
+
+                    document.add(new Paragraph("（四）句法能力综合评估", simsunBold));
+                    document.add(new Paragraph("综合结果：" + scoreSyntax, simsun));
+                    document.add(new Paragraph(" ", simsun));
+                }
 
                 document.add(new Paragraph("（五）评估建议", simsunBold));
-                document.add(new Paragraph("通过儿童句法理解能力的评估，本次评估结果如下：", simsun));
+                if ("syntax_comprehension".equals(moduleKey)) {
+                    document.add(new Paragraph("通过儿童句法理解能力的评估，本次评估结果如下：", simsun));
+                } else if ("syntax_expression".equals(moduleKey)) {
+                    document.add(new Paragraph("通过儿童句法表达能力的评估，本次评估结果如下：", simsun));
+                } else {
+                    document.add(new Paragraph("通过儿童句法理解与表达能力的评估，本次评估结果如下：", simsun));
+                }
                 document.add(new Paragraph(" ", simsun));
 
                 if (lenthrg + lenthse > 0) {
-                    double totalSyntaxScore = ((countrg + countse) / (lenthrg + lenthse)) * 100;
-                    if (totalSyntaxScore >= 66.7) { // 10/15 ≈ 66.7%
-                        document.add(new Paragraph("● 从整体上来说，孩子的句法理解能力较好，基本达标，符合该年龄段孩子语言发育水平。", simsun));
+                    double totalSyntaxScore = 0;
+                    String abilityType = "句法理解能力";
+                    if ("syntax_comprehension".equals(moduleKey)) {
+                        totalSyntaxScore = lenthrg > 0 ? (countrg / lenthrg) * 100 : 0;
+                        abilityType = "句法理解能力";
+                    } else if ("syntax_expression".equals(moduleKey)) {
+                        totalSyntaxScore = lenthse > 0 ? (countse / lenthse) * 100 : 0;
+                        abilityType = "句法表达能力";
                     } else {
-                        document.add(new Paragraph("● 从整体上来说，孩子的句法理解能力还有待进一步发展，尚未达标。", simsun));
+                        totalSyntaxScore = ((countrg + countse) / (lenthrg + lenthse)) * 100;
+                        abilityType = "句法能力";
+                    }
+                    if (totalSyntaxScore >= 66.7) { // 10/15 ≈ 66.7%
+                        document.add(new Paragraph("● 从整体上来说，孩子的" + abilityType + "较好，基本达标，符合该年龄段孩子语言发育水平。", simsun));
+                    } else {
+                        document.add(new Paragraph("● 从整体上来说，孩子的" + abilityType + "还有待进一步发展，尚未达标。", simsun));
                     }
                     document.add(new Paragraph(" ", simsun));
 
@@ -1162,75 +1610,7 @@ public class PdfGenerator extends evmenuactivity{
                     document.add(new Paragraph(" ", simsun));
                 }
 
-                document.add(new Paragraph("具体建议：", simsun));
 
-                // 针对需要重点关注的能力
-                if (!weaknessList.isEmpty()) {
-                    document.add(new Paragraph("1. 针对需要重点关注的能力：", simsun));
-                    for (String ability : weaknessList) {
-                        if (ability.contains("复合句")) {
-                            document.add(new Paragraph("   - 复合句理解：通过简单的因果关系句子开始，逐步引导孩子理解复杂的句子结构", simsun));
-                        } else if (ability.contains("条件句")) {
-                            document.add(new Paragraph("   - 条件句表达：使用'如果...就...'等常见条件句结构，在日常生活中反复练习", simsun));
-                        } else if (ability.contains("疑问句")) {
-                            document.add(new Paragraph("   - 疑问句理解：通过实物和图片，帮助孩子理解不同类型的疑问句", simsun));
-                        } else if (ability.contains("比较句")) {
-                            document.add(new Paragraph("   - 比较句表达：使用具体的事物进行比较，如大小、多少、高矮等", simsun));
-                        } else if (ability.contains("简单动词短语")) {
-                            document.add(new Paragraph("   - 简单动词短语理解：通过动作示范和图片，帮助孩子理解动词短语的含义", simsun));
-                        } else if (ability.contains("简单名词短语")) {
-                            document.add(new Paragraph("   - 简单名词短语理解：通过实物和图片，帮助孩子理解名词短语的含义", simsun));
-                        } else if (ability.contains("否定句")) {
-                            document.add(new Paragraph("   - 否定句理解：通过对比和示范，帮助孩子理解否定句的含义", simsun));
-                        } else if (ability.contains("因果句")) {
-                            document.add(new Paragraph("   - 因果句表达：通过日常生活中的例子，帮助孩子理解因果关系", simsun));
-                        }
-                    }
-                    document.add(new Paragraph(" ", simsun));
-                }
-
-                // 针对不稳定的能力
-                if (!inProgressList.isEmpty()) {
-                    document.add(new Paragraph("2. 针对不稳定的能力：", simsun));
-                    for (String ability : inProgressList) {
-                        if (ability.contains("复合句")) {
-                            document.add(new Paragraph("   - 复合句理解：通过简单的因果关系句子开始，逐步引导孩子理解复杂的句子结构", simsun));
-                        } else if (ability.contains("条件句")) {
-                            document.add(new Paragraph("   - 条件句表达：使用'如果...就...'等常见条件句结构，在日常生活中反复练习", simsun));
-                        } else if (ability.contains("疑问句")) {
-                            document.add(new Paragraph("   - 疑问句理解：通过实物和图片，帮助孩子理解不同类型的疑问句", simsun));
-                        } else if (ability.contains("比较句")) {
-                            document.add(new Paragraph("   - 比较句表达：使用具体的事物进行比较，如大小、多少、高矮等", simsun));
-                        } else if (ability.contains("简单动词短语")) {
-                            document.add(new Paragraph("   - 简单动词短语理解：通过动作示范和图片，帮助孩子理解动词短语的含义", simsun));
-                        } else if (ability.contains("简单名词短语")) {
-                            document.add(new Paragraph("   - 简单名词短语理解：通过实物和图片，帮助孩子理解名词短语的含义", simsun));
-                        } else if (ability.contains("否定句")) {
-                            document.add(new Paragraph("   - 否定句理解：通过对比和示范，帮助孩子理解否定句的含义", simsun));
-                        } else if (ability.contains("因果句")) {
-                            document.add(new Paragraph("   - 因果句表达：通过日常生活中的例子，帮助孩子理解因果关系", simsun));
-                        }
-                    }
-                    document.add(new Paragraph(" ", simsun));
-                }
-
-                document.add(new Paragraph("3. 日常语言训练建议：", simsun));
-                document.add(new Paragraph("   - 日常对话中多使用正确的语法结构，为孩子提供良好的语言示范", simsun));
-                document.add(new Paragraph("   - 阅读适合孩子年龄的绘本，帮助孩子理解和吸收各种语法结构", simsun));
-                document.add(new Paragraph("   - 鼓励孩子用完整的句子表达自己的想法，及时纠正语法错误", simsun));
-                document.add(new Paragraph("   - 定期进行句法能力评估，跟踪孩子的进步情况", simsun));
-                document.add(new Paragraph(" ", simsun));
-
-                document.add(new Paragraph("（六）评估建议依据", simsunBold));
-                document.add(new Paragraph("1. 整体达标标准：", simsun));
-                document.add(new Paragraph("   - 如果题目总数，得到 10/15 以上分数，则达标。", simsun));
-                document.add(new Paragraph("   - 如果不到 10/15，则尚未达标。", simsun));
-                document.add(new Paragraph(" ", simsun));
-
-                document.add(new Paragraph("2. 对应每一个考查点：", simsun));
-                document.add(new Paragraph("   - 如果该考查点，题目正确率等于 0：【需要重点关注的能力】", simsun));
-                document.add(new Paragraph("   - 如果该考查点，题目正确率等于 1/3：【不稳定的能力】", simsun));
-                document.add(new Paragraph(" ", simsun));
             }
 
             // 社交能力评估结果
@@ -2012,15 +2392,35 @@ public class PdfGenerator extends evmenuactivity{
                 filtered.put("NWR", evaluations.optJSONArray("NWR"));
                 break;
             case "syntax":
-                filtered.put("RG", evaluations.optJSONArray("RG"));
-                filtered.put("SE1", evaluations.optJSONArray("SE1"));
-                filtered.put("SE2", evaluations.optJSONArray("SE2"));
-                filtered.put("SE3", evaluations.optJSONArray("SE3"));
-                filtered.put("SE4", evaluations.optJSONArray("SE4"));
-                filtered.put("RG1", evaluations.optJSONArray("RG1"));
-                filtered.put("RG2", evaluations.optJSONArray("RG2"));
-                filtered.put("RG3", evaluations.optJSONArray("RG3"));
-                filtered.put("RG4", evaluations.optJSONArray("RG4"));
+            case "syntax_comprehension":
+            case "syntax_expression":
+                if ("syntax_comprehension".equals(moduleKey)) {
+                    // 只复制RG相关数据
+                    filtered.put("RG", evaluations.optJSONArray("RG"));
+                    filtered.put("RG1", evaluations.optJSONArray("RG1"));
+                    filtered.put("RG2", evaluations.optJSONArray("RG2"));
+                    filtered.put("RG3", evaluations.optJSONArray("RG3"));
+                    filtered.put("RG4", evaluations.optJSONArray("RG4"));
+                } else if ("syntax_expression".equals(moduleKey)) {
+                    // 只复制SE相关数据
+                    filtered.put("SE", evaluations.optJSONArray("SE"));
+                    filtered.put("SE1", evaluations.optJSONArray("SE1"));
+                    filtered.put("SE2", evaluations.optJSONArray("SE2"));
+                    filtered.put("SE3", evaluations.optJSONArray("SE3"));
+                    filtered.put("SE4", evaluations.optJSONArray("SE4"));
+                } else {
+                    // 复制所有句法相关数据
+                    filtered.put("RG", evaluations.optJSONArray("RG"));
+                    filtered.put("RG1", evaluations.optJSONArray("RG1"));
+                    filtered.put("RG2", evaluations.optJSONArray("RG2"));
+                    filtered.put("RG3", evaluations.optJSONArray("RG3"));
+                    filtered.put("RG4", evaluations.optJSONArray("RG4"));
+                    filtered.put("SE", evaluations.optJSONArray("SE"));
+                    filtered.put("SE1", evaluations.optJSONArray("SE1"));
+                    filtered.put("SE2", evaluations.optJSONArray("SE2"));
+                    filtered.put("SE3", evaluations.optJSONArray("SE3"));
+                    filtered.put("SE4", evaluations.optJSONArray("SE4"));
+                }
                 break;
             case "social":
                 filtered.put("SOCIAL", evaluations.optJSONArray("SOCIAL"));
