@@ -466,7 +466,8 @@ public class SelectReportActivity extends AppCompatActivity {
         options.add(new ExportOption("prelinguistic", "前语言评估报告",
                 checkCompletion("PL", ImageUrls.PL_SKILLS.length)));
         options.add(new ExportOption("vocabulary", "词汇评估报告", isVocabularyReportReady()));
-        options.add(new ExportOption("syntax", "句法评估报告", checkSyntaxCompletion()));
+        options.add(new ExportOption("syntax_comprehension", "句法理解评估报告", checkSyntaxComprehensionCompletion()));
+        options.add(new ExportOption("syntax_expression", "句法表达评估报告", checkSyntaxExpressionCompletion()));
         options.add(new ExportOption("social", "社交评估报告", checkSocialCompletion()));
         return options;
     }
@@ -597,14 +598,14 @@ public class SelectReportActivity extends AppCompatActivity {
     }
     
     private boolean checkSyntaxCompletion() {
+        return checkSyntaxComprehensionCompletion() && checkSyntaxExpressionCompletion();
+    }
+
+    private boolean checkSyntaxComprehensionCompletion() {
         if (data == null) return false;
         JSONObject evaluations = data.optJSONObject("evaluations");
         if (evaluations == null) return false;
-        
-        boolean hasCompletedRG = false;
-        boolean hasCompletedSE = false;
-        
-        // 检查句法理解（RG）是否至少完成了一组
+
         for (int group = 1; group <= 4; group++) {
             JSONArray groupArray = evaluations.optJSONArray("RG" + group);
             if (groupArray != null && groupArray.length() > 0) {
@@ -616,13 +617,18 @@ public class SelectReportActivity extends AppCompatActivity {
                     }
                 }
                 if (completedCount == groupArray.length()) {
-                    hasCompletedRG = true;
-                    break;
+                    return true;
                 }
             }
         }
-        
-        // 检查句法表达（SE）是否至少完成了一组
+        return false;
+    }
+
+    private boolean checkSyntaxExpressionCompletion() {
+        if (data == null) return false;
+        JSONObject evaluations = data.optJSONObject("evaluations");
+        if (evaluations == null) return false;
+
         for (int group = 1; group <= 4; group++) {
             JSONArray groupArray = evaluations.optJSONArray("SE" + group);
             if (groupArray != null && groupArray.length() > 0) {
@@ -634,14 +640,11 @@ public class SelectReportActivity extends AppCompatActivity {
                     }
                 }
                 if (completedCount == groupArray.length()) {
-                    hasCompletedSE = true;
-                    break;
+                    return true;
                 }
             }
         }
-        
-        // 只有当句法理解和句法表达都至少完成了一组时，才认为句法能力模块已完成
-        return hasCompletedRG && hasCompletedSE;
+        return false;
     }
     
     @Override
