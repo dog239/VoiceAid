@@ -1189,4 +1189,40 @@ public class NetInteractUtils {
             }
         });
     }
+
+    /**
+     * 上传PDF报告
+     * @param uid
+     * @param childUserID
+     * @param moduleType 报告模块类型
+     * @param pdfPath 本地PDF文件路径
+     */
+    public void uploadPdf(String uid, String childUserID, String moduleType, String pdfPath) {
+        uiThreadRefresh(true);
+        File pdf = new File(pdfPath);
+        if (!pdf.exists()) {
+            showToast("PDF文件不存在");
+            uiThreadRefresh(false);
+            return;
+        }
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .build();
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("uid", uid)
+                .addFormDataPart("childUserID", childUserID)
+                .addFormDataPart("moduleType", moduleType == null ? "" : moduleType)
+                .addFormDataPart("pdf", pdf.getName(),
+                        RequestBody.create(pdf, MediaType.parse("application/pdf")))
+                .build();
+
+        Request request = new Request.Builder()
+                .url(url + "/upload_pdf")
+                .post(requestBody)
+                .build();
+        newCall(request, client);
+    }
 }

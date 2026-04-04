@@ -87,6 +87,18 @@
             app:cornerRadius="12dp"
             app:icon="@android:drawable/ic_menu_save"
             app:iconGravity="textStart" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_upload_report"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="#10B981"
+            android:text="上传PDF报告"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_menu_upload"
+            app:iconGravity="textStart" />
     </LinearLayout>
 
     <!-- Bottom Navigation -->

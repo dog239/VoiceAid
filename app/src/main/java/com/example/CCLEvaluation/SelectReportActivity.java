@@ -47,6 +47,7 @@ public class SelectReportActivity extends AppCompatActivity {
     private JSONObject data;
     private MaterialButton btnViewOverall;
     private MaterialButton btnExportReport;
+    private MaterialButton btnUploadReport;
     private static final int REQUEST_EXPORT_ASSESSMENT_PDF = 3101;
     private final List<ExportOption> pendingExports = new ArrayList<>();
     private ExportOption currentExport;
@@ -95,6 +96,16 @@ public class SelectReportActivity extends AppCompatActivity {
         btnExportReport = findViewById(R.id.btn_export_report);
         if (btnExportReport != null) {
             btnExportReport.setOnClickListener(v -> onExportReportClick());
+        }
+
+        btnUploadReport = findViewById(R.id.btn_upload_report);
+        if (btnUploadReport != null) {
+            btnUploadReport.setOnClickListener(v -> {
+                Intent intent = new Intent(SelectReportActivity.this, PdfUploadActivity.class);
+                intent.putExtra("Uid", uid);
+                intent.putExtra("childID", childUser);
+                startActivity(intent);
+            });
         }
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
