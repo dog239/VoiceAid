@@ -16,6 +16,7 @@ public class NetServiceStub implements NetService {
     private static final long STUB_DELAY_MS = 300;
     private static final String PREFS_NAME = "login_prefs";
     private static final String PREF_IS_ADMIN = "isAdmin";
+    private static final String PREF_MODULE_JSON = "module_json";
     private static final String ADMIN_NAME_HINT = "admin";
 
     private final Activity activity;
@@ -313,7 +314,20 @@ public class NetServiceStub implements NetService {
         post(() -> {
             if (moduleCallback != null) {
                 try {
-                    moduleCallback.onModuleResult("{}");
+                    String storedModule = activity.getSharedPreferences(PREFS_NAME, Activity.MODE_PRIVATE)
+                            .getString(PREF_MODULE_JSON, null);
+                    if (storedModule == null || storedModule.trim().isEmpty()) {
+                        JSONObject fallback = new JSONObject();
+                        fallback.put("A", 1);
+                        fallback.put("PL", 1);
+                        fallback.put("E", 1);
+                        fallback.put("SE", 1);
+                        fallback.put("RG", 1);
+                        fallback.put("SOCIAL", 1);
+                        moduleCallback.onModuleResult(fallback.toString());
+                    } else {
+                        moduleCallback.onModuleResult(storedModule);
+                    }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

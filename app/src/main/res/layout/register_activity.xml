@@ -183,13 +183,11 @@
                         android:textSize="18sp"
                         android:fontFamily="@font/zcool_kuaile" />
 
-                    <!-- 第一行：构音、前语言、词汇表达
-                         注意：保持原有ID不变，只是修改文字内容 -->
+                    <!-- 第一行：构音、前语言、词汇 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="15dp"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="16dp"
                         android:orientation="horizontal">
 
                         <CheckBox
@@ -215,13 +213,12 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="词汇表达"
+                            android:text="词汇"
                             android:textColor="#0F172A"
                             android:textSize="14sp" />
                     </LinearLayout>
 
-                    <!-- 第二行：词汇理解、句法、社交
-                         注意：保持原有ID不变，只是修改文字内容 -->
+                    <!-- 第二行：句法表达、句法理解、社交 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -232,7 +229,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="词汇理解"
+                            android:text="句法表达"
                             android:textColor="#0F172A"
                             android:textSize="14sp" />
 
@@ -241,11 +238,10 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="句法"
+                            android:text="句法理解"
                             android:textColor="#0F172A"
                             android:textSize="14sp" />
 
-                        <!-- 由于原文件只有5个CheckBox，需要新增第6个，但为了保持ID命名风格，使用一个新的ID -->
                         <CheckBox
                             android:id="@+id/social"
                             android:layout_width="0dp"

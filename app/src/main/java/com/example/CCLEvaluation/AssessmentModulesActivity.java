@@ -133,48 +133,84 @@ public class AssessmentModulesActivity extends AppCompatActivity {
     }
 
     private void updateModulesList(String moduleJson) {
-        // 始终启用所有模块，不依赖服务器返回的结果
-        // 这样可以确保用户始终看到所有测试模块
+        ModuleFlags flags = resolveModuleFlags(moduleJson);
 
         moduleList.clear();
 
         // 1. 构音 (A)
-        AssessmentModule m1 = new AssessmentModule("A", "构音评估", "评估语音放置和发音准确性", "10 分钟", android.R.drawable.ic_btn_speak_now);
-        int progressStatusA = getModuleProgressStatus("A", ImageUrls.A_imageUrls.length);
-        m1.setProgressStatus(progressStatusA);
-        m1.setCompleted(progressStatusA == AssessmentModule.STATUS_COMPLETED);
-        moduleList.add(m1);
+        if (flags.enablePronunciation) {
+            AssessmentModule m1 = new AssessmentModule("A", "构音评估", "评估语音放置和发音准确性", "10 分钟", android.R.drawable.ic_btn_speak_now);
+            int progressStatusA = getModuleProgressStatus("A", ImageUrls.A_imageUrls.length);
+            m1.setProgressStatus(progressStatusA);
+            m1.setCompleted(progressStatusA == AssessmentModule.STATUS_COMPLETED);
+            moduleList.add(m1);
+        }
 
         // 2. 前语言 (PL)
-        AssessmentModule m2 = new AssessmentModule("PL", "前语言能力", "评估前语言沟通技能", "15 分钟", android.R.drawable.ic_menu_agenda);
-        int progressStatusPL = getModuleProgressStatus("PL", ImageUrls.PL_SKILLS.length);
-        m2.setProgressStatus(progressStatusPL);
-        m2.setCompleted(progressStatusPL == AssessmentModule.STATUS_COMPLETED);
-        moduleList.add(m2);
+        if (flags.enablePrelinguistic) {
+            AssessmentModule m2 = new AssessmentModule("PL", "前语言能力", "评估前语言沟通技能", "15 分钟", android.R.drawable.ic_menu_agenda);
+            int progressStatusPL = getModuleProgressStatus("PL", ImageUrls.PL_SKILLS.length);
+            m2.setProgressStatus(progressStatusPL);
+            m2.setCompleted(progressStatusPL == AssessmentModule.STATUS_COMPLETED);
+            moduleList.add(m2);
+        }
 
         // 3. 词汇-表达 (E)
-        AssessmentModule m3 = new AssessmentModule("E", "词汇能力-表达", "评估词汇表达能力", "15 分钟", android.R.drawable.ic_menu_sort_by_size);
-        m3.setCompleted(checkCompletion("E", 7)); 
-        moduleList.add(m3);
+        if (flags.enableWord) {
+            AssessmentModule m3 = new AssessmentModule("E", "词汇能力-表达", "评估词汇表达能力", "15 分钟", android.R.drawable.ic_menu_sort_by_size);
+            m3.setCompleted(checkCompletion("E", 7));
+            moduleList.add(m3);
 
-        // 4. 词汇-理解 (EV)
-        AssessmentModule m4 = new AssessmentModule("EV", "词汇能力-理解", "评估词汇理解能力", "15 分钟", android.R.drawable.ic_menu_search);
-        m4.setCompleted(checkCompletion("EV", 7)); 
-        moduleList.add(m4);
+            // 4. 词汇-理解 (EV)
+            AssessmentModule m4 = new AssessmentModule("EV", "词汇能力-理解", "评估词汇理解能力", "15 分钟", android.R.drawable.ic_menu_search);
+            m4.setCompleted(checkCompletion("EV", 7));
+            moduleList.add(m4);
+        }
 
         // 5. 句法 (RG)
-        AssessmentModule m5 = new AssessmentModule("RG", "句法能力", "评估句法理解与表达", "20 分钟", android.R.drawable.ic_menu_edit);
-        // 检查句法理解和句法表达是否都至少完成了一组
-        boolean syntaxCompleted = checkSyntaxCompletion();
-        m5.setCompleted(syntaxCompleted);
-        moduleList.add(m5);
+        if (flags.enableGrammar) {
+            AssessmentModule m5 = new AssessmentModule("RG", "句法能力", "评估句法理解与表达", "20 分钟", android.R.drawable.ic_menu_edit);
+            boolean syntaxCompleted = checkSyntaxCompletion();
+            m5.setCompleted(syntaxCompleted);
+            moduleList.add(m5);
+        }
 
-        // 6. 社交 (Social) - Always added
-        AssessmentModule m6 = new AssessmentModule("SOCIAL", "社交能力", "评估社交互动技能", "15 分钟", android.R.drawable.ic_menu_myplaces);
-        m6.setCompleted(checkCompletion("SOCIAL", 7)); // Assuming 7 based on earlier snippet or default
-        moduleList.add(m6);
+        // 6. 社交 (Social)
+        if (flags.enableSocial) {
+            AssessmentModule m6 = new AssessmentModule("SOCIAL", "社交能力", "评估社交互动技能", "15 分钟", android.R.drawable.ic_menu_myplaces);
+            m6.setCompleted(checkCompletion("SOCIAL", 7));
+            moduleList.add(m6);
+        }
 
         runOnUiThread(() -> adapter.notifyDataSetChanged());
+    }
+
+    private static class ModuleFlags {
+        boolean enableWord = true;
+        boolean enablePronunciation = true;
+        boolean enableGrammar = true;
+        boolean enablePrelinguistic = true;
+        boolean enableSocial = true;
+    }
+
+    private ModuleFlags resolveModuleFlags(String moduleJson) {
+        ModuleFlags flags = new ModuleFlags();
+        if (moduleJson == null || moduleJson.isEmpty()) {
+            return flags;
+        }
+        try {
+            JSONObject jsonObject = new JSONObject(moduleJson);
+            flags.enableWord = "1".equals(jsonObject.optString("E", "1"));
+            flags.enablePronunciation = "1".equals(jsonObject.optString("A", "1"));
+            String rg = jsonObject.optString("RG", "1");
+            String se = jsonObject.optString("SE", "1");
+            flags.enableGrammar = "1".equals(rg) || "1".equals(se);
+            flags.enablePrelinguistic = "1".equals(jsonObject.optString("PL", "1"));
+            flags.enableSocial = "1".equals(jsonObject.optString("SOCIAL", "1"));
+        } catch (JSONException e) {
+            return flags;
+        }
+        return flags;
     }
 
     private int getModuleProgressStatus(String key, int targetLength) {
@@ -195,7 +231,6 @@ public class AssessmentModulesActivity extends AppCompatActivity {
         }
         if ("SOCIAL".equals(key)) {
             int totalAnswered = 0;
-            // 检查主 SOCIAL 数组
             JSONArray mainArray = evaluations.optJSONArray(key);
             if (mainArray != null) {
                 for (int i = 0; i < mainArray.length(); i++) {
@@ -205,7 +240,6 @@ public class AssessmentModulesActivity extends AppCompatActivity {
                     }
                 }
             }
-            // 检查每个组的数组
             for (int i = 1; i <= 6; i++) {
                 JSONArray groupArray = evaluations.optJSONArray(key + i);
                 if (groupArray != null) {
@@ -229,29 +263,21 @@ public class AssessmentModulesActivity extends AppCompatActivity {
         if ("A".equals(key) && targetLength > 0) {
             java.util.HashSet<Integer> answeredNums = new java.util.HashSet<>();
             for (int i = 0; i < array.length(); i++) {
-                try {
-                    JSONObject obj = array.getJSONObject(i);
-                    if (obj == null || !obj.has("time") || obj.isNull("time")) {
-                        continue;
-                    }
-                    int num = obj.optInt("num", -1);
-                    if (num >= 1 && num <= targetLength) {
-                        answeredNums.add(num);
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                JSONObject obj = array.optJSONObject(i);
+                if (obj == null || !obj.has("time") || obj.isNull("time")) {
+                    continue;
+                }
+                int num = obj.optInt("num", -1);
+                if (num >= 1 && num <= targetLength) {
+                    answeredNums.add(num);
                 }
             }
             answered = answeredNums.size();
         } else {
             for (int i = 0; i < array.length(); i++) {
-                try {
-                    JSONObject obj = array.getJSONObject(i);
-                    if (obj != null && obj.has("time") && !obj.isNull("time")) {
-                        answered++;
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                JSONObject obj = array.optJSONObject(i);
+                if (obj != null && obj.has("time") && !obj.isNull("time")) {
+                    answered++;
                 }
             }
         }
@@ -281,21 +307,14 @@ public class AssessmentModulesActivity extends AppCompatActivity {
     private boolean checkCompletion(String key, int targetLength) {
         return getModuleProgressStatus(key, targetLength) == AssessmentModule.STATUS_COMPLETED;
     }
-    
-    // Overload for array check (A, RG)
-    private boolean checkCompletion(String key, String[] targetArray) {
-        return checkCompletion(key, targetArray != null ? targetArray.length : 0);
-    }
 
     private boolean checkSyntaxCompletion() {
         if (data == null) return false;
         JSONObject evaluations = data.optJSONObject("evaluations");
         if (evaluations == null) return false;
-        
+
         boolean hasCompletedRG = false;
         boolean hasCompletedSE = false;
-        
-        // 检查句法理解（RG）是否至少完成了一组
         for (int group = 1; group <= 4; group++) {
             JSONArray groupArray = evaluations.optJSONArray("RG" + group);
             if (groupArray != null && groupArray.length() > 0) {
@@ -312,8 +331,6 @@ public class AssessmentModulesActivity extends AppCompatActivity {
                 }
             }
         }
-        
-        // 检查句法表达（SE）是否至少完成了一组
         for (int group = 1; group <= 4; group++) {
             JSONArray groupArray = evaluations.optJSONArray("SE" + group);
             if (groupArray != null && groupArray.length() > 0) {
@@ -330,8 +347,6 @@ public class AssessmentModulesActivity extends AppCompatActivity {
                 }
             }
         }
-        
-        // 只有当句法理解和句法表达都至少完成了一组时，才认为句法能力模块已完成
         return hasCompletedRG && hasCompletedSE;
     }
 

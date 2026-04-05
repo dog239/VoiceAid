@@ -1,6 +1,7 @@
 package com.example.CCLEvaluation;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -24,8 +25,8 @@ public class choosemoduleactivity extends AppCompatActivity {
 
     private Button Sure1;
     private Button Back1;
-    private CheckBox[] checkBoxes = new CheckBox[5];
-    private Boolean[] chooseWhat = new Boolean[5];
+    private CheckBox[] checkBoxes = new CheckBox[6];
+    private Boolean[] chooseWhat = new Boolean[6];
     private String Uid;
     private NetService netService;
 
@@ -40,72 +41,58 @@ public class choosemoduleactivity extends AppCompatActivity {
         checkBoxes[2] = findViewById(R.id.grammar);
         checkBoxes[3] = findViewById(R.id.narrator);
         checkBoxes[4] = findViewById(R.id.prelinguistic);
+        checkBoxes[5] = findViewById(R.id.social);
         checkBoxes[0].setVisibility(View.INVISIBLE);
         checkBoxes[1].setVisibility(View.INVISIBLE);
         checkBoxes[2].setVisibility(View.INVISIBLE);
         checkBoxes[3].setVisibility(View.INVISIBLE);
         checkBoxes[4].setVisibility(View.INVISIBLE);
+        checkBoxes[5].setVisibility(View.INVISIBLE);
 
         Uid = getIntent().getStringExtra("Uid");
         netService = NetServiceProvider.get(this);
-//        Toast.makeText(choosemoduleactivity.this,Uid,Toast.LENGTH_SHORT).show();
+
+        /**
+         * 字段约定如下
+         * A 构音
+         * PL 前语言
+         * E 词汇
+         * SE 句法表达
+         * RG 句法理解
+         * SOCIAL 社交
+         */
         netService.setModuleCallback(module -> {
             JSONObject jsonObject = new JSONObject(module);
-            String E = jsonObject.getString("E");
-            String RE = jsonObject.getString("RE");
-            String S = jsonObject.getString("S");
-            String NWR = jsonObject.getString("NWR");
-            String A = jsonObject.getString("A");
-            String RG = jsonObject.getString("RG");
-            String PN = jsonObject.getString("PN");
-            String PST = jsonObject.getString("PST");
+            String E = jsonObject.optString("E", "0");
+            String A = jsonObject.optString("A", "0");
+            String SE = jsonObject.optString("SE", "0");
+            String RG = jsonObject.optString("RG", "0");
             String PL = jsonObject.optString("PL", "0");
+            String SOCIAL = jsonObject.optString("SOCIAL", "0");
 
-            if(E.equals("1") && RE.equals("1") && S.equals("1") && NWR.equals("1")){
-                chooseWhat[0] = true;
-                checkBoxes[0].setChecked(true);
-                checkBoxes[0].setVisibility(View.VISIBLE);
-            }else{
-                chooseWhat[0] = false;
-                checkBoxes[0].setChecked(false);
-                checkBoxes[0].setVisibility(View.VISIBLE);
-            }
-            if(A.equals("1")){
-                chooseWhat[1] = true;
-                checkBoxes[1].setChecked(true);
-                checkBoxes[1].setVisibility(View.VISIBLE);
-            }else{
-                chooseWhat[1] = false;
-                checkBoxes[1].setChecked(false);
-                checkBoxes[1].setVisibility(View.VISIBLE);
-            }
-            if(RG.equals("1")){
-                chooseWhat[2] = true;
-                checkBoxes[2].setChecked(true);
-                checkBoxes[2].setVisibility(View.VISIBLE);
-            }else{
-                chooseWhat[2] = false;
-                checkBoxes[2].setChecked(false);
-                checkBoxes[2].setVisibility(View.VISIBLE);
-            }
-            if(PN.equals("1") && PST.equals("1")){
-                chooseWhat[3] = true;
-                checkBoxes[3].setChecked(true);
-                checkBoxes[3].setVisibility(View.VISIBLE);
-            }else{
-                chooseWhat[3] = false;
-                checkBoxes[3].setChecked(false);
-                checkBoxes[3].setVisibility(View.VISIBLE);
-            }
-            if(PL.equals("1")){
-                chooseWhat[4] = true;
-                checkBoxes[4].setChecked(true);
-                checkBoxes[4].setVisibility(View.VISIBLE);
-            }else{
-                chooseWhat[4] = false;
-                checkBoxes[4].setChecked(false);
-                checkBoxes[4].setVisibility(View.VISIBLE);
-            }
+            chooseWhat[0] = "1".equals(E);
+            checkBoxes[0].setChecked(chooseWhat[0]);
+            checkBoxes[0].setVisibility(View.VISIBLE);
+
+            chooseWhat[1] = "1".equals(A);
+            checkBoxes[1].setChecked(chooseWhat[1]);
+            checkBoxes[1].setVisibility(View.VISIBLE);
+
+            chooseWhat[2] = "1".equals(SE);
+            checkBoxes[2].setChecked(chooseWhat[2]);
+            checkBoxes[2].setVisibility(View.VISIBLE);
+
+            chooseWhat[3] = "1".equals(RG);
+            checkBoxes[3].setChecked(chooseWhat[3]);
+            checkBoxes[3].setVisibility(View.VISIBLE);
+
+            chooseWhat[4] = "1".equals(PL);
+            checkBoxes[4].setChecked(chooseWhat[4]);
+            checkBoxes[4].setVisibility(View.VISIBLE);
+
+            chooseWhat[5] = "1".equals(SOCIAL);
+            checkBoxes[5].setChecked(chooseWhat[5]);
+            checkBoxes[5].setVisibility(View.VISIBLE);
         });
 
         netService.getModule(Uid);
@@ -114,57 +101,38 @@ public class choosemoduleactivity extends AppCompatActivity {
         checkBoxes[0].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // 将RadioButton的选中状态存储到SharedPreferences中
-                if(isChecked){
-                    chooseWhat[0] = true;
-                }else{
-                    chooseWhat[0] = false;
-                }
+                chooseWhat[0] = isChecked;
             }
         });
 
         checkBoxes[1].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // 将RadioButton的选中状态存储到SharedPreferences中
-                if(isChecked){
-                    chooseWhat[1] = true;
-                }else{
-                    chooseWhat[1] = false;
-                }
+                chooseWhat[1] = isChecked;
             }
         });
         checkBoxes[2].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // 将RadioButton的选中状态存储到SharedPreferences中
-                if(isChecked){
-                    chooseWhat[2] = true;
-                }else{
-                    chooseWhat[2] = false;
-                }
+                chooseWhat[2] = isChecked;
             }
         });
         checkBoxes[3].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // 将RadioButton的选中状态存储到SharedPreferences中
-                if(isChecked){
-                    chooseWhat[3] = true;
-                }else{
-                    chooseWhat[3] = false;
-                }
+                chooseWhat[3] = isChecked;
             }
         });
         checkBoxes[4].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // 将RadioButton的选中状态存储到SharedPreferences中
-                if(isChecked){
-                    chooseWhat[4] = true;
-                }else{
-                    chooseWhat[4] = false;
-                }
+                chooseWhat[4] = isChecked;
+            }
+        });
+        checkBoxes[5].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                chooseWhat[5] = isChecked;
             }
         });
 
@@ -174,40 +142,15 @@ public class choosemoduleactivity extends AppCompatActivity {
             public void onClick(View v) {
                 try {
                     JSONObject jsonObject = new JSONObject();
-                    if(chooseWhat[0]){
-                        jsonObject.put("E",1);
-                        jsonObject.put("RE",1);
-                        jsonObject.put("S",1);
-                        jsonObject.put("NWR",1);
-                    }else{
-                        jsonObject.put("E",0);
-                        jsonObject.put("RE",0);
-                        jsonObject.put("S",0);
-                        jsonObject.put("NWR",0);
-                    }
-                    if(chooseWhat[1]){
-                        jsonObject.put("A",1);
-                    }else{
-                        jsonObject.put("A",0);
-                    }
-                    if(chooseWhat[2]){
-                        jsonObject.put("RG",1);
-                    }else{
-                        jsonObject.put("RG",0);
-                    }
-                    if(chooseWhat[3]){
-                        jsonObject.put("PST",1);
-                        jsonObject.put("PN",1);
-                    }else{
-                        jsonObject.put("PST",0);
-                        jsonObject.put("PN",0);
-                    }
-                    if(chooseWhat[4]){
-                        jsonObject.put("PL",1);
-                    }else{
-                        jsonObject.put("PL",0);
-                    }
+                    jsonObject.put("E", chooseWhat[0] ? 1 : 0);
+                    jsonObject.put("A", chooseWhat[1] ? 1 : 0);
+                    jsonObject.put("SE", chooseWhat[2] ? 1 : 0);
+                    jsonObject.put("RG", chooseWhat[3] ? 1 : 0);
+                    jsonObject.put("PL", chooseWhat[4] ? 1 : 0);
+                    jsonObject.put("SOCIAL", chooseWhat[5] ? 1 : 0);
                     Log.d("10086",jsonObject.toString());
+                    SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
+                    preferences.edit().putString("module_json", jsonObject.toString()).apply();
                     netService.updateModule(Uid,jsonObject);
                 } catch (JSONException e) {
                     throw new RuntimeException(e);

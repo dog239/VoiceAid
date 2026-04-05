@@ -54,6 +54,21 @@ public class SelectReportActivity extends AppCompatActivity {
     private ExportOption currentExport;
     private NetService netService;
 
+    private String lastModuleJson = null;
+
+    private static class ModuleFlags {
+        boolean enableWord = true;
+        boolean enablePronunciation = true;
+        boolean enablePrelinguistic = true;
+        boolean enableSocial = true;
+        boolean enableSyntaxComprehension = true;
+        boolean enableSyntaxExpression = true;
+
+        boolean enableGrammar() {
+            return enableSyntaxComprehension || enableSyntaxExpression;
+        }
+    }
+
     private static class ExportOption {
         final String moduleType;
         final String label;
@@ -191,31 +206,20 @@ public class SelectReportActivity extends AppCompatActivity {
     }
 
     private void updateReportList(String moduleJson) {
-        String E = "1", A = "1", RG = "1", PL = "1";
-        
-        if (moduleJson != null && !moduleJson.isEmpty()) {
-            try {
-                JSONObject jsonObject = new JSONObject(moduleJson);
-                E = jsonObject.optString("E", "1");
-                A = jsonObject.optString("A", "1");
-                RG = jsonObject.optString("RG", "1");
-                PL = jsonObject.optString("PL", "1");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
+        lastModuleJson = moduleJson;
+        ModuleFlags flags = resolveModuleFlags(moduleJson);
 
         reportList.clear();
 
-        if ("1".equals(A)) {
+        if (flags.enablePronunciation) {
             AssessmentModule m = new AssessmentModule("A", "构音评估", "发音准确性与清晰度报告", "", android.R.drawable.ic_btn_speak_now);
-            m.setCompleted(checkCompletion("A", ImageUrls.A_imageUrls.length)); 
+            m.setCompleted(checkCompletion("A", ImageUrls.A_imageUrls.length));
             m.setLastTestDate(getTestDate("A"));
             m.setReportGenerated(checkReportGenerated("A"));
             reportList.add(m);
         }
-        
-        if ("1".equals(PL)) {
+
+        if (flags.enablePrelinguistic) {
             AssessmentModule m = new AssessmentModule("PL", "前语言能力", "前语言沟通技能报告", "", android.R.drawable.ic_menu_agenda);
             m.setCompleted(checkCompletion("PL", ImageUrls.PL_SKILLS.length));
             m.setLastTestDate(getTestDate("PL"));
@@ -223,27 +227,29 @@ public class SelectReportActivity extends AppCompatActivity {
             reportList.add(m);
         }
 
-        if ("1".equals(E)) {
+        if (flags.enableWord) {
             AssessmentModule m = new AssessmentModule("E", "词汇能力", "词汇理解与表达报告", "", android.R.drawable.ic_menu_sort_by_size);
             m.setCompleted(isVocabularyReportReady());
             m.setLastTestDate(getTestDate("E"));
             m.setReportGenerated(checkReportGenerated("E"));
             reportList.add(m);
         }
-        
-        if ("1".equals(RG)) {
+
+        if (flags.enableGrammar()) {
             AssessmentModule m = new AssessmentModule("RG", "句法能力", "句法理解与表达报告", "", android.R.drawable.ic_menu_edit);
-            m.setCompleted(checkSyntaxCompletion()); 
+            m.setCompleted(checkSyntaxCompletion());
             m.setLastTestDate(getTestDate("RG"));
             m.setReportGenerated(checkReportGenerated("RG"));
             reportList.add(m);
         }
-        
-        AssessmentModule m = new AssessmentModule("SOCIAL", "社交能力", "社交互动技能报告", "", android.R.drawable.ic_menu_myplaces);
-        m.setCompleted(checkSocialCompletion());
-        m.setLastTestDate(getTestDate("SOCIAL"));
-        m.setReportGenerated(checkReportGenerated("SOCIAL"));
-        reportList.add(m);
+
+        if (flags.enableSocial) {
+            AssessmentModule m = new AssessmentModule("SOCIAL", "社交能力", "社交互动技能报告", "", android.R.drawable.ic_menu_myplaces);
+            m.setCompleted(checkSocialCompletion());
+            m.setLastTestDate(getTestDate("SOCIAL"));
+            m.setReportGenerated(checkReportGenerated("SOCIAL"));
+            reportList.add(m);
+        }
 
         runOnUiThread(() -> adapter.notifyDataSetChanged());
     }
@@ -458,15 +464,28 @@ public class SelectReportActivity extends AppCompatActivity {
     }
 
     private List<ExportOption> buildExportOptions() {
+        ModuleFlags flags = resolveModuleFlags(lastModuleJson);
         List<ExportOption> options = new ArrayList<>();
-        options.add(new ExportOption("articulation", "构音评估报告",
-                checkCompletion("A", ImageUrls.A_imageUrls.length)));
-        options.add(new ExportOption("prelinguistic", "前语言评估报告",
-                checkCompletion("PL", ImageUrls.PL_SKILLS.length)));
-        options.add(new ExportOption("vocabulary", "词汇评估报告", isVocabularyReportReady()));
-        options.add(new ExportOption("syntax_comprehension", "句法理解评估报告", checkSyntaxComprehensionCompletion()));
-        options.add(new ExportOption("syntax_expression", "句法表达评估报告", checkSyntaxExpressionCompletion()));
-        options.add(new ExportOption("social", "社交评估报告", checkSocialCompletion()));
+        if (flags.enablePronunciation) {
+            options.add(new ExportOption("articulation", "构音评估报告",
+                    checkCompletion("A", ImageUrls.A_imageUrls.length)));
+        }
+        if (flags.enablePrelinguistic) {
+            options.add(new ExportOption("prelinguistic", "前语言评估报告",
+                    checkCompletion("PL", ImageUrls.PL_SKILLS.length)));
+        }
+        if (flags.enableWord) {
+            options.add(new ExportOption("vocabulary", "词汇评估报告", isVocabularyReportReady()));
+        }
+        if (flags.enableSyntaxComprehension) {
+            options.add(new ExportOption("syntax_comprehension", "句法理解评估报告", checkSyntaxComprehensionCompletion()));
+        }
+        if (flags.enableSyntaxExpression) {
+            options.add(new ExportOption("syntax_expression", "句法表达评估报告", checkSyntaxExpressionCompletion()));
+        }
+        if (flags.enableSocial) {
+            options.add(new ExportOption("social", "社交评估报告", checkSocialCompletion()));
+        }
         return options;
     }
 
@@ -560,12 +579,12 @@ public class SelectReportActivity extends AppCompatActivity {
     private boolean isVocabularyReportReady() {
         return checkCompletion("E", 7) && checkCompletion("EV", 7);
     }
-    
+
     private boolean checkSocialCompletion() {
         if (data == null) return false;
         JSONObject evaluations = data.optJSONObject("evaluations");
         if (evaluations == null) return false;
-        
+
         // 检查是否有任何一组社交能力测试已经完成
         for (int i = 1; i <= 6; i++) {
             String socialKey = "SOCIAL" + i;
@@ -580,7 +599,7 @@ public class SelectReportActivity extends AppCompatActivity {
                 }
             }
         }
-        
+
         // 检查主 SOCIAL 数组
         JSONArray mainArray = evaluations.optJSONArray("SOCIAL");
         if (mainArray != null && mainArray.length() > 0) {
@@ -591,10 +610,10 @@ public class SelectReportActivity extends AppCompatActivity {
                 }
             }
         }
-        
+
         return false;
     }
-    
+
     private boolean checkSyntaxCompletion() {
         return checkSyntaxComprehensionCompletion() && checkSyntaxExpressionCompletion();
     }
@@ -644,7 +663,26 @@ public class SelectReportActivity extends AppCompatActivity {
         }
         return false;
     }
-    
+
+    private ModuleFlags resolveModuleFlags(String moduleJson) {
+        ModuleFlags flags = new ModuleFlags();
+        if (moduleJson == null || moduleJson.isEmpty()) {
+            return flags;
+        }
+        try {
+            JSONObject jsonObject = new JSONObject(moduleJson);
+            flags.enableWord = "1".equals(jsonObject.optString("E", "1"));
+            flags.enablePronunciation = "1".equals(jsonObject.optString("A", "1"));
+            flags.enableSyntaxComprehension = "1".equals(jsonObject.optString("RG", "1"));
+            flags.enableSyntaxExpression = "1".equals(jsonObject.optString("SE", "1"));
+            flags.enablePrelinguistic = "1".equals(jsonObject.optString("PL", "1"));
+            flags.enableSocial = "1".equals(jsonObject.optString("SOCIAL", "1"));
+        } catch (JSONException e) {
+            return flags;
+        }
+        return flags;
+    }
+
     @Override
     protected void onResume() {
         super.onResume();

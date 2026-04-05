@@ -96,7 +96,7 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- 第一行：构音、前语言、词汇表达
+                <!-- 第一行：构音、前语言、词汇
                      注意：保持原有ID不变，只修改文字内容 -->
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -127,12 +127,12 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="词汇表达"
+                        android:text="词汇"
                         android:textColor="#0F172A"
                         android:textSize="15sp" />
                 </LinearLayout>
 
-                <!-- 第二行：词汇理解、句法、社交 -->
+                <!-- 第二行：句法表达、句法理解、社交 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -144,7 +144,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="词汇理解"
+                        android:text="句法表达"
                         android:textColor="#0F172A"
                         android:textSize="15sp" />
 
@@ -153,7 +153,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="句法"
+                        android:text="句法理解"
                         android:textColor="#0F172A"
                         android:textSize="15sp" />
 

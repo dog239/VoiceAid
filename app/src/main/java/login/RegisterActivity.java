@@ -2,6 +2,7 @@ package login;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -36,8 +37,8 @@ public class RegisterActivity extends AppCompatActivity{
 
     private Boolean isChangeCode = false;
     private LinearLayout chooseTable;
-    private CheckBox[] checkBoxes = new CheckBox[4];
-    private Boolean[] chooseWhat = new Boolean[4];
+    private CheckBox[] checkBoxes = new CheckBox[6];
+    private Boolean[] chooseWhat = new Boolean[6];
     private String Uid;
 
     // 添加变量保存注册信息，用于在登录成功后创建模块
@@ -65,9 +66,11 @@ public class RegisterActivity extends AppCompatActivity{
         checkBoxes[1] = findViewById(R.id.pronounciation);
         checkBoxes[2] = findViewById(R.id.grammar);
         checkBoxes[3] = findViewById(R.id.narrator);
+        checkBoxes[4] = findViewById(R.id.prelinguistic);
+        checkBoxes[5] = findViewById(R.id.social);
         Back = findViewById(R.id.btn_back);
         netService = NetServiceProvider.get(this);
-        for(int i=0;i<4;++i){
+        for(int i=0;i<6;++i){
             chooseWhat[i] = false;
         }
 
@@ -78,35 +81,15 @@ public class RegisterActivity extends AppCompatActivity{
             if (!isChangeCode && uid != null && !uid.isEmpty()) {
                 try {
                     JSONObject jsonObject = new JSONObject();
-                    if(chooseWhat[0]){
-                        jsonObject.put("E",1);
-                        jsonObject.put("RE",1);
-                        jsonObject.put("S",1);
-                        jsonObject.put("NWR",1);
-                    }else{
-                        jsonObject.put("E",0);
-                        jsonObject.put("RE",0);
-                        jsonObject.put("S",0);
-                        jsonObject.put("NWR",0);
-                    }
-                    if(chooseWhat[1]){
-                        jsonObject.put("A",1);
-                    }else{
-                        jsonObject.put("A",0);
-                    }
-                    if(chooseWhat[2]){
-                        jsonObject.put("RG",1);
-                    }else{
-                        jsonObject.put("RG",0);
-                    }
-                    if(chooseWhat[3]){
-                        jsonObject.put("PST",1);
-                        jsonObject.put("PN",1);
-                    }else{
-                        jsonObject.put("PST",0);
-                        jsonObject.put("PN",0);
-                    }
+                    jsonObject.put("E", chooseWhat[0] ? 1 : 0);
+                    jsonObject.put("A", chooseWhat[1] ? 1 : 0);
+                    jsonObject.put("SE", chooseWhat[2] ? 1 : 0);
+                    jsonObject.put("RG", chooseWhat[3] ? 1 : 0);
+                    jsonObject.put("PL", chooseWhat[4] ? 1 : 0);
+                    jsonObject.put("SOCIAL", chooseWhat[5] ? 1 : 0);
                     Log.d("10086",jsonObject.toString());
+                    SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
+                    preferences.edit().putString("module_json", jsonObject.toString()).apply();
                     netService.createModule(Uid,jsonObject);
 
                     // 模块创建完成后跳转到登录页面
@@ -233,44 +216,42 @@ public class RegisterActivity extends AppCompatActivity{
         checkBoxes[0].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked){
-                    chooseWhat[0] = true;
-                }else{
-                    chooseWhat[0] = false;
-                }
+                chooseWhat[0] = isChecked;
             }
         });
 
         checkBoxes[1].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked){
-                    chooseWhat[1] = true;
-                }else{
-                    chooseWhat[1] = false;
-                }
+                chooseWhat[1] = isChecked;
             }
         });
 
         checkBoxes[2].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked){
-                    chooseWhat[2] = true;
-                }else{
-                    chooseWhat[2] = false;
-                }
+                chooseWhat[2] = isChecked;
             }
         });
 
         checkBoxes[3].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked){
-                    chooseWhat[3] = true;
-                }else{
-                    chooseWhat[3] = false;
-                }
+                chooseWhat[3] = isChecked;
+            }
+        });
+
+        checkBoxes[4].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                chooseWhat[4] = isChecked;
+            }
+        });
+
+        checkBoxes[5].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                chooseWhat[5] = isChecked;
             }
         });
     }
