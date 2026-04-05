@@ -21,9 +21,10 @@ import org.json.JSONObject;
 
 import java.util.List;
 
-import utils.NetInteractUtils;
 import utils.dataManager;
 import utils.dialogUtils;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class showprivatechildinformation extends AppCompatActivity {
 
@@ -41,6 +42,7 @@ public class showprivatechildinformation extends AppCompatActivity {
     private RecyclerView familyRecyclerView;
     private FamilyMemberAdapter familyMemberAdapter;
     private String fName;
+    private NetService netService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +51,7 @@ public class showprivatechildinformation extends AppCompatActivity {
 
         initViews();
         fName = getIntent().getStringExtra("fName");
+        netService = NetServiceProvider.get(this);
         familyRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         familyMemberAdapter = new FamilyMemberAdapter(getFamilyMembers(null), ignored -> {});
         familyMemberAdapter.setReadOnly(true);
@@ -143,7 +146,7 @@ public class showprivatechildinformation extends AppCompatActivity {
         if (parts.length >= 2) {
             String part1 = parts[0];
             String part2 = parts[1].split("\\.")[0];
-            NetInteractUtils.getInstance(showprivatechildinformation.this).deleteEvaluation(part2, part1);
+            netService.deleteEvaluation(part2, part1);
         }
         Toast.makeText(showprivatechildinformation.this, "Child deleted.", Toast.LENGTH_SHORT).show();
     }

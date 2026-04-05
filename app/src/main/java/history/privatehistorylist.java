@@ -27,7 +27,8 @@ import java.util.List;
 
 import utils.dataManager;
 import utils.dialogUtils;
-import utils.NetInteractUtils;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class privatehistorylist extends AppCompatActivity {
     RecyclerView mRecyclerView;
@@ -39,6 +40,7 @@ public class privatehistorylist extends AppCompatActivity {
     private int[] intArray;
 
     private int number;
+    private NetService netService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,8 +70,8 @@ public class privatehistorylist extends AppCompatActivity {
 //            }
 //        });
 
-
         String Uid = getIntent().getStringExtra("Uid");
+        netService = NetServiceProvider.get(this);
 
         try {
             if (Uid == null || Uid.isEmpty()) {
@@ -77,31 +79,28 @@ public class privatehistorylist extends AppCompatActivity {
                 return;
             }
 
-            NetInteractUtils.getInstance(this).setEvaluationsCallback(new NetInteractUtils.EvaluationsCallback() {
-                @Override
-                public void onEvaluationsResult(String evaluations) {
-                    try {
-                        JSONArray jsonArray = new JSONArray(evaluations);
-                        if (jsonArray.length() == 0) {
-                            updateUIWithNoData();
-                            return;
-                        }
-                        intArray = new int[jsonArray.length()];
-                        for (int i = 0; i < jsonArray.length(); ++i) {
-                            JSONObject jsonObject = jsonArray.getJSONObject(i);
-                            String id = jsonObject.getString("ID");
-                            intArray[i] = Integer.parseInt(id);
-                            dataManager.getInstance().saveData(id + "_" + Uid + ".json", jsonObject);
-                            Log.d("sssss", id + "_" + Uid + ".json");
-                        }
-                        updateUI(Uid);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+            netService.setEvaluationsCallback(evaluations -> {
+                try {
+                    JSONArray jsonArray = new JSONArray(evaluations);
+                    if (jsonArray.length() == 0) {
+                        updateUIWithNoData();
+                        return;
                     }
+                    intArray = new int[jsonArray.length()];
+                    for (int i = 0; i < jsonArray.length(); ++i) {
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        String id = jsonObject.getString("ID");
+                        intArray[i] = Integer.parseInt(id);
+                        dataManager.getInstance().saveData(id + "_" + Uid + ".json", jsonObject);
+                        Log.d("sssss", id + "_" + Uid + ".json");
+                    }
+                    updateUI(Uid);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
             });
 
-            NetInteractUtils.getInstance(this).getEvaluations(Uid);
+            netService.getEvaluations(Uid);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -233,7 +232,7 @@ public class privatehistorylist extends AppCompatActivity {
             String part1 = parts[0];
             // 第二部分是我们想要的"100008"
             String part2 = parts[1].split("\\.")[0]; // 如果需要确保去除.json后缀
-            NetInteractUtils.getInstance(privatehistorylist.this).deleteEvaluation(part2,part1);
+            netService.deleteEvaluation(part2,part1);
         }
         Toast.makeText(privatehistorylist.this,"儿童信息已删除",Toast.LENGTH_SHORT).show();
     }

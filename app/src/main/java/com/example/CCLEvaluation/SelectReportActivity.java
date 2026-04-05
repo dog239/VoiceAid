@@ -32,9 +32,10 @@ import java.util.Locale;
 
 import bean.AssessmentModule;
 import utils.ImageUrls;
-import utils.NetInteractUtils;
 import utils.OverallInterventionReportBuilder;
 import utils.dataManager;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class SelectReportActivity extends AppCompatActivity {
 
@@ -51,6 +52,7 @@ public class SelectReportActivity extends AppCompatActivity {
     private static final int REQUEST_EXPORT_ASSESSMENT_PDF = 3101;
     private final List<ExportOption> pendingExports = new ArrayList<>();
     private ExportOption currentExport;
+    private NetService netService;
 
     private static class ExportOption {
         final String moduleType;
@@ -140,6 +142,7 @@ public class SelectReportActivity extends AppCompatActivity {
         uid = getIntent().getStringExtra("Uid");
         childUser = getIntent().getStringExtra("childID");
         boolean isPrivate = getIntent().getBooleanExtra("private", false);
+        netService = NetServiceProvider.get(this);
 
         // Load data to check plan status
         refreshData();
@@ -148,14 +151,9 @@ public class SelectReportActivity extends AppCompatActivity {
         if (isPrivate || uid == null || uid.isEmpty()) {
             updateReportList(null);
         } else {
-            NetInteractUtils.getInstance(this).setModuleCallback(new NetInteractUtils.ModuleCallback() {
-                @Override
-                public void onModuleResult(String module) throws JSONException {
-                    updateReportList(module);
-                }
-            });
-            NetInteractUtils.getInstance(this).getModule(uid);
-            
+            netService.setModuleCallback(module -> updateReportList(module));
+            netService.getModule(uid);
+
             // Fallback init
             updateReportList(null);
         }

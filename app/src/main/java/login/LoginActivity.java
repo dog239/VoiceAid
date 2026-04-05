@@ -5,20 +5,17 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.Environment;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.example.CCLEvaluation.MainActivity;
 import com.example.CCLEvaluation.R;
 import com.example.CCLEvaluation.startActivity;
 
-import utils.ImageUrls;
-import utils.NetInteractUtils;
 import utils.IflytekEvaluator;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class LoginActivity extends AppCompatActivity{
     //声明控件
@@ -31,6 +28,7 @@ public class LoginActivity extends AppCompatActivity{
     private EditText mEtPassword;
     private TextView changeCode;
     private TextView captchaLogin;
+    private NetService netService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,26 +45,24 @@ public class LoginActivity extends AppCompatActivity{
         changeCode = findViewById(R.id.changeCode);
         captchaLogin = findViewById(R.id.capchaLogin);
         isCaptcha = false;
+        netService = NetServiceProvider.get(this);
         //页面初始化
         mEtUsername.setHint("用户名");
         mEtCaptcha.setVisibility(View.GONE);
         mBtnCaptcha.setVisibility(View.GONE);
         captchaLogin.setText(getString(R.string.captchaLogin));
         //重写验证码登陆回调函数
-        NetInteractUtils.getInstance(LoginActivity.this).setLoginCallback(new NetInteractUtils.LoginCallback() {
-            @Override
-            public void onLoginResult(String uid, String username) {
-                Intent intent = new Intent(LoginActivity.this, startActivity.class);
-                SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putString("Uid", uid);
-                editor.putString("Username", username);
-                editor.putBoolean("isLoggedIn", true);
-                editor.apply();
-                startActivity(intent);
-                Toast.makeText(LoginActivity.this,"登录成功！",Toast.LENGTH_SHORT).show();
-                finish();
-            }
+        netService.setLoginCallback((uid, username) -> {
+            Intent intent = new Intent(LoginActivity.this, startActivity.class);
+            SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putString("Uid", uid);
+            editor.putString("Username", username);
+            editor.putBoolean("isLoggedIn", true);
+            editor.apply();
+            startActivity(intent);
+            Toast.makeText(LoginActivity.this,"登录成功！",Toast.LENGTH_SHORT).show();
+            finish();
         });
 
         SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
@@ -81,60 +77,23 @@ public class LoginActivity extends AppCompatActivity{
         //匹配对应的用户名和密码才能登录
         mBtnLogin.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                // ==========================
-                // 版本 A：本地调试模式（直接进入）
-                // ==========================
-                boolean useLocalDebug = false;
                 String username;
-                if (useLocalDebug) {
+                String password;
+                if(!isCaptcha){
                     username = mEtUsername.getText().toString();
-                    String password = mEtPassword.getText().toString();
-                    
-                    // 添加简单的验证逻辑，确保用户输入了用户名和密码
-                    if(username.equals("")||password.equals("")){
-                        Toast.makeText(LoginActivity.this,"还有信息未填写",Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    
-                    // 检查是否是首次登录（模拟注册）
-                    SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
-                    boolean isLoggedIn = preferences.getBoolean("isLoggedIn", false);
-                    
-                    if (!isLoggedIn) {
-                        // 首次登录，模拟注册成功
-                        Toast.makeText(LoginActivity.this,"注册成功！",Toast.LENGTH_SHORT).show();
-                    }
-                    
-                    Intent intent = new Intent(LoginActivity.this, startActivity.class);
-                    SharedPreferences.Editor editor = preferences.edit();
-                    editor.putString("Uid", "local_user_001");
-                    editor.putString("Username", username);
-                    editor.putBoolean("isLoggedIn", true);
-                    editor.apply();
-                    startActivity(intent);
-                    Toast.makeText(LoginActivity.this,"登录成功",Toast.LENGTH_SHORT).show();
-                    finish();
-                } else {
-                    // ==========================
-                    // 版本 B：原网络请求版本（连接服务器用）
-                    // ==========================
-                    String password;
-                    if(!isCaptcha){
-                        username = mEtUsername.getText().toString();
-                        password = mEtPassword.getText().toString();
-                    }else{
-                        username = mEtUsername.getText().toString();
-                        password = mEtCaptcha.getText().toString();
-                    }
+                    password = mEtPassword.getText().toString();
+                }else{
+                    username = mEtUsername.getText().toString();
+                    password = mEtCaptcha.getText().toString();
+                }
 
-                    if(username.equals("")||password.equals("")){
-                        Toast.makeText(LoginActivity.this,"还有信息未填写",Toast.LENGTH_SHORT).show();
+                if(username.equals("")||password.equals("")){
+                    Toast.makeText(LoginActivity.this,"还有信息未填写",Toast.LENGTH_SHORT).show();
+                }else{
+                    if(!isCaptcha){
+                        netService.loginWithPassword(username,password);
                     }else{
-                        if(!isCaptcha){
-                            NetInteractUtils.getInstance(LoginActivity.this).loginWithPassword(username,password);
-                        }else{
-                            NetInteractUtils.getInstance(LoginActivity.this).loginWithCaptcha(username,password);
-                        }
+                        netService.loginWithCaptcha(username,password);
                     }
                 }
             }
@@ -180,7 +139,6 @@ public class LoginActivity extends AppCompatActivity{
         mBtnCaptcha.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean useLocalDebug = false;
                 CountDownTimer countDownTimer = new CountDownTimer(60000, 1000) {
                     @Override
                     public void onTick(long millisUntilFinished) {
@@ -194,25 +152,13 @@ public class LoginActivity extends AppCompatActivity{
                         mBtnCaptcha.setText("获取验证码");
                     }
                 };
-                if (useLocalDebug) {
-                    // ==========================
-                    // 版本 A：本地调试模式（直接倒计时）
-                    // ==========================
-                    Toast.makeText(LoginActivity.this,"[调试模式] 模拟验证码已发送",Toast.LENGTH_SHORT).show();
+                String bind = mEtUsername.getText().toString();
+                if(bind.isEmpty()){
+                    Toast.makeText(LoginActivity.this,"未填写手机号/邮箱！",Toast.LENGTH_SHORT).show();
+                }else{
+                    netService.getCaptcha("0",bind);
                     mBtnCaptcha.setEnabled(false);
                     countDownTimer.start();
-                } else {
-                    // ==========================
-                    // 版本 B：原网络请求版本（连接服务器用）
-                    // ==========================
-                    String bind = mEtUsername.getText().toString();
-                    if(bind.isEmpty()){
-                        Toast.makeText(LoginActivity.this,"未填写手机号/邮箱！",Toast.LENGTH_SHORT).show();
-                    }else{
-                        NetInteractUtils.getInstance(LoginActivity.this).getCaptcha("0",bind);
-                        mBtnCaptcha.setEnabled(false);
-                        countDownTimer.start();
-                    }
                 }
             }
         });

@@ -25,8 +25,9 @@ import java.util.List;
 import bean.AssessmentModule;
 import bean.evaluation;
 import utils.ImageUrls;
-import utils.NetInteractUtils;
 import utils.dataManager;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class AssessmentModulesActivity extends AppCompatActivity {
 
@@ -42,6 +43,7 @@ public class AssessmentModulesActivity extends AppCompatActivity {
     private TextView patientId;
     private String lastModuleJson;
     private boolean isPrivateMode;
+    private NetService netService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,6 +104,7 @@ public class AssessmentModulesActivity extends AppCompatActivity {
         uid = getIntent().getStringExtra("Uid");
         childUser = getIntent().getStringExtra("childID");
         isPrivateMode = getIntent().getBooleanExtra("private", false);
+        netService = NetServiceProvider.get(this);
 
         // Load data from file
         try {
@@ -117,15 +120,12 @@ public class AssessmentModulesActivity extends AppCompatActivity {
             lastModuleJson = null;
             updateModulesList(null); 
         } else {
-            NetInteractUtils.getInstance(this).setModuleCallback(new NetInteractUtils.ModuleCallback() {
-                @Override
-                public void onModuleResult(String module) throws JSONException {
-                    lastModuleJson = module;
-                    updateModulesList(module);
-                }
+            netService.setModuleCallback(module -> {
+                lastModuleJson = module;
+                updateModulesList(module);
             });
-            NetInteractUtils.getInstance(this).getModule(uid);
-            
+            netService.getModule(uid);
+
             // Fallback: if network is slow/fails, show defaults after delay? 
             // Or just init with defaults and let network update it.
             updateModulesList(null);
@@ -378,14 +378,11 @@ public class AssessmentModulesActivity extends AppCompatActivity {
                 data = dataManager.getInstance().loadData(fName);
                 updateModulesList(lastModuleJson);
                 if (!isPrivateMode && uid != null && !uid.isEmpty()) {
-                    NetInteractUtils.getInstance(this).setModuleCallback(new NetInteractUtils.ModuleCallback() {
-                        @Override
-                        public void onModuleResult(String module) throws JSONException {
-                            lastModuleJson = module;
-                            updateModulesList(module);
-                        }
+                    netService.setModuleCallback(module -> {
+                        lastModuleJson = module;
+                        updateModulesList(module);
                     });
-                    NetInteractUtils.getInstance(this).getModule(uid);
+                    netService.getModule(uid);
                 }
             }
         } catch (Exception e) {

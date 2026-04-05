@@ -17,19 +17,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.CCLEvaluation.R;
-import com.example.CCLEvaluation.MainActivity;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import utils.NetInteractUtils;
 import utils.dataManager;
 import utils.dialogUtils;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class allhistorylist extends AppCompatActivity {
     RecyclerView mRecyclerView;
@@ -40,6 +37,7 @@ public class allhistorylist extends AppCompatActivity {
     private int count = 0;
 
     private int number;
+    private NetService netService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,8 +46,9 @@ public class allhistorylist extends AppCompatActivity {
         mRecyclerView = findViewById(R.id.recyclerview);
         ChildNumber = findViewById(R.id.childnumber);
         String Uid = getIntent().getStringExtra("Uid");
+        netService = NetServiceProvider.get(this);
         try {
-            NetInteractUtils.UserInfoCallback userInfoCallback = new NetInteractUtils.UserInfoCallback() {
+            NetService.UserInfoCallback userInfoCallback = new NetService.UserInfoCallback() {
                 @Override
                 public void onUserInfoResult(String user) throws Exception {
                     JSONObject jsonObject = new JSONObject(user);
@@ -64,7 +63,7 @@ public class allhistorylist extends AppCompatActivity {
                 }
             };
 
-            NetInteractUtils.UserIDsCallback userIDsCallback = new NetInteractUtils.UserIDsCallback() {
+            NetService.UserIDsCallback userIDsCallback = new NetService.UserIDsCallback() {
                 @Override
                 public void onUserIDsResult(String userIDs) {
                     String strippedInput = userIDs.replace("[", "").replace("]", "").replace(" ", "");
@@ -76,14 +75,14 @@ public class allhistorylist extends AppCompatActivity {
                     numbers = strippedInput.split(",");
                     for(int i=0;i<numbers.length;++i){
                         if (!numbers[i].isEmpty()) {
-                            NetInteractUtils.getInstance(allhistorylist.this).getUserInfo(numbers[i]);
+                            netService.getUserInfo(numbers[i]);
                         }
                     }
                 }
             };
-            NetInteractUtils.getInstance(this).setUserIDsCallback(userIDsCallback);
-            NetInteractUtils.getInstance(this).setUserInfoCallback(userInfoCallback);
-            NetInteractUtils.getInstance(this).getUserIDs(Uid);
+            netService.setUserIDsCallback(userIDsCallback);
+            netService.setUserInfoCallback(userInfoCallback);
+            netService.getUserIDs(Uid);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -141,14 +140,14 @@ public class allhistorylist extends AppCompatActivity {
         dialogUtils.showDialog(allhistorylist.this, "提示信息", "您确定要删除该测评人的全部测评记录吗？",
                 "确认", () -> {
                     try {
-                        //clearStudentInfoAudio(fname,position,Uid);
                         String Uid = getIntent().getStringExtra("Uid");
-                        NetInteractUtils.getInstance(allhistorylist.this).deleteEvaluations(Uid,childID);
+                        netService.deleteEvaluations(Uid,childID);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 }, "取消", null);
     }
+
     private void  clearStudentInfoAudio(String fname, int position, String Uid) throws Exception {
         dataManager.getInstance().deleteData(fname);
 
@@ -160,7 +159,7 @@ public class allhistorylist extends AppCompatActivity {
             String part1 = parts[0];
             // 第二部分是我们想要的"100008"
             String part2 = parts[1].split("\\.")[0]; // 如果需要确保去除.json后缀
-            NetInteractUtils.getInstance(allhistorylist.this).deleteEvaluation(part2,part1);
+            netService.deleteEvaluation(part2,part1);
         }
         Toast.makeText(allhistorylist.this,"儿童信息已删除",Toast.LENGTH_SHORT).show();
     }

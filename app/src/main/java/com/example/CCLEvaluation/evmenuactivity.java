@@ -13,11 +13,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -44,13 +42,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import bean.evaluation;
-import utils.AudioRecorder;
+import utils.ImageUrls;
+import utils.ReportPipeline;
 import utils.dataManager;
 import utils.dialogUtils;
 import utils.dirpath;
-import utils.ImageUrls;
-import utils.NetInteractUtils;
-import utils.ReportPipeline;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class evmenuactivity extends AppCompatActivity implements View.OnClickListener {
     private ActivityResultLauncher<Intent> createDocumentLauncher;
@@ -81,6 +79,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     private Map<String, Map<String, String>> audioPaths;
     private final Handler planHandler = new Handler(Looper.getMainLooper());
     private Runnable planHintRunnable;
+    private NetService netService;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -112,50 +111,46 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         uid = getIntent().getStringExtra("Uid");
         childUser = getIntent().getStringExtra("childID");
         isServerBacked = childUser != null && !childUser.isEmpty();
+        netService = NetServiceProvider.get(this);
 //        if(childUser != null){
 //            Download.setVisibility(View.VISIBLE);
 //        }
-        NetInteractUtils.getInstance(evmenuactivity.this).setModuleCallback(new NetInteractUtils.ModuleCallback() {
-            @Override
-            public void onModuleResult(String module) throws JSONException {
-                JSONObject jsonObject = new JSONObject(module);
-                String E = jsonObject.getString("E");
-                String RE = jsonObject.getString("RE");
-                String S = jsonObject.getString("S");
-                String NWR = jsonObject.getString("NWR");
-                String A = jsonObject.getString("A");
-                String RG = jsonObject.getString("RG");
-                String PN = jsonObject.getString("PN");
-                String PST = jsonObject.getString("PST");
-                String PL = jsonObject.optString("PL", "0");
+        netService.setModuleCallback(module -> {
+            JSONObject jsonObject = new JSONObject(module);
+            String E = jsonObject.getString("E");
+            String RE = jsonObject.getString("RE");
+            String S = jsonObject.getString("S");
+            String NWR = jsonObject.getString("NWR");
+            String A = jsonObject.getString("A");
+            String RG = jsonObject.getString("RG");
+            String PN = jsonObject.getString("PN");
+            String PST = jsonObject.getString("PST");
+            String PL = jsonObject.optString("PL", "0");
 
-                if(E.equals("1") && RE.equals("1") && S.equals("1") && NWR.equals("1")){
-                    wd.setVisibility(View.VISIBLE);
-                }else{
-                    wd.setVisibility(View.GONE);
-                }
-                if(A.equals("1")){
-                    pn.setVisibility(View.VISIBLE);
-                }else{
-                    pn.setVisibility(View.GONE);
-                }
-                if(RG.equals("1")){
-                    gm.setVisibility(View.VISIBLE);
-                }else{
-                    gm.setVisibility(View.GONE);
-                }
+            if(E.equals("1") && RE.equals("1") && S.equals("1") && NWR.equals("1")){
+                wd.setVisibility(View.VISIBLE);
+            }else{
+                wd.setVisibility(View.GONE);
+            }
+            if(A.equals("1")){
+                pn.setVisibility(View.VISIBLE);
+            }else{
+                pn.setVisibility(View.GONE);
+            }
+            if(RG.equals("1")){
+                gm.setVisibility(View.VISIBLE);
+            }else{
+                gm.setVisibility(View.GONE);
+            }
 
-                if(PL.equals("1")){
-                    plModule.setVisibility(View.VISIBLE);
-                }else{
-                    plModule.setVisibility(View.GONE);
-                }
-
-
+            if(PL.equals("1")){
+                plModule.setVisibility(View.VISIBLE);
+            }else{
+                plModule.setVisibility(View.GONE);
             }
         });
 
-        NetInteractUtils.getInstance(evmenuactivity.this).getModule(uid);
+        netService.getModule(uid);
 
 
         try {
@@ -259,9 +254,9 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         try {
             data = dataManager.getInstance().loadData(fName);
             if (isServerBacked && childUser != null && !childUser.isEmpty()) {
-                NetInteractUtils.getInstance(this).updateEvaluation(uid, childUser, data.toString());
+                netService.updateEvaluation(uid, childUser, data.toString());
             } else {
-                NetInteractUtils.getInstance(this).uploadEvaluation(uid, data.toString());
+                netService.uploadEvaluation(uid, data.toString());
             }
             if (navigateAfter) {
                 Intent intent = new Intent(evmenuactivity.this, MainActivity.class);
@@ -274,7 +269,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
-    NetInteractUtils.UploadEvaluationCallback uploadEvaluationCallback = new NetInteractUtils.UploadEvaluationCallback() {
+    NetService.UploadEvaluationCallback uploadEvaluationCallback = new NetService.UploadEvaluationCallback() {
         /**
          * 如果上传成功，则会执行该回调，否则会在前后文this中弹出Toast提示错误
          * @param childUserID 后端返回的本次上传的编号，或者说这个儿童用户的测评id
@@ -288,7 +283,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
 
         }
     };
-    NetInteractUtils.AudioCallback audioCallback = new NetInteractUtils.AudioCallback() {
+    NetService.AudioCallback audioCallback = new NetService.AudioCallback() {
 
         @Override
         public void onAudioResult(String audio) {
@@ -576,8 +571,8 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
 
     private void initData() throws Exception {
         //设置回调函数
-        NetInteractUtils.getInstance(this).setUploadEvaluationCallback(uploadEvaluationCallback);
-        NetInteractUtils.getInstance(this).setAudioCallback(audioCallback);
+        netService.setUploadEvaluationCallback(uploadEvaluationCallback);
+        netService.setAudioCallback(audioCallback);
 
         //获取信息并展示
         fName = getIntent().getStringExtra("fName");
@@ -618,7 +613,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                         Map<String, String> innerMap = outerEntry.getValue();
                         for (Map.Entry<String, String> innerEntry : innerMap.entrySet()) {
                             String num = innerEntry.getKey();
-                            NetInteractUtils.getInstance(evmenuactivity.this).getAudio(uid, childUser, title, num);
+                            netService.getAudio(uid, childUser, title, num);
                         }
                     }
                 }
@@ -701,8 +696,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
                 if (audioPath != null && !audioPath.equals("null")) {
                     Runnable uploadTask = () -> {
                         try {
-                            NetInteractUtils.getInstance(evmenuactivity.this)
-                                    .uploadAudio(Uid, childUser, title, String.valueOf(num), audioPath);
+                            netService.uploadAudio(Uid, childUser, title, String.valueOf(num), audioPath);
                         } catch (Exception e) {
                             e.printStackTrace(); // 处理上传异常
                         }

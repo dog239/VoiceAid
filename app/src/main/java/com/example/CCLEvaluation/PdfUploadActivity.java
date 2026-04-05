@@ -19,7 +19,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
-import utils.NetInteractUtils;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 /**
  * PDF上传界面
@@ -32,6 +33,7 @@ public class PdfUploadActivity extends AppCompatActivity {
     private String childUser;
     private Uri selectedUri;
     private File stagedFile;
+    private NetService netService;
 
     private TextView txtSelectedFile;
     private Spinner spinnerModule;
@@ -46,6 +48,7 @@ public class PdfUploadActivity extends AppCompatActivity {
 
         uid = getIntent().getStringExtra("Uid");
         childUser = getIntent().getStringExtra("childID");
+        netService = NetServiceProvider.get(this);
 
         txtSelectedFile = findViewById(R.id.txt_selected_pdf);
         spinnerModule = findViewById(R.id.spinner_module);
@@ -97,7 +100,7 @@ public class PdfUploadActivity extends AppCompatActivity {
             Toast.makeText(this, "PDF准备失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
             return;
         }
-        NetInteractUtils.getInstance(this).uploadPdf(uid, childUser, moduleType, stagedFile.getAbsolutePath());
+        netService.uploadPdf(uid, childUser, moduleType, stagedFile.getAbsolutePath());
         Toast.makeText(this, "已开始上传", Toast.LENGTH_SHORT).show();
     }
 

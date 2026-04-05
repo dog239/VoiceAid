@@ -25,8 +25,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-import utils.NetInteractUtils;
 import utils.dataManager;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class childinfoactivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -46,6 +47,7 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
     private String examinerName;
     private String existingFileName;
     private View rootContainer;
+    private NetService netService;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -54,6 +56,7 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
         setContentView(R.layout.activity_child_info);
 
         initViews();
+        netService = NetServiceProvider.get(this);
         initBaseInfo();
         bindEvents();
     }
@@ -100,7 +103,7 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
 
         String uid = getIntent().getStringExtra("Uid");
         if ((examinerName == null || examinerName.trim().isEmpty()) && !TextUtils.isEmpty(uid)) {
-            NetInteractUtils.getInstance(this).setUserInfoCallback(user -> {
+            netService.setUserInfoCallback(user -> {
                 try {
                     JSONObject obj = new JSONObject(user);
                     String username = obj.optString("Username", "");
@@ -111,7 +114,7 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
                 } catch (Exception ignored) {
                 }
             });
-            NetInteractUtils.getInstance(this).getUserInfo(uid);
+            netService.getUserInfo(uid);
         }
 
         existingFileName = getIntent().getStringExtra("fName");
@@ -154,9 +157,9 @@ public class childinfoactivity extends AppCompatActivity implements View.OnClick
             String uid = getIntent().getStringExtra("Uid");
             if (!TextUtils.isEmpty(uid)) {
                 Toast.makeText(this, "Uploading assessment...", Toast.LENGTH_SHORT).show();
-                NetInteractUtils.getInstance(this).setUploadEvaluationCallback(childUserID ->
+                netService.setUploadEvaluationCallback(childUserID ->
                         startAssessment(fName, uid, childUserID));
-                NetInteractUtils.getInstance(this).uploadEvaluation(uid, data.toString());
+                netService.uploadEvaluation(uid, data.toString());
             } else {
                 startAssessment(fName, null, null);
             }

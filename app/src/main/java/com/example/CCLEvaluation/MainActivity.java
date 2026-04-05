@@ -19,7 +19,6 @@ import history.allhistorylist;
 import history.historylist;
 import history.privatehistorylist;
 import login.LoginActivity;
-import utils.NetInteractUtils;
 import utils.dialogUtils;
 import utils.dirpath;
 import utils.Ifileinter;

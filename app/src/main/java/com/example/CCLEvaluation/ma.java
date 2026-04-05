@@ -27,8 +27,9 @@ import org.json.JSONObject;
 import utils.AudioRecorder;
 import utils.dirpath;
 import utils.Ifileinter;
-import utils.NetInteractUtils;
 import utils.sdcard;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class ma extends AppCompatActivity implements View.OnClickListener {
 
@@ -39,8 +40,7 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
     private String jsonString;
     private String childUser;
     private MediaPlayer player;
-
-
+    private NetService netService;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -79,23 +79,16 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
         }
 
+        netService = NetServiceProvider.get(this);
         /**
          * 这里定义网络请求时的等待动画，可以是某种动画，调整，提示等，我这里简单用TextView模拟：正在加载中
          */
-        NetInteractUtils.getInstance(this).setListener(new NetInteractUtils.UiRefreshListener() {
-            /**
-             * @param isPlaying 是否需要打开等待动画中
-             */
-            @Override
-            public void refreshUI(Boolean isPlaying) {
-
-                if (isPlaying == true){//加载动画
-                    loading.setVisibility(View.VISIBLE);
-                }
-                else {//关闭动画
-                    loading.setVisibility(View.GONE);
-                }
-
+        netService.setListener(isPlaying -> {
+            if (isPlaying == true){//加载动画
+                loading.setVisibility(View.VISIBLE);
+            }
+            else {//关闭动画
+                loading.setVisibility(View.GONE);
             }
         });
 
@@ -121,7 +114,7 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
              * @param code 0：登录验证码，1：注册验证码，2：修改密码验证码，其他不合法
              * @param contact 手机号或邮箱二选一
              */
-            NetInteractUtils.getInstance(this).getCaptcha("1","19173144580");
+            netService.getCaptcha("1","19173144580");
 
         } else if (view.getId() == R.id.i2) {
 
@@ -133,7 +126,7 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
              * @param password
              * @param password_confirm
              */
-            NetInteractUtils.getInstance(this).register("19173144580",cEdit.getText().toString(),
+            netService.register("19173144580",cEdit.getText().toString(),
                     "qing1","123456","123456");
 
         } else if (view.getId() == R.id.i3) {
@@ -141,7 +134,7 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
             /**
              * 先定义登录回调函数
              */
-            NetInteractUtils.getInstance(this).setLoginCallback(new NetInteractUtils.LoginCallback() {
+            netService.setLoginCallback(new NetService.LoginCallback() {
                 /**
                  * 如果登录成功，则会执行该回调，否则会在前后文this中弹出Toast提示错误
                  * @param uid 后端返回的用户标识uid
@@ -154,14 +147,14 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
             });
 
             //密码登录
-            NetInteractUtils.getInstance(this).loginWithPassword("qing1","123456");
+            netService.loginWithPassword("qing1","123456");
             //验证码登录
-//            NetInteractUtils.getInstance(this).loginWithCaptcha("19173144580",cEdit.getText().toString());
+//            netService.loginWithCaptcha("19173144580",cEdit.getText().toString());
         } else if (view.getId() == R.id.i4) {
             /**
              * 先定义上传回调函数
              */
-            NetInteractUtils.getInstance(this).setUploadEvaluationCallback(new NetInteractUtils.UploadEvaluationCallback() {
+            netService.setUploadEvaluationCallback(new NetService.UploadEvaluationCallback() {
                 /**
                  * 如果上传成功，则会执行该回调，否则会在前后文this中弹出Toast提示错误
                  * @param childUserID 后端返回的本次上传的编号，或者说这个儿童用户的测评id
@@ -179,7 +172,7 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
              * @param uid 比如是100007
              * @param childUser
              */
-            NetInteractUtils.getInstance(this).uploadEvaluation("100007",jsonString);
+            netService.uploadEvaluation("100007",jsonString);
 
         } else if (view.getId() == R.id.i5) {
             /**
@@ -198,7 +191,7 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
              * 改
              * uploadEvaluation(uid, childUserID):会根据用户uid和childUserID更新该测评，无回调函数，不可靠，若产生错误，将Toast弹出
              */
-            NetInteractUtils.getInstance(this).setEvaluationCallback(new NetInteractUtils.EvaluationCallback() {
+            netService.setEvaluationCallback(new NetService.EvaluationCallback() {
                 /**
                  *
                  * @param evaluation
@@ -224,48 +217,19 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
                 }
 
             });
-            NetInteractUtils.getInstance(this).getEvaluation("100007",childUser);
-//            NetInteractUtils.getInstance(this).setGetEvaluationsCallback(new NetInteractUtils.EvaluationsCallback() {
-//                /**
-//                 *
-//                 * @param evaluations
-//                 * "evaluations": [
-//                 *     {
-//                 *       "ID": "ChildUser ID",
-//                 *       "Info": "ChildUser Info",
-//                 *       "Evaluations": "ChildUser Evaluations",
-//                 *       "UserID": "User ID",
-//                 *       "Time": "Timestamp"
-//                 *     }
-//                 *      {
-//                 *       "ID": "ChildUser ID",
-//                 *       "Info": "ChildUser Info",
-//                 *       "Evaluations": "ChildUser Evaluations",
-//                 *       "UserID": "User ID",
-//                 *       "Time": "Timestamp"
-//                 *     }
-//                 *     ·····
-//                 *     ***返回字符串没有包含"evaluations":[],已经通过json转换取出，即内层
-//                 *     则字符串为
-//                 *     {
-//                 *     "ID": "ChildUser ID",
-//                 *     "Info": "ChildUser Info",
-//                 *     "Evaluations": "ChildUser Evaluations",
-//                 *     "UserID": "User ID",
-//                 *     "Time": "Timestamp"
-//                 *     }
-//                 */
+            netService.getEvaluation("100007",childUser);
+
+//            netService.setEvaluationsCallback(new NetService.EvaluationsCallback() {
 //                @Override
 //                public void onEvaluationsResult(String evaluations) {
 //                    Toast.makeText(MainActivity.this,"evaluation:"+evaluations,Toast.LENGTH_SHORT).show();
 //                }
-//
 //            });
-//            NetInteractUtils.getInstance(this).getEvaluations("100007");
+//            netService.getEvaluations("100007");
 
-//            NetInteractUtils.getInstance(this).deleteEvaluation("100007",childUser);
-//            NetInteractUtils.getInstance(this).deleteEvaluations("100007");
-//            NetInteractUtils.getInstance(this).updateEvaluation("100007",childUser,jsonString);
+//            netService.deleteEvaluation("100007",childUser);
+//            netService.deleteEvaluations("100007");
+//            netService.updateEvaluation("100007",childUser,jsonString);
 
         } else if (view.getId() == R.id.i6) {
             //开始录音
@@ -290,14 +254,14 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
              * @param audioPath 文件路径
              */
             if (childUser!=null)
-                NetInteractUtils.getInstance(this).uploadAudio("100007",childUser,"A","1",
+                netService.uploadAudio("100007",childUser,"A","1",
                         AudioRecorder.getInstance().getOutputFilePath());
 
         } else if (view.getId() == R.id.i8) {
             /**
              * 先定义下载录音回调函数，需要与获取测评同步获取
              */
-            NetInteractUtils.getInstance(this).setAudioCallback(new NetInteractUtils.AudioCallback() {
+            netService.setAudioCallback(new NetService.AudioCallback() {
 
                 @Override
                 public void onAudioResult(String audio) {
@@ -335,7 +299,7 @@ public class ma extends AppCompatActivity implements View.OnClickListener {
 
 
             if(childUser!=null)
-                NetInteractUtils.getInstance(this).getAudio("100007",childUser,"A","1");
+                netService.getAudio("100007",childUser,"A","1");
         }
 
 

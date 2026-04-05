@@ -1,26 +1,14 @@
 package com.example.CCLEvaluation;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.media.MediaRecorder;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.CountDownTimer;
-import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 
 import com.example.CCLEvaluation.R;
 import com.example.CCLEvaluation.MainActivity;
@@ -28,16 +16,8 @@ import com.example.CCLEvaluation.MainActivity;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.IOException;
-
-import audiotest.Audiocheckresult;
-import login.LoginActivity;
-import login.RegisterActivity;
-import utils.AudioPlayer;
-import utils.AudioRecorder;
-import utils.NetInteractUtils;
-import utils.dialogUtils;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class choosemoduleactivity extends AppCompatActivity {
 
@@ -47,6 +27,7 @@ public class choosemoduleactivity extends AppCompatActivity {
     private CheckBox[] checkBoxes = new CheckBox[5];
     private Boolean[] chooseWhat = new Boolean[5];
     private String Uid;
+    private NetService netService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,72 +47,68 @@ public class choosemoduleactivity extends AppCompatActivity {
         checkBoxes[4].setVisibility(View.INVISIBLE);
 
         Uid = getIntent().getStringExtra("Uid");
+        netService = NetServiceProvider.get(this);
 //        Toast.makeText(choosemoduleactivity.this,Uid,Toast.LENGTH_SHORT).show();
-        NetInteractUtils.getInstance(choosemoduleactivity.this).setModuleCallback(new NetInteractUtils.ModuleCallback() {
-            @Override
-            public void onModuleResult(String module) throws JSONException {
-                JSONObject jsonObject = new JSONObject(module);
-                String E = jsonObject.getString("E");
-                String RE = jsonObject.getString("RE");
-                String S = jsonObject.getString("S");
-                String NWR = jsonObject.getString("NWR");
-                String A = jsonObject.getString("A");
-                String RG = jsonObject.getString("RG");
-                String PN = jsonObject.getString("PN");
-                String PST = jsonObject.getString("PST");
-                String PL = jsonObject.optString("PL", "0");
+        netService.setModuleCallback(module -> {
+            JSONObject jsonObject = new JSONObject(module);
+            String E = jsonObject.getString("E");
+            String RE = jsonObject.getString("RE");
+            String S = jsonObject.getString("S");
+            String NWR = jsonObject.getString("NWR");
+            String A = jsonObject.getString("A");
+            String RG = jsonObject.getString("RG");
+            String PN = jsonObject.getString("PN");
+            String PST = jsonObject.getString("PST");
+            String PL = jsonObject.optString("PL", "0");
 
-                if(E.equals("1") && RE.equals("1") && S.equals("1") && NWR.equals("1")){
-                    chooseWhat[0] = true;
-                    checkBoxes[0].setChecked(true);
-                    checkBoxes[0].setVisibility(View.VISIBLE);
-                }else{
-                    chooseWhat[0] = false;
-                    checkBoxes[0].setChecked(false);
-                    checkBoxes[0].setVisibility(View.VISIBLE);
-                }
-                if(A.equals("1")){
-                    chooseWhat[1] = true;
-                    checkBoxes[1].setChecked(true);
-                    checkBoxes[1].setVisibility(View.VISIBLE);
-                }else{
-                    chooseWhat[1] = false;
-                    checkBoxes[1].setChecked(false);
-                    checkBoxes[1].setVisibility(View.VISIBLE);
-                }
-                if(RG.equals("1")){
-                    chooseWhat[2] = true;
-                    checkBoxes[2].setChecked(true);
-                    checkBoxes[2].setVisibility(View.VISIBLE);
-                }else{
-                    chooseWhat[2] = false;
-                    checkBoxes[2].setChecked(false);
-                    checkBoxes[2].setVisibility(View.VISIBLE);
-                }
-                if(PN.equals("1") && PST.equals("1")){
-                    chooseWhat[3] = true;
-                    checkBoxes[3].setChecked(true);
-                    checkBoxes[3].setVisibility(View.VISIBLE);
-                }else{
-                    chooseWhat[3] = false;
-                    checkBoxes[3].setChecked(false);
-                    checkBoxes[3].setVisibility(View.VISIBLE);
-                }
-                if(PL.equals("1")){
-                    chooseWhat[4] = true;
-                    checkBoxes[4].setChecked(true);
-                    checkBoxes[4].setVisibility(View.VISIBLE);
-                }else{
-                    chooseWhat[4] = false;
-                    checkBoxes[4].setChecked(false);
-                    checkBoxes[4].setVisibility(View.VISIBLE);
-                }
-
-
+            if(E.equals("1") && RE.equals("1") && S.equals("1") && NWR.equals("1")){
+                chooseWhat[0] = true;
+                checkBoxes[0].setChecked(true);
+                checkBoxes[0].setVisibility(View.VISIBLE);
+            }else{
+                chooseWhat[0] = false;
+                checkBoxes[0].setChecked(false);
+                checkBoxes[0].setVisibility(View.VISIBLE);
+            }
+            if(A.equals("1")){
+                chooseWhat[1] = true;
+                checkBoxes[1].setChecked(true);
+                checkBoxes[1].setVisibility(View.VISIBLE);
+            }else{
+                chooseWhat[1] = false;
+                checkBoxes[1].setChecked(false);
+                checkBoxes[1].setVisibility(View.VISIBLE);
+            }
+            if(RG.equals("1")){
+                chooseWhat[2] = true;
+                checkBoxes[2].setChecked(true);
+                checkBoxes[2].setVisibility(View.VISIBLE);
+            }else{
+                chooseWhat[2] = false;
+                checkBoxes[2].setChecked(false);
+                checkBoxes[2].setVisibility(View.VISIBLE);
+            }
+            if(PN.equals("1") && PST.equals("1")){
+                chooseWhat[3] = true;
+                checkBoxes[3].setChecked(true);
+                checkBoxes[3].setVisibility(View.VISIBLE);
+            }else{
+                chooseWhat[3] = false;
+                checkBoxes[3].setChecked(false);
+                checkBoxes[3].setVisibility(View.VISIBLE);
+            }
+            if(PL.equals("1")){
+                chooseWhat[4] = true;
+                checkBoxes[4].setChecked(true);
+                checkBoxes[4].setVisibility(View.VISIBLE);
+            }else{
+                chooseWhat[4] = false;
+                checkBoxes[4].setChecked(false);
+                checkBoxes[4].setVisibility(View.VISIBLE);
             }
         });
 
-        NetInteractUtils.getInstance(choosemoduleactivity.this).getModule(Uid);
+        netService.getModule(Uid);
 
 
         checkBoxes[0].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -231,7 +208,7 @@ public class choosemoduleactivity extends AppCompatActivity {
                         jsonObject.put("PL",0);
                     }
                     Log.d("10086",jsonObject.toString());
-                    NetInteractUtils.getInstance(choosemoduleactivity.this).updateModule(Uid,jsonObject);
+                    netService.updateModule(Uid,jsonObject);
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }

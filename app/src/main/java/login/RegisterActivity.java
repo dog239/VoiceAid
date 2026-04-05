@@ -16,12 +16,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.CCLEvaluation.R;
-import com.example.CCLEvaluation.choosemoduleactivity;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import utils.NetInteractUtils;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class RegisterActivity extends AppCompatActivity{
     private TextView tv1;
@@ -46,6 +46,7 @@ public class RegisterActivity extends AppCompatActivity{
     private String savedUsername;
     private String savedPassword;
     private String savedCheck;
+    private NetService netService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,66 +66,63 @@ public class RegisterActivity extends AppCompatActivity{
         checkBoxes[2] = findViewById(R.id.grammar);
         checkBoxes[3] = findViewById(R.id.narrator);
         Back = findViewById(R.id.btn_back);
+        netService = NetServiceProvider.get(this);
         for(int i=0;i<4;++i){
             chooseWhat[i] = false;
         }
 
-        NetInteractUtils.getInstance(RegisterActivity.this).setLoginCallback(new NetInteractUtils.LoginCallback() {
-            @Override
-            public void onLoginResult(String uid, String username) {
-                Uid = uid;
+        netService.setLoginCallback((uid, username) -> {
+            Uid = uid;
 
-                // 只有在注册模式下且成功获取到UID时才创建模块
-                if (!isChangeCode && uid != null && !uid.isEmpty()) {
-                    try {
-                        JSONObject jsonObject = new JSONObject();
-                        if(chooseWhat[0]){
-                            jsonObject.put("E",1);
-                            jsonObject.put("RE",1);
-                            jsonObject.put("S",1);
-                            jsonObject.put("NWR",1);
-                        }else{
-                            jsonObject.put("E",0);
-                            jsonObject.put("RE",0);
-                            jsonObject.put("S",0);
-                            jsonObject.put("NWR",0);
-                        }
-                        if(chooseWhat[1]){
-                            jsonObject.put("A",1);
-                        }else{
-                            jsonObject.put("A",0);
-                        }
-                        if(chooseWhat[2]){
-                            jsonObject.put("RG",1);
-                        }else{
-                            jsonObject.put("RG",0);
-                        }
-                        if(chooseWhat[3]){
-                            jsonObject.put("PST",1);
-                            jsonObject.put("PN",1);
-                        }else{
-                            jsonObject.put("PST",0);
-                            jsonObject.put("PN",0);
-                        }
-                        Log.d("10086",jsonObject.toString());
-                        NetInteractUtils.getInstance(RegisterActivity.this).createModule(Uid,jsonObject);
-
-                        // 模块创建完成后跳转到登录页面
-                        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                        startActivity(intent);
-                        Toast.makeText(RegisterActivity.this,"注册成功！",Toast.LENGTH_SHORT).show();
-
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
+            // 只有在注册模式下且成功获取到UID时才创建模块
+            if (!isChangeCode && uid != null && !uid.isEmpty()) {
+                try {
+                    JSONObject jsonObject = new JSONObject();
+                    if(chooseWhat[0]){
+                        jsonObject.put("E",1);
+                        jsonObject.put("RE",1);
+                        jsonObject.put("S",1);
+                        jsonObject.put("NWR",1);
+                    }else{
+                        jsonObject.put("E",0);
+                        jsonObject.put("RE",0);
+                        jsonObject.put("S",0);
+                        jsonObject.put("NWR",0);
                     }
+                    if(chooseWhat[1]){
+                        jsonObject.put("A",1);
+                    }else{
+                        jsonObject.put("A",0);
+                    }
+                    if(chooseWhat[2]){
+                        jsonObject.put("RG",1);
+                    }else{
+                        jsonObject.put("RG",0);
+                    }
+                    if(chooseWhat[3]){
+                        jsonObject.put("PST",1);
+                        jsonObject.put("PN",1);
+                    }else{
+                        jsonObject.put("PST",0);
+                        jsonObject.put("PN",0);
+                    }
+                    Log.d("10086",jsonObject.toString());
+                    netService.createModule(Uid,jsonObject);
+
+                    // 模块创建完成后跳转到登录页面
+                    Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                    startActivity(intent);
+                    Toast.makeText(RegisterActivity.this,"注册成功！",Toast.LENGTH_SHORT).show();
+
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
                 }
             }
         });
 
-        NetInteractUtils.getInstance(RegisterActivity.this).setRegisterCallback(() -> {
+        netService.setRegisterCallback(() -> {
             if (savedUsername != null && savedPassword != null) {
-                NetInteractUtils.getInstance(RegisterActivity.this)
-                        .loginWithPassword(savedUsername, savedPassword);
+                netService.loginWithPassword(savedUsername, savedPassword);
             }
         });
 
@@ -168,7 +166,7 @@ public class RegisterActivity extends AppCompatActivity{
                         savedCheck = check;
 
                         // 先注册，注册成功后再登录
-                        NetInteractUtils.getInstance(RegisterActivity.this).register(bind,cap,username,password,check);
+                        netService.register(bind,cap,username,password,check);
 
                         // 注意：这里不再立即跳转，等待登录成功回调
                     }else{
@@ -180,7 +178,7 @@ public class RegisterActivity extends AppCompatActivity{
                     if(bind.isEmpty()||cap.isEmpty()||password.isEmpty()||check.isEmpty()){
                         Toast.makeText(RegisterActivity.this,"还有内容未填写！",Toast.LENGTH_SHORT).show();
                     }else if(password.equals(check)){
-                        NetInteractUtils.getInstance(RegisterActivity.this).changePassword(bind,cap,password,check);
+                        netService.changePassword(bind,cap,password,check);
                         Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
                         startActivity(intent);
                         Toast.makeText(RegisterActivity.this,"密码修改成功！",Toast.LENGTH_SHORT).show();
@@ -225,23 +223,12 @@ public class RegisterActivity extends AppCompatActivity{
                 if(bind.isEmpty()){
                     Toast.makeText(RegisterActivity.this,"未填写手机号/邮箱！",Toast.LENGTH_SHORT).show();
                 }else{
-                    // 添加本地调试模式
-                    boolean useLocalDebug = false;
-                    if (useLocalDebug) {
-                        // 本地调试模式，模拟验证码发送成功
-                        Toast.makeText(RegisterActivity.this,"验证码已发送（调试模式）",Toast.LENGTH_SHORT).show();
-                        Get_capcha.setEnabled(false);
-                        countDownTimer.start();
-                    } else {
-                        // 网络请求模式，连接服务器发送验证码
-                        NetInteractUtils.getInstance(RegisterActivity.this).getCaptcha("1",bind);
-                        Get_capcha.setEnabled(false);
-                        countDownTimer.start();
-                    }
+                    netService.getCaptcha("1",bind);
+                    Get_capcha.setEnabled(false);
+                    countDownTimer.start();
                 }
             }
         });
-
         // 复选框监听器保持不变
         checkBoxes[0].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
