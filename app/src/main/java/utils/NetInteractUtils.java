@@ -1,6 +1,7 @@
 package utils;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -346,6 +347,9 @@ public class NetInteractUtils {
                     if (response.isSuccessful()) {//返回码为200
                         String username = jsonResponse.getString("username");
                         String uid = jsonResponse.getString("uid");
+                        boolean isAdmin = jsonResponse.optBoolean("is_admin", false);
+                        SharedPreferences preferences = context.getSharedPreferences("login_prefs", Activity.MODE_PRIVATE);
+                        preferences.edit().putBoolean("isAdmin", isAdmin).apply();
                         if (loginCallback != null) {
                             context.runOnUiThread(() -> {
                                 loginCallback.onLoginResult(uid, username);

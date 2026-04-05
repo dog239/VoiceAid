@@ -42,6 +42,8 @@ public class startActivity extends AppCompatActivity implements View.OnClickList
         // Clear login status
         SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
         Uid = preferences.getString("Uid", null);
+        boolean isAdmin = preferences.getBoolean("isAdmin", false);
+
 
         //申请权限
         permissionutils.getInstance().RequestPermissions(this, permissions, listener);
@@ -96,4 +98,3 @@ public class startActivity extends AppCompatActivity implements View.OnClickList
         }
     }
 }
-

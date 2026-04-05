@@ -79,7 +79,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         delete.setOnClickListener(this);
 
         Uid = getIntent().getStringExtra("Uid");
-        isTest = getIntent().getBooleanExtra("isTest",true);
+        boolean isAdmin = getSharedPreferences("login_prefs", MODE_PRIVATE)
+                .getBoolean("isAdmin", false);
+        isTest = getIntent().getBooleanExtra("isTest", !isAdmin);
+        if (!isAdmin) {
+            allTests.setVisibility(View.GONE);
+        }
         if(isTest){
             newTestno.setText("1");
             oldTest1no.setText("2");

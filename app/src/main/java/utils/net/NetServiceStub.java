@@ -14,6 +14,9 @@ import java.util.UUID;
  */
 public class NetServiceStub implements NetService {
     private static final long STUB_DELAY_MS = 300;
+    private static final String PREFS_NAME = "login_prefs";
+    private static final String PREF_IS_ADMIN = "isAdmin";
+    private static final String ADMIN_NAME_HINT = "admin";
 
     private final Activity activity;
     private final Handler mainHandler;
@@ -95,9 +98,15 @@ public class NetServiceStub implements NetService {
             showToast("还有信息未填写");
             return;
         }
+        String normalizedName = username.trim();
+        boolean isAdmin = normalizedName.toLowerCase().contains(ADMIN_NAME_HINT);
+        activity.getSharedPreferences(PREFS_NAME, Activity.MODE_PRIVATE)
+                .edit()
+                .putBoolean(PREF_IS_ADMIN, isAdmin)
+                .apply();
         post(() -> {
             if (loginCallback != null) {
-                loginCallback.onLoginResult(fakeUid(), username.trim());
+                loginCallback.onLoginResult(fakeUid(), normalizedName);
             }
         });
     }
@@ -108,9 +117,15 @@ public class NetServiceStub implements NetService {
             showToast("还有信息未填写");
             return;
         }
+        String normalizedBind = bind.trim();
+        boolean isAdmin = normalizedBind.toLowerCase().contains(ADMIN_NAME_HINT);
+        activity.getSharedPreferences(PREFS_NAME, Activity.MODE_PRIVATE)
+                .edit()
+                .putBoolean(PREF_IS_ADMIN, isAdmin)
+                .apply();
         post(() -> {
             if (loginCallback != null) {
-                loginCallback.onLoginResult(fakeUid(), bind.trim());
+                loginCallback.onLoginResult(fakeUid(), normalizedBind);
             }
         });
     }
