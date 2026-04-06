@@ -1,19 +1,23 @@
 package utils.net;
 
 import android.app.Activity;
+import android.widget.Toast;
 
 import org.json.JSONObject;
 
-import utils.NetInteractUtils;
+import utils.netService.NetInteractUtils;
 
 /**
- * utils/NetServiceNet.java 将接口调用转发到 NetInteractUtils，后续对方完成时仅需维护这里。
+ * utils/NetServiceNet.java 将接口调用转发到 utils.netService.NetInteractUtils，后续对方完成时仅需维护这里。
  */
 public class NetServiceNet implements NetService {
     private final NetInteractUtils net;
 
     public NetServiceNet(Activity activity) {
         this.net = NetInteractUtils.getInstance(activity);
+        this.net.setUiRunner(activity::runOnUiThread);
+        this.net.setMessageHandler(message -> activity.runOnUiThread(
+                () -> Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()));
     }
 
     @Override
