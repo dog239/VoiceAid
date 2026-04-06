@@ -45,6 +45,8 @@ import utils.dialogUtils;
 import utils.ImageUrls;
 import utils.ModuleReportHelper;
 import utils.testcontext;
+import utils.net.NetService;
+import utils.net.NetServiceProvider;
 
 public class testactivity extends AppCompatActivity implements View.OnClickListener {
     private CustomViewPager viewPager;
@@ -75,6 +77,11 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         }
     };
 
+    private NetService netService;
+    private String uid;
+    private String childUserId;
+    private boolean uploadRequested;
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +93,13 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         exit = findViewById(R.id.btn_exit);
         counter = findViewById(R.id.counter);
         timer = findViewById(R.id.timer);
+
+        uid = getIntent().getStringExtra("Uid");
+        childUserId = getIntent().getStringExtra("childID");
+        netService = NetServiceProvider.get(this);
+        if (netService != null) {
+            netService.setUploadEvaluationCallback(childUserID -> childUserId = childUserID);
+        }
 
         // 显示加载界面
         View loadingView = findViewById(R.id.loading_view);
@@ -1883,7 +1897,8 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                 int totalScore = 0;
                 boolean saveSuccess = false;
                 int resultCode = -4;
-                
+                String dataJson = null;
+
                 try {
                     if (finalFName == null) {
                         resultCode = -1;
@@ -1938,6 +1953,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                                 try {
                                     dataManager.getInstance().saveData(finalFName, data);
                                     saveSuccess = true;
+                                    dataJson = data.toString();
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                     saveSuccess = false;
@@ -1975,6 +1991,7 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                 
                 final int finalResult = resultCode;
                 final int finalTotalScore = totalScore;
+                final String finalDataJson = dataJson;
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -1991,7 +2008,10 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                             Toast.makeText(testactivity.this, "保存数据失败！", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        
+
+                        // 退出模块时做一次上传（有账号时）
+                        uploadEvaluationOnExit(finalDataJson);
+
                         // 所有题目完成后，生成模块报告
                         if (finalShouldNavigate) {
                             // 显示测评已完成提示
@@ -2028,6 +2048,21 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                 });
             }
         }).start();
+    }
+
+    private void uploadEvaluationOnExit(String dataJson) {
+        if (uploadRequested || dataJson == null || dataJson.isEmpty()) {
+            return;
+        }
+        if (uid == null || uid.trim().isEmpty() || netService == null) {
+            return;
+        }
+        uploadRequested = true;
+        if (childUserId != null && !childUserId.trim().isEmpty()) {
+            netService.updateEvaluation(uid, childUserId, dataJson);
+        } else {
+            netService.uploadEvaluation(uid, dataJson);
+        }
     }
 
     private void generateModuleReport() {
@@ -2148,3 +2183,5 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         return false;
     }
 }
+
+
