@@ -217,6 +217,9 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     @Override
     protected void onResume() {
         super.onResume();
+        // 离开主菜单进入任意模块页面时，不要在 onPause 里用旧数据覆盖服务端；
+        // 每个模块完成/退出后由 testactivity.performCleanup 负责同步。
+        shouldAutoUpload = true;
         try {
             if (fName == null || fName.isEmpty()) {
                 Toast.makeText(this, "数据加载失败：文件名为空！", Toast.LENGTH_SHORT).show();
@@ -323,24 +326,36 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
     public void onClick(View v) {
         if (v.getId() == R.id.btn_wordTest1) {
             // 词汇能力-表达测试
+            shouldAutoUpload = false;
             Intent intent = new Intent(this, testactivity.class);
             intent.putExtra("fName", fName);
             intent.putExtra("format", "E");
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
             startActivity(intent);
         } else if (v.getId() == R.id.btn_wordTest2) {
             // 词汇能力-理解测试
+            shouldAutoUpload = false;
             Intent intent = new Intent(this, testactivity.class);
             intent.putExtra("fName", fName);
             intent.putExtra("format", "EV");
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
             startActivity(intent);
         } else if (v.getId() == R.id.btn_pronunciationTest) {
+            shouldAutoUpload = false;
             Intent intent = new Intent(this, testactivity.class);
             intent.putExtra("fName", fName);
             intent.putExtra("format", "A");
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
             startActivity(intent);
         } else if (v.getId() == R.id.btn_grammar) {
+            shouldAutoUpload = false;
             Intent intent = new Intent(this, SyntaxAbilityEvaluationActivity.class);
             intent.putExtra("fName", fName);
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
             startActivity(intent);
 
         } else if (v.getId() == R.id.btn_wordResult1) {
@@ -356,8 +371,11 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             startActivity(intent);
 
         } else if (v.getId() == R.id.btn_prelinguisticTest) {
+            shouldAutoUpload = false;
             Intent intent = new Intent(this, PrelinguisticSceneSelectActivity.class);
             intent.putExtra("fName", fName);
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
             startActivity(intent);
         } else if (v.getId() == R.id.btn_prelinguisticResult) {
             Intent intent = new Intent(this, resultactivity.class);
@@ -365,6 +383,7 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             intent.putExtra("format", "PL");
             startActivity(intent);
         } else if (v.getId() == R.id.btn_socialTest) {
+            shouldAutoUpload = false;
             Intent intent = new Intent(this, SocialGroupSelectActivity.class);
             intent.putExtra("fName", fName);
             intent.putExtra("Uid", uid);
@@ -691,18 +710,28 @@ public class evmenuactivity extends AppCompatActivity implements View.OnClickLis
             JSONArray currentArray = evaluations.getJSONArray(title);
             for (int i = 0; i < currentArray.length(); i++) {
                 JSONObject element = currentArray.getJSONObject(i);
-                int num = element.getInt("num");
-                String audioPath = element.getString("audioPath");
-                if (audioPath != null && !audioPath.equals("null")) {
-                    Runnable uploadTask = () -> {
-                        try {
-                            netService.uploadAudio(Uid, childUser, title, String.valueOf(num), audioPath);
-                        } catch (Exception e) {
-                            e.printStackTrace(); // 处理上传异常
-                        }
-                    };
-                    executorService.submit(uploadTask); // 提交任务到线程池
+                int num = element.optInt("num", -1);
+                if (num <= 0) {
+                    continue;
                 }
+                String audioPath = element.optString("audioPath", null);
+                if (audioPath == null || audioPath.trim().isEmpty() || "null".equals(audioPath)) {
+                    continue;
+                }
+                audioPath = audioPath.trim();
+                if (!new File(audioPath).isFile()) {
+                    continue;
+                }
+                final String pathFinal = audioPath;
+                final int numFinal = num;
+                Runnable uploadTask = () -> {
+                    try {
+                        netService.uploadAudio(Uid, childUser, title, String.valueOf(numFinal), pathFinal);
+                    } catch (Exception e) {
+                        e.printStackTrace(); // 处理上传异常
+                    }
+                };
+                executorService.submit(uploadTask); // 提交任务到线程池
             }
         }
 

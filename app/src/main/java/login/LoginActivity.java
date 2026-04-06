@@ -54,6 +54,7 @@ public class LoginActivity extends AppCompatActivity{
         //重写验证码登陆回调函数
         netService.setLoginCallback((uid, username) -> {
             Intent intent = new Intent(LoginActivity.this, startActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
             SharedPreferences.Editor editor = preferences.edit();
             editor.putString("Uid", uid);
@@ -71,6 +72,7 @@ public class LoginActivity extends AppCompatActivity{
         if (isLoggedIn && Uid != null) {
             // Directly go to Main Activity
             Intent intent = new Intent(LoginActivity.this, startActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
         }

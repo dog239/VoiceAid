@@ -2,6 +2,7 @@ package com.example.CCLEvaluation;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.ImageView;
@@ -45,6 +46,18 @@ public class AssessmentModulesActivity extends AppCompatActivity {
     private boolean isPrivateMode;
     private NetService netService;
 
+    private String getCachedModuleJson() {
+        try {
+            SharedPreferences preferences = getSharedPreferences("login_prefs", MODE_PRIVATE);
+            String cached = preferences.getString("module_json", null);
+            if (cached == null) return null;
+            cached = cached.trim();
+            return cached.isEmpty() ? null : cached;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,11 +76,7 @@ public class AssessmentModulesActivity extends AppCompatActivity {
 
         ImageView btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> {
-            // 直接回到图二（startActivity），无论前面有多少个界面
-            Intent intent = new Intent(AssessmentModulesActivity.this, startActivity.class);
-            // 清除所有之前的Activity，确保直接回到主界面
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
+            // 模块页属于流程页，返回应遵循正常返回栈
             finish();
         });
         
@@ -84,7 +93,9 @@ public class AssessmentModulesActivity extends AppCompatActivity {
             intent.putExtra("fName", fName);
             intent.putExtra("Uid", uid);
             intent.putExtra("childID", childUser);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
+            finish();
             overridePendingTransition(0, 0); // Seamless transition
             return true;
         } else if (item.getItemId() == R.id.nav_profile) {
@@ -93,7 +104,9 @@ public class AssessmentModulesActivity extends AppCompatActivity {
             intent.putExtra("fName", fName);
             intent.putExtra("Uid", uid);
             intent.putExtra("childID", childUser);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
+            finish();
             return true;
         }
         return false;
@@ -120,19 +133,34 @@ public class AssessmentModulesActivity extends AppCompatActivity {
             lastModuleJson = null;
             updateModulesList(null); 
         } else {
+            // Render cached module selection immediately (prevents first-enter showing "all modules")
+            String cached = getCachedModuleJson();
+            if (cached != null) {
+                lastModuleJson = cached;
+                updateModulesList(cached);
+            } else {
+                updateModulesList(null);
+            }
+
             netService.setModuleCallback(module -> {
                 lastModuleJson = module;
                 updateModulesList(module);
             });
             netService.getModule(uid);
-
-            // Fallback: if network is slow/fails, show defaults after delay? 
-            // Or just init with defaults and let network update it.
-            updateModulesList(null);
         }
     }
 
     private void updateModulesList(String moduleJson) {
+        // In non-private mode, if backend selection hasn't been loaded yet (moduleJson is null/empty),
+        // do not fall back to enabling all modules. Otherwise the UI will briefly show everything
+        // until the next refresh/callback.
+        if ((moduleJson == null || moduleJson.isEmpty())
+                && !(isPrivateMode || uid == null || uid.isEmpty())) {
+            moduleList.clear();
+            runOnUiThread(() -> adapter.notifyDataSetChanged());
+            return;
+        }
+
         ModuleFlags flags = resolveModuleFlags(moduleJson);
 
         moduleList.clear();
@@ -379,6 +407,8 @@ public class AssessmentModulesActivity extends AppCompatActivity {
         }
 
         if (intent != null) {
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
             intent.putExtra("fName", fName);
             startActivity(intent);
         }
@@ -391,6 +421,13 @@ public class AssessmentModulesActivity extends AppCompatActivity {
         try {
             if (fName != null) {
                 data = dataManager.getInstance().loadData(fName);
+                if (!isPrivateMode && uid != null && !uid.isEmpty()) {
+                    // Ensure we at least apply cached selection on returning to this page.
+                    String cached = getCachedModuleJson();
+                    if (cached != null) {
+                        lastModuleJson = cached;
+                    }
+                }
                 updateModulesList(lastModuleJson);
                 if (!isPrivateMode && uid != null && !uid.isEmpty()) {
                     netService.setModuleCallback(module -> {

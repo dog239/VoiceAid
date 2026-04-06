@@ -10,6 +10,8 @@ import android.widget.Button;
 public class PrelinguisticSceneSelectActivity extends AppCompatActivity implements View.OnClickListener {
 
     private Button btnSceneA, btnSceneB;
+    private String uid;
+    private String childUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,6 +23,9 @@ public class PrelinguisticSceneSelectActivity extends AppCompatActivity implemen
 
         btnSceneA.setOnClickListener(this);
         btnSceneB.setOnClickListener(this);
+
+        uid = getIntent().getStringExtra("Uid");
+        childUser = getIntent().getStringExtra("childID");
     }
 
     @Override
@@ -35,6 +40,8 @@ public class PrelinguisticSceneSelectActivity extends AppCompatActivity implemen
         intent.putExtra("moduleKey", "PL");
         intent.putExtra("scene", scene);
         intent.putExtra("fName", getIntent().getStringExtra("fName"));
+        intent.putExtra("Uid", uid);
+        intent.putExtra("childID", childUser);
         startActivity(intent);
         finish();
     }

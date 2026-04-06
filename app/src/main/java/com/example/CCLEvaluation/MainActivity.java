@@ -12,6 +12,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.util.List;
 
@@ -25,6 +27,7 @@ import utils.Ifileinter;
 import utils.permissionutils;
 import utils.sdcard;
 import audiotest.Audiocheck;
+import utils.netService.NetInteractUtils;
 import utils.testcontext;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -46,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView deleteno;
     private String Uid;
     private Boolean isTest = true;
+    private NetInteractUtils netInteractUtils;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -82,9 +86,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         boolean isAdmin = getSharedPreferences("login_prefs", MODE_PRIVATE)
                 .getBoolean("isAdmin", false);
         isTest = getIntent().getBooleanExtra("isTest", !isAdmin);
-        if (!isAdmin) {
-            allTests.setVisibility(View.GONE);
-        }
+        applyAdminAccess(isAdmin);
+        requestAdminStatus();
         if(isTest){
             newTestno.setText("1");
             oldTest1no.setText("2");
@@ -104,6 +107,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             logoutno.setText("3");
             deleteno.setText("4");
         }
+    }
+
+    private void applyAdminAccess(boolean isAdmin) {
+        allTests.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+    }
+
+    private void requestAdminStatus() {
+        if (Uid == null || Uid.trim().isEmpty()) {
+            return;
+        }
+        netInteractUtils = NetInteractUtils.getInstance(this);
+        netInteractUtils.setUiRunner(this::runOnUiThread);
+        netInteractUtils.setAdminStatusCallback(adminStatus -> {
+            boolean isAdmin = false;
+            try {
+                JSONObject statusJson = new JSONObject(adminStatus);
+                isAdmin = statusJson.optBoolean("isAdmin", false);
+            } catch (Exception ignored) {
+            }
+            getSharedPreferences("login_prefs", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("isAdmin", isAdmin)
+                    .apply();
+            applyAdminAccess(isAdmin);
+        });
+        netInteractUtils.getAdminStatus(Uid);
     }
 
 
@@ -145,6 +174,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         editor.apply();
 
                         Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                         startActivity(intent);
                         finish();
                     }, "取消", null);

@@ -12,6 +12,8 @@ public class SyntaxAbilityEvaluationActivity extends AppCompatActivity implement
     private Button btnSyntaxComprehension;
     private Button btnSyntaxExpression;
     private String fName;
+    private String uid;
+    private String childUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +27,8 @@ public class SyntaxAbilityEvaluationActivity extends AppCompatActivity implement
         btnSyntaxExpression.setOnClickListener(this);
 
         fName = getIntent().getStringExtra("fName");
+        uid = getIntent().getStringExtra("Uid");
+        childUser = getIntent().getStringExtra("childID");
     }
 
     @Override
@@ -33,11 +37,15 @@ public class SyntaxAbilityEvaluationActivity extends AppCompatActivity implement
             // 启动句法理解组选择
             Intent intent = new Intent(this, SyntaxComprehensionGroupSelectActivity.class);
             intent.putExtra("fName", fName);
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
             startActivity(intent);
         } else if (v.getId() == R.id.btn_syntax_expression) {
             // 启动句法表达组选择
             Intent intent = new Intent(this, SyntaxExpressionGroupSelectActivity.class);
             intent.putExtra("fName", fName);
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
             startActivity(intent);
 
         }

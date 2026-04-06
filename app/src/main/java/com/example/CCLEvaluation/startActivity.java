@@ -90,11 +90,13 @@ public class startActivity extends AppCompatActivity implements View.OnClickList
             intent.putExtra("Uid", Uid);
             intent.putExtra("isTest",true);
             startActivity(intent);
+            finish();
         } else if (v.getId() == R.id.setting) {
             Intent intent = new Intent(startActivity.this, MainActivity.class);
             intent.putExtra("Uid", Uid);
             intent.putExtra("isTest",false);
             startActivity(intent);
+            finish();
         }
     }
 }

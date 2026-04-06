@@ -200,7 +200,9 @@ public class UserProfileActivity extends AppCompatActivity {
             intent.putExtra("fName", fName);
             intent.putExtra("Uid", uid);
             intent.putExtra("childID", childUser);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
+            finish();
             overridePendingTransition(0, 0);
             return true;
         }
@@ -209,7 +211,9 @@ public class UserProfileActivity extends AppCompatActivity {
             intent.putExtra("fName", fName);
             intent.putExtra("Uid", uid);
             intent.putExtra("childID", childUser);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
+            finish();
             overridePendingTransition(0, 0);
             return true;
         }
