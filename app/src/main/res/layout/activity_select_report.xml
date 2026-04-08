@@ -98,7 +98,8 @@
             android:textColor="#FFFFFF"
             app:cornerRadius="12dp"
             app:icon="@android:drawable/ic_menu_upload"
-            app:iconGravity="textStart" />
+            app:iconGravity="textStart"
+            android:visibility="invisible"/>
     </LinearLayout>
 
     <!-- Bottom Navigation -->

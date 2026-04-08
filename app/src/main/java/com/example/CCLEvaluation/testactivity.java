@@ -19,7 +19,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import adapter.CustomViewPager;
 import adapter.testpageradapter;
@@ -58,6 +61,10 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
     private String scene;
     private String moduleKey;
     private String resolvedKey;
+    private NetService netService;
+    private String uid;
+    private String childUser;
+    private boolean isServerBacked;
     private static final String FORMAT_PL = "11";
     private static final String MODULE_PL = "PL";
     
@@ -261,6 +268,18 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             scene = "A";
         }
         fName = intent.getStringExtra("fName");
+        uid = intent.getStringExtra("Uid");
+        childUser = intent.getStringExtra("childID");
+        SharedPreferences loginPrefs = getSharedPreferences("login_prefs", MODE_PRIVATE);
+        if (uid == null || uid.isEmpty()) {
+            uid = loginPrefs.getString("Uid", null);
+        }
+        // 如果上游没透传 childID，就尝试从当前文件名映射恢复
+        if (fName != null && (childUser == null || childUser.isEmpty())) {
+            childUser = loginPrefs.getString("childID_" + fName, null);
+        }
+        isServerBacked = childUser != null && !childUser.isEmpty();
+        netService = (uid != null && !uid.isEmpty()) ? NetServiceProvider.get(this) : null;
         JSONObject data = dataManager.getInstance().loadData(fName);
         JSONObject evaluations;
         if (data.has("evaluations")) {
@@ -1889,6 +1908,9 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         final boolean finalShouldNavigate = shouldNavigate;
         final ArrayList<evaluation> finalEvTemp = evTemp;
         final String finalFName = fName;
+        final String finalUid = uid;
+        final String finalChildUser = childUser;
+        final NetService finalNetService = netService;
         
         final Handler handler = new Handler(Looper.getMainLooper());
         new Thread(new Runnable() {
@@ -1957,6 +1979,41 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                     saveSuccess = false;
+                                }
+
+                                // 保存本地成功后，同步到服务端（并上传该模块产生的音频）
+                                if (saveSuccess
+                                        && finalNetService != null
+                                        && finalUid != null
+                                        && !finalUid.isEmpty()) {
+                                    JSONObject evaluationsToUpload = data.optJSONObject("evaluations");
+                                    if (evaluationsToUpload == null) {
+                                        evaluationsToUpload = new JSONObject();
+                                    }
+                                    // lambda 回调需要捕获“effectively final”变量
+                                    final JSONObject evaluationsToUploadFinal = evaluationsToUpload;
+
+                                    if (finalChildUser != null && !finalChildUser.isEmpty()) {
+                                        // 已有 childUserID：直接更新
+                                        finalNetService.updateEvaluation(finalUid, finalChildUser, data.toString());
+                                        uploadAudioIfPresent(finalNetService, finalUid, finalChildUser, evaluationsToUploadFinal);
+                                    } else {
+                                        // 没有 childUserID：创建一条并拿到返回的 childUserID，再继续上传音频
+                                        finalNetService.setUploadEvaluationCallback(childUserID -> {
+                                            try {
+                                                if (childUserID != null && !childUserID.isEmpty()) {
+                                                    SharedPreferences loginPrefs = getSharedPreferences("login_prefs", MODE_PRIVATE);
+                                                    loginPrefs.edit().putString("childID_" + finalFName, childUserID).apply();
+                                                    childUser = childUserID;
+                                                    isServerBacked = true;
+
+                                                    uploadAudioIfPresent(finalNetService, finalUid, childUserID, evaluationsToUploadFinal);
+                                                }
+                                            } catch (Exception ignored) {
+                                            }
+                                        });
+                                        finalNetService.uploadEvaluation(finalUid, data.toString());
+                                    }
                                 }
                                 
                                 // 计算当前组的总分（仅适用于SOCIAL）
@@ -2035,6 +2092,8 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                                             // 总分大于等于12，或者是第一组，跳转到评估模块选择界面
                                             Intent intent = new Intent(testactivity.this, AssessmentModulesActivity.class);
                                             intent.putExtra("fName", finalFName);
+                                            intent.putExtra("Uid", getIntent().getStringExtra("Uid"));
+                                            intent.putExtra("childID", getIntent().getStringExtra("childID"));
                                             startActivity(intent);
                                         }
                                     } else {
@@ -2077,6 +2136,8 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             if ("E".equals(resolvedKey) || "EV".equals(resolvedKey)) {
                 Intent intent = new Intent(this, AssessmentModulesActivity.class);
                 intent.putExtra("fName", fName);
+                intent.putExtra("Uid", uid);
+                intent.putExtra("childID", childUser);
                 startActivity(intent);
                 return;
             }
@@ -2086,21 +2147,29 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
                 // 两个模块都完成了，跳转到图三（评估模块选择界面）
                 Intent intent = new Intent(this, AssessmentModulesActivity.class);
                 intent.putExtra("fName", fName);
+                intent.putExtra("Uid", uid);
+                intent.putExtra("childID", childUser);
                 startActivity(intent);
             } else if (isRGCompleted || isSECompleted) {
                 // 只有一个模块完成了，跳转到图二（句法能力评估选择界面）
                 Intent intent = new Intent(this, SyntaxAbilityEvaluationActivity.class);
                 intent.putExtra("fName", fName);
+                intent.putExtra("Uid", uid);
+                intent.putExtra("childID", childUser);
                 startActivity(intent);
             } else {
                 // 两个模块都没完成，跳转到对应模块的组别选择界面
                 if ("RG".equals(resolvedKey)) {
                     Intent intent = new Intent(this, SyntaxComprehensionGroupSelectActivity.class);
                     intent.putExtra("fName", fName);
+                    intent.putExtra("Uid", uid);
+                    intent.putExtra("childID", childUser);
                     startActivity(intent);
                 } else if ("SE".equals(resolvedKey)) {
                     Intent intent = new Intent(this, SyntaxExpressionGroupSelectActivity.class);
                     intent.putExtra("fName", fName);
+                    intent.putExtra("Uid", uid);
+                    intent.putExtra("childID", childUser);
                     startActivity(intent);
                 }
             }
@@ -2109,7 +2178,47 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
             // 异常发生时，跳转到评估模块选择界面
             Intent intent = new Intent(this, AssessmentModulesActivity.class);
             intent.putExtra("fName", fName);
+            intent.putExtra("Uid", uid);
+            intent.putExtra("childID", childUser);
             startActivity(intent);
+        }
+    }
+
+    private void uploadAudioIfPresent(NetService service, String uid, String childUserID, JSONObject evaluations) {
+        if (service == null || uid == null || uid.isEmpty() || childUserID == null || childUserID.isEmpty() || evaluations == null) {
+            return;
+        }
+        try {
+            Iterator<String> it = evaluations.keys();
+            while (it.hasNext()) {
+                String moduleType = it.next(); // 与 evmenuactivity 约定一致
+                JSONArray currentArray = evaluations.optJSONArray(moduleType);
+                if (currentArray == null) {
+                    continue;
+                }
+                for (int i = 0; i < currentArray.length(); i++) {
+                    JSONObject element = currentArray.optJSONObject(i);
+                    if (element == null) {
+                        continue;
+                    }
+                    String audioPath = element.optString("audioPath", null);
+                    if (audioPath == null || audioPath.trim().isEmpty() || "null".equals(audioPath)) {
+                        continue;
+                    }
+                    audioPath = audioPath.trim();
+                    if (!new File(audioPath).isFile()) {
+                        // JSON 里可能残留旧路径或该题本无需录音；无本地文件则不上传，避免误报「音频文件不存在」
+                        continue;
+                    }
+                    int num = element.optInt("num", -1);
+                    if (num <= 0) {
+                        continue;
+                    }
+                    service.uploadAudio(uid, childUserID, moduleType, String.valueOf(num), audioPath);
+                }
+            }
+        } catch (Exception ignored) {
+            // 上传失败交给 NetService 内部回调/Toast 处理
         }
     }
     
