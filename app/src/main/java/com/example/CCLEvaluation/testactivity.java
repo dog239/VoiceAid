@@ -84,8 +84,6 @@ public class testactivity extends AppCompatActivity implements View.OnClickListe
         }
     };
 
-    private NetService netService;
-    private String uid;
     private String childUserId;
     private boolean uploadRequested;
 
