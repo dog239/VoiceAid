@@ -35,7 +35,7 @@ import login.LoginActivity;
 import login.RegisterActivity;
 import utils.AudioPlayer;
 import utils.AudioRecorder;
-import utils.NetInteractUtils;
+import utils.netService.NetInteractUtils;
 import utils.dialogUtils;
 
 public class Audiocheck extends AppCompatActivity {

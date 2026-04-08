@@ -21,6 +21,8 @@ public class SyntaxExpressionGroupSelectActivity extends AppCompatActivity imple
     private Button btnGroup4;
     // private Button btnEvaluationReport;  // 注释掉或删除这行
     private String fName;
+    private String uid;
+    private String childUser;
     private boolean hasCompletedAnyGroup = false;
 
     @Override
@@ -41,6 +43,8 @@ public class SyntaxExpressionGroupSelectActivity extends AppCompatActivity imple
         // btnEvaluationReport.setOnClickListener(this);  // 注释掉或删除这行
 
         fName = getIntent().getStringExtra("fName");
+        uid = getIntent().getStringExtra("Uid");
+        childUser = getIntent().getStringExtra("childID");
 
         // 检查是否已经有完成的组别
         checkCompletedGroups();
@@ -113,6 +117,8 @@ public class SyntaxExpressionGroupSelectActivity extends AppCompatActivity imple
                 intent.putExtra("fName", fName);
                 intent.putExtra("format", "SE");
                 intent.putExtra("groupNumber", groupNumber);
+                intent.putExtra("Uid", uid);
+                intent.putExtra("childID", childUser);
                 startActivity(intent);
             }
         }
